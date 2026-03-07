@@ -1,8 +1,8 @@
 import 'package:hive/hive.dart';
-import 'package:pilipala/models/user/info.dart';
-import 'package:pilipala/plugin/pl_player/models/play_repeat.dart';
-import 'package:pilipala/plugin/pl_player/models/play_speed.dart';
-import 'package:pilipala/utils/storage.dart';
+import 'package:piliotto/models/user/info.dart';
+import 'package:piliotto/plugin/pl_player/models/play_repeat.dart';
+import 'package:piliotto/plugin/pl_player/models/play_speed.dart';
+import 'package:piliotto/utils/storage.dart';
 import '../models/common/index.dart';
 
 Box setting = GStrorage.setting;

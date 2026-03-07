@@ -1,17 +1,17 @@
 import 'package:audio_service/audio_service.dart';
 import 'package:hive/hive.dart';
-import 'package:pilipala/models/bangumi/info.dart';
-import 'package:pilipala/models/video_detail_res.dart';
+import 'package:piliotto/models/bangumi/info.dart';
+import 'package:piliotto/models/video_detail_res.dart';
 import 'package:get/get.dart';
-import 'package:pilipala/plugin/pl_player/index.dart';
-import 'package:pilipala/utils/storage.dart';
+import 'package:piliotto/plugin/pl_player/index.dart';
+import 'package:piliotto/utils/storage.dart';
 
 Future<VideoPlayerServiceHandler> initAudioService() async {
   return await AudioService.init(
     builder: () => VideoPlayerServiceHandler(),
     config: const AudioServiceConfig(
-      androidNotificationChannelId: 'com.guozhigq.pilipala.audio',
-      androidNotificationChannelName: 'Audio Service Pilipala',
+      androidNotificationChannelId: 'com.cyaniagent.piliotto.audio',
+      androidNotificationChannelName: 'Audio Service PiliOtto',
       androidNotificationOngoing: true,
       androidStopForegroundOnPause: true,
       fastForwardInterval: Duration(seconds: 10),

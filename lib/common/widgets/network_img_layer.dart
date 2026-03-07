@@ -1,8 +1,8 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
-import 'package:pilipala/utils/extension.dart';
-import 'package:pilipala/utils/global_data_cache.dart';
+import 'package:piliotto/utils/extension.dart';
+import 'package:piliotto/utils/global_data_cache.dart';
 import '../../utils/storage.dart';
 import '../constants.dart';
 

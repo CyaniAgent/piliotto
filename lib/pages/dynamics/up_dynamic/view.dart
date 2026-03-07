@@ -1,12 +1,12 @@
 import 'package:easy_debounce/easy_throttle.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:pilipala/common/skeleton/dynamic_card.dart';
-import 'package:pilipala/common/widgets/http_error.dart';
-import 'package:pilipala/common/widgets/no_data.dart';
-import 'package:pilipala/models/dynamics/result.dart';
-import 'package:pilipala/models/dynamics/up.dart';
-import 'package:pilipala/pages/dynamics/up_dynamic/index.dart';
+import 'package:piliotto/common/skeleton/dynamic_card.dart';
+import 'package:piliotto/common/widgets/http_error.dart';
+import 'package:piliotto/common/widgets/no_data.dart';
+import 'package:piliotto/models/dynamics/result.dart';
+import 'package:piliotto/models/dynamics/up.dart';
+import 'package:piliotto/pages/dynamics/up_dynamic/index.dart';
 
 import '../index.dart';
 import '../widgets/dynamic_panel.dart';

@@ -4,9 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
 import 'package:hive/hive.dart';
-import 'package:pilipala/http/msg.dart';
-import 'package:pilipala/models/msg/session.dart';
-import 'package:pilipala/pages/whisper/index.dart';
+import 'package:piliotto/http/msg.dart';
+import 'package:piliotto/models/msg/session.dart';
+import 'package:piliotto/pages/whisper/index.dart';
 import '../../utils/feed_back.dart';
 import '../../utils/storage.dart';
 

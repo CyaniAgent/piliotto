@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
-import 'package:pilipala/common/widgets/http_error.dart';
-import 'package:pilipala/common/widgets/video_card_h.dart';
-import 'package:pilipala/models/common/search_type.dart';
-import 'package:pilipala/pages/search/widgets/search_text.dart';
-import 'package:pilipala/pages/search_panel/index.dart';
+import 'package:piliotto/common/widgets/http_error.dart';
+import 'package:piliotto/common/widgets/video_card_h.dart';
+import 'package:piliotto/models/common/search_type.dart';
+import 'package:piliotto/pages/search/widgets/search_text.dart';
+import 'package:piliotto/pages/search_panel/index.dart';
 
 class SearchVideoPanel extends StatelessWidget {
   SearchVideoPanel({

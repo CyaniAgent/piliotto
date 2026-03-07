@@ -1,4 +1,4 @@
-name: Pilipala Release
+name: PiliOtto Release
 
 # action事件触发
 on:
@@ -82,7 +82,7 @@ jobs:
       - name: 上传
         uses: actions/upload-artifact@v3
         with:
-          name: Pilipala-Release
+          name: PiliOtto-Release
           path: |
             build/app/outputs/flutter-apk/Pili-*.apk
 
@@ -122,7 +122,7 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           if-no-files-found: error
-          name: Pilipala-Release
+          name: PiliOtto-Release
           path: |
             build/Pili-*.ipa
 
@@ -135,8 +135,8 @@ jobs:
     steps:
       - uses: actions/download-artifact@v3
         with:
-          name: Pilipala-Release
-          path: ./Pilipala-Release
+          name: PiliOtto-Release
+          path: ./PiliOtto-Release
 
       - name: Install dependencies
         run: sudo apt-get install tree -y
@@ -154,4 +154,4 @@ jobs:
           omitNameDuringUpdate: true
           omitPrereleaseDuringUpdate: true
           allowUpdates: true
-          artifacts: Pilipala-Release/*
+          artifacts: PiliOtto-Release/*

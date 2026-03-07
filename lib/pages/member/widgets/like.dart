@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:pilipala/common/constants.dart';
-import 'package:pilipala/models/member/like.dart';
-import 'package:pilipala/pages/member_like/widgets/item.dart';
+import 'package:piliotto/common/constants.dart';
+import 'package:piliotto/models/member/like.dart';
+import 'package:piliotto/pages/member_like/widgets/item.dart';
 
 class MemberLikePanel extends StatelessWidget {
   final List<MemberLikeDataModel> data;

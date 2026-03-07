@@ -3,10 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
 import 'package:hive/hive.dart';
-import 'package:pilipala/models/video/ai.dart';
-import 'package:pilipala/pages/video/detail/index.dart';
-import 'package:pilipala/utils/storage.dart';
-import 'package:pilipala/utils/utils.dart';
+import 'package:piliotto/models/video/ai.dart';
+import 'package:piliotto/pages/video/detail/index.dart';
+import 'package:piliotto/utils/storage.dart';
+import 'package:piliotto/utils/utils.dart';
 
 Box localCache = GStrorage.localCache;
 late double sheetHeight;

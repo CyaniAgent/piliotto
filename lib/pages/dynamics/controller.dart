@@ -4,16 +4,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
 import 'package:hive/hive.dart';
-import 'package:pilipala/http/dynamics.dart';
-import 'package:pilipala/http/search.dart';
-import 'package:pilipala/models/common/dynamics_type.dart';
-import 'package:pilipala/models/dynamics/result.dart';
-import 'package:pilipala/models/dynamics/up.dart';
-import 'package:pilipala/models/live/item.dart';
-import 'package:pilipala/utils/feed_back.dart';
-import 'package:pilipala/utils/id_utils.dart';
-import 'package:pilipala/utils/route_push.dart';
-import 'package:pilipala/utils/storage.dart';
+import 'package:piliotto/http/dynamics.dart';
+import 'package:piliotto/http/search.dart';
+import 'package:piliotto/models/common/dynamics_type.dart';
+import 'package:piliotto/models/dynamics/result.dart';
+import 'package:piliotto/models/dynamics/up.dart';
+import 'package:piliotto/models/live/item.dart';
+import 'package:piliotto/utils/feed_back.dart';
+import 'package:piliotto/utils/id_utils.dart';
+import 'package:piliotto/utils/responsive_util.dart';
+import 'package:piliotto/utils/route_push.dart';
+import 'package:piliotto/utils/storage.dart';
 
 class DynamicsController extends GetxController {
   int page = 1;
@@ -55,6 +56,7 @@ class DynamicsController extends GetxController {
   var userInfo;
   RxBool isLoadingDynamic = false.obs;
   Box setting = GStrorage.setting;
+  RxInt crossAxisCount = 1.obs;
 
   @override
   void onInit() {
@@ -64,6 +66,25 @@ class DynamicsController extends GetxController {
     initialValue.value =
         setting.get(SettingBoxKey.defaultDynamicType, defaultValue: 0);
     dynamicsType = DynamicsType.values[initialValue.value].obs;
+    // 初始计算列数
+    updateCrossAxisCount();
+  }
+
+  // 根据屏幕宽度更新列数
+  void updateCrossAxisCount() {
+    try {
+      // 使用ResponsiveUtil计算列数
+      int baseCount = ResponsiveUtil.calculateCrossAxisCount(
+        baseCount: 1,
+        minCount: 1,
+        maxCount: 2,
+      );
+
+      crossAxisCount.value = baseCount;
+    } catch (e) {
+      // 捕获异常，避免在没有 context 时崩溃
+      crossAxisCount.value = 1;
+    }
   }
 
   Future queryFollowDynamic({type = 'init'}) async {

@@ -1,6 +1,6 @@
 import 'package:get/get.dart';
-import 'package:pilipala/http/msg.dart';
-import 'package:pilipala/models/msg/like.dart';
+import 'package:piliotto/http/msg.dart';
+import 'package:piliotto/models/msg/like.dart';
 
 class MessageLikeController extends GetxController {
   Cursor? cursor;

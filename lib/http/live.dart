@@ -1,4 +1,4 @@
-import 'package:pilipala/models/live/follow.dart';
+import 'package:piliotto/models/live/follow.dart';
 
 import '../models/live/item.dart';
 import '../models/live/room_info.dart';

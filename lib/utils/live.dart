@@ -2,8 +2,8 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 import 'package:brotli/brotli.dart';
-import 'package:pilipala/models/live/message.dart';
-import 'package:pilipala/utils/binary_writer.dart';
+import 'package:piliotto/models/live/message.dart';
+import 'package:piliotto/utils/binary_writer.dart';
 
 class LiveUtils {
   static List<int> encodeData(String msg, int action) {

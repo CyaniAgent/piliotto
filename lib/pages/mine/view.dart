@@ -3,10 +3,10 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:pilipala/common/constants.dart';
-import 'package:pilipala/common/widgets/network_img_layer.dart';
-import 'package:pilipala/models/common/theme_type.dart';
-import 'package:pilipala/models/user/info.dart';
+import 'package:piliotto/common/constants.dart';
+import 'package:piliotto/common/widgets/network_img_layer.dart';
+import 'package:piliotto/models/common/theme_type.dart';
+import 'package:piliotto/models/user/info.dart';
 import 'controller.dart';
 
 class MinePage extends StatefulWidget {
@@ -155,7 +155,7 @@ class _MinePageState extends State<MinePage> {
                   style:
                       TextStyle(color: Theme.of(context).colorScheme.outline)),
               TextSpan(
-                  text: (_mineController.userInfo.value.money ?? 'pilipala')
+                  text: (_mineController.userInfo.value.money ?? 'piliotto')
                       .toString(),
                   style:
                       TextStyle(color: Theme.of(context).colorScheme.primary)),

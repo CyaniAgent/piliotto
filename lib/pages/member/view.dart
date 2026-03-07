@@ -3,10 +3,10 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:get/get.dart';
-import 'package:pilipala/common/constants.dart';
-import 'package:pilipala/common/widgets/network_img_layer.dart';
-import 'package:pilipala/pages/member/index.dart';
-import 'package:pilipala/utils/utils.dart';
+import 'package:piliotto/common/constants.dart';
+import 'package:piliotto/common/widgets/network_img_layer.dart';
+import 'package:piliotto/pages/member/index.dart';
+import 'package:piliotto/utils/utils.dart';
 
 import 'widgets/conis.dart';
 import 'widgets/like.dart';

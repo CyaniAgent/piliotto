@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
-import 'package:pilipala/http/member.dart';
-import 'package:pilipala/models/member/article.dart';
+import 'package:piliotto/http/member.dart';
+import 'package:piliotto/models/member/article.dart';
 
 class MemberArticleController extends GetxController {
   final ScrollController scrollController = ScrollController();

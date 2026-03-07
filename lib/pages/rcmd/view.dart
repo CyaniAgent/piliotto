@@ -3,11 +3,13 @@ import 'dart:async';
 import 'package:easy_debounce/easy_throttle.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:pilipala/common/constants.dart';
-import 'package:pilipala/common/skeleton/video_card_v.dart';
-import 'package:pilipala/common/widgets/http_error.dart';
-import 'package:pilipala/common/widgets/video_card_v.dart';
-import 'package:pilipala/utils/main_stream.dart';
+import 'package:piliotto/common/constants.dart';
+import 'package:piliotto/common/skeleton/video_card_v.dart';
+import 'package:piliotto/common/widgets/http_error.dart';
+import 'package:piliotto/common/widgets/no_data.dart';
+import 'package:piliotto/common/widgets/video_card_v.dart';
+import 'package:piliotto/utils/main_stream.dart';
+import 'package:piliotto/utils/responsive_util.dart';
 
 import 'controller.dart';
 
@@ -22,6 +24,7 @@ class _RcmdPageState extends State<RcmdPage>
     with AutomaticKeepAliveClientMixin {
   final RcmdController _rcmdController = Get.put(RcmdController());
   late Future _futureBuilderFuture;
+  late MediaQueryData _mediaQueryData;
 
   @override
   bool get wantKeepAlive => true;
@@ -44,6 +47,25 @@ class _RcmdPageState extends State<RcmdPage>
         handleScrollEvent(scrollController);
       },
     );
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // 初始化媒体查询数据
+    _mediaQueryData = MediaQuery.of(context);
+    // 初始计算列数
+    _rcmdController.updateCrossAxisCount();
+  }
+
+  @override
+  void didUpdateWidget(covariant RcmdPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // 屏幕尺寸变化时更新列数（使用防抖处理）
+    EasyThrottle.throttle(
+        'updateCrossAxisCount', const Duration(milliseconds: 100), () {
+      _rcmdController.updateCrossAxisCount();
+    });
   }
 
   @override
@@ -78,33 +100,42 @@ class _RcmdPageState extends State<RcmdPage>
                 future: _futureBuilderFuture,
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.done) {
-                    Map data = snapshot.data as Map;
-                    if (data['status']) {
-                      return Obx(
-                        () {
-                          if (_rcmdController.isLoadingMore &&
-                              _rcmdController.videoList.isEmpty) {
-                            return contentGrid(_rcmdController, []);
-                          } else {
-                            // 显示视频列表
-                            return contentGrid(
-                                _rcmdController, _rcmdController.videoList);
-                          }
-                        },
-                      );
+                    if (snapshot.data != null) {
+                      Map data = snapshot.data as Map;
+                      if (data['status']) {
+                        return Obx(
+                          () {
+                            if (_rcmdController.isLoadingMore &&
+                                _rcmdController.videoList.isEmpty) {
+                              return contentGrid(_rcmdController, []);
+                            } else {
+                              // 显示视频列表
+                              return contentGrid(
+                                  _rcmdController, _rcmdController.videoList);
+                            }
+                          },
+                        );
+                      } else {
+                        return SliverToBoxAdapter(
+                          child: HttpError(
+                            errMsg: data['msg'],
+                            fn: () {
+                              setState(() {
+                                _rcmdController.isLoadingMore = true;
+                                _futureBuilderFuture =
+                                    _rcmdController.queryRcmdFeed('init');
+                              });
+                            },
+                          ),
+                        );
+                      }
                     } else {
-                      return HttpError(
-                        errMsg: data['msg'],
-                        fn: () {
-                          setState(() {
-                            _rcmdController.isLoadingMore = true;
-                            _futureBuilderFuture =
-                                _rcmdController.queryRcmdFeed('init');
-                          });
-                        },
+                      return const SliverToBoxAdapter(
+                        child: NoData(),
                       );
                     }
                   } else {
+                    // 骨架屏
                     return contentGrid(_rcmdController, []);
                   }
                 },
@@ -117,19 +148,13 @@ class _RcmdPageState extends State<RcmdPage>
   }
 
   Widget contentGrid(ctr, videoList) {
-    // double maxWidth = Get.size.width;
-    // int baseWidth = 500;
-    // int step = 300;
-    // int crossAxisCount =
-    //     maxWidth > baseWidth ? 2 + ((maxWidth - baseWidth) / step).ceil() : 2;
-    // if (maxWidth < 300) {
-    //   crossAxisCount = 1;
-    // }
     int crossAxisCount = ctr.crossAxisCount.value;
-    double mainAxisExtent = (Get.size.width /
-            crossAxisCount /
-            StyleString.aspectRatio) +
-        (crossAxisCount == 1 ? 68 : MediaQuery.textScalerOf(context).scale(86));
+    double mainAxisExtent = ResponsiveUtil.calculateMainAxisExtent(
+      crossAxisCount: crossAxisCount,
+      aspectRatio: StyleString.aspectRatio,
+      textHeight:
+          crossAxisCount == 1 ? 68 : MediaQuery.textScalerOf(context).scale(86),
+    );
     return SliverGrid(
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
         // 行间距

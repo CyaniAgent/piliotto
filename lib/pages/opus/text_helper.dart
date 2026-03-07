@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:pilipala/models/read/opus.dart';
+import 'package:piliotto/models/read/opus.dart';
 
 class TextHelper {
   static Alignment getAlignment(int? align) {

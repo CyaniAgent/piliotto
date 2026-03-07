@@ -12,14 +12,14 @@ import 'package:hive/hive.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 import 'package:ns_danmaku/ns_danmaku.dart';
-import 'package:pilipala/http/video.dart';
-import 'package:pilipala/models/video/play/ao_output.dart';
-import 'package:pilipala/plugin/pl_player/index.dart';
-import 'package:pilipala/plugin/pl_player/models/play_repeat.dart';
-import 'package:pilipala/services/service_locator.dart';
-import 'package:pilipala/utils/feed_back.dart';
-import 'package:pilipala/utils/global_data_cache.dart';
-import 'package:pilipala/utils/storage.dart';
+import 'package:piliotto/http/video.dart';
+import 'package:piliotto/models/video/play/ao_output.dart';
+import 'package:piliotto/plugin/pl_player/index.dart';
+import 'package:piliotto/plugin/pl_player/models/play_repeat.dart';
+import 'package:piliotto/services/service_locator.dart';
+import 'package:piliotto/utils/feed_back.dart';
+import 'package:piliotto/utils/global_data_cache.dart';
+import 'package:piliotto/utils/storage.dart';
 import 'package:screen_brightness/screen_brightness.dart';
 import 'package:status_bar_control/status_bar_control.dart';
 import 'package:universal_platform/universal_platform.dart';
@@ -765,10 +765,12 @@ class PlPlayerController {
 
   /// 音量
   Future<void> getCurrentVolume() async {
-    // mac try...catch
-    try {
-      _currentVolume.value = (await FlutterVolumeController.getVolume())!;
-    } catch (_) {}
+    // 只在移动平台上使用FlutterVolumeController
+    if (UniversalPlatform.isAndroid || UniversalPlatform.isIOS) {
+      try {
+        _currentVolume.value = (await FlutterVolumeController.getVolume())!;
+      } catch (_) {}
+    }
   }
 
   Future<void> setVolume(double volumeNew,
@@ -783,11 +785,14 @@ class PlPlayerController {
     }
     volume.value = volumeNew;
 
-    try {
-      FlutterVolumeController.updateShowSystemUI(false);
-      await FlutterVolumeController.setVolume(volumeNew);
-    } catch (err) {
-      print(err);
+    // 只在移动平台上使用FlutterVolumeController
+    if (UniversalPlatform.isAndroid || UniversalPlatform.isIOS) {
+      try {
+        FlutterVolumeController.updateShowSystemUI(false);
+        await FlutterVolumeController.setVolume(volumeNew);
+      } catch (err) {
+        print(err);
+      }
     }
   }
 
@@ -801,18 +806,23 @@ class PlPlayerController {
 
   /// 亮度
   Future<void> getCurrentBrightness() async {
-    try {
-      _currentBrightness.value = await ScreenBrightness().current;
-    } catch (e) {
-      throw 'Failed to get current brightness';
-      //return 0;
+    // 只在移动平台上使用ScreenBrightness
+    if (UniversalPlatform.isAndroid || UniversalPlatform.isIOS) {
+      try {
+        _currentBrightness.value = await ScreenBrightness().current;
+      } catch (e) {
+        throw 'Failed to get current brightness';
+      }
     }
   }
 
   Future<void> setBrightness(double brightnes) async {
     try {
       brightness.value = brightnes;
-      ScreenBrightness().setScreenBrightness(brightnes);
+      // 只在移动平台上使用ScreenBrightness
+      if (UniversalPlatform.isAndroid || UniversalPlatform.isIOS) {
+        ScreenBrightness().setScreenBrightness(brightnes);
+      }
       // setVideoBrightness();
     } catch (e) {
       throw 'Failed to set brightness';
@@ -820,10 +830,13 @@ class PlPlayerController {
   }
 
   Future<void> resetBrightness() async {
-    try {
-      await ScreenBrightness().resetScreenBrightness();
-    } catch (e) {
-      throw 'Failed to reset brightness';
+    // 只在移动平台上使用ScreenBrightness
+    if (UniversalPlatform.isAndroid || UniversalPlatform.isIOS) {
+      try {
+        await ScreenBrightness().resetScreenBrightness();
+      } catch (e) {
+        throw 'Failed to reset brightness';
+      }
     }
   }
 
@@ -937,7 +950,13 @@ class PlPlayerController {
   Future<void> triggerFullScreen({bool status = true}) async {
     FullScreenMode mode = FullScreenModeCode.fromCode(
         setting.get(SettingBoxKey.fullScreenMode, defaultValue: 0))!;
-    await StatusBarControl.setHidden(true, animation: StatusBarAnimation.FADE);
+
+    // 只在移动平台上使用StatusBarControl
+    if (UniversalPlatform.isAndroid || UniversalPlatform.isIOS) {
+      await StatusBarControl.setHidden(true,
+          animation: StatusBarAnimation.FADE);
+    }
+
     if (!isFullScreen.value && status) {
       /// 按照视频宽高比决定全屏方向
       toggleFullScreen(true);
@@ -951,7 +970,10 @@ class PlPlayerController {
         await landScape();
       }
     } else if (isFullScreen.value && !status) {
-      StatusBarControl.setHidden(false, animation: StatusBarAnimation.FADE);
+      // 只在移动平台上使用StatusBarControl
+      if (UniversalPlatform.isAndroid || UniversalPlatform.isIOS) {
+        StatusBarControl.setHidden(false, animation: StatusBarAnimation.FADE);
+      }
       exitFullScreen();
       await verticalScreen();
       toggleFullScreen(false);

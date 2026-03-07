@@ -5,12 +5,12 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
-import 'package:pilipala/common/widgets/network_img_layer.dart';
-import 'package:pilipala/plugin/pl_gallery/hero_dialog_route.dart';
-import 'package:pilipala/plugin/pl_gallery/interactiveviewer_gallery.dart';
-import 'package:pilipala/utils/route_push.dart';
-import 'package:pilipala/utils/utils.dart';
-import 'package:pilipala/utils/storage.dart';
+import 'package:piliotto/common/widgets/network_img_layer.dart';
+import 'package:piliotto/plugin/pl_gallery/hero_dialog_route.dart';
+import 'package:piliotto/plugin/pl_gallery/interactiveviewer_gallery.dart';
+import 'package:piliotto/utils/route_push.dart';
+import 'package:piliotto/utils/utils.dart';
+import 'package:piliotto/utils/storage.dart';
 import '../../../http/search.dart';
 import '../controller.dart';
 

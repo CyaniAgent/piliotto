@@ -1,8 +1,8 @@
 import 'dart:convert';
 import 'dart:math';
-import 'package:pilipala/models/msg/like.dart';
-import 'package:pilipala/models/msg/reply.dart';
-import 'package:pilipala/models/msg/system.dart';
+import 'package:piliotto/models/msg/like.dart';
+import 'package:piliotto/models/msg/reply.dart';
+import 'package:piliotto/models/msg/system.dart';
 import '../models/msg/account.dart';
 import '../models/msg/session.dart';
 import '../utils/wbi_sign.dart';

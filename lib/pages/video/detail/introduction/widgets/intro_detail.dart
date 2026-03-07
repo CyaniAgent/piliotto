@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
-import 'package:pilipala/utils/feed_back.dart';
-import 'package:pilipala/utils/utils.dart';
+import 'package:piliotto/utils/feed_back.dart';
+import 'package:piliotto/utils/utils.dart';
 
 class IntroDetail extends StatelessWidget {
   const IntroDetail({

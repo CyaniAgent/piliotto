@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
-import 'package:pilipala/utils/feed_back.dart';
-import 'package:pilipala/utils/image_save.dart';
-import 'package:pilipala/utils/route_push.dart';
+import 'package:piliotto/utils/feed_back.dart';
+import 'package:piliotto/utils/image_save.dart';
+import 'package:piliotto/utils/route_push.dart';
 import '../../models/model_rec_video_item.dart';
 import 'stat/danmu.dart';
 import 'stat/view.dart';

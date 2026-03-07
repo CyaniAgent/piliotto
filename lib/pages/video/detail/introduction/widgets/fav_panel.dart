@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:get/get.dart';
 import 'package:hive/hive.dart';
-import 'package:pilipala/common/widgets/http_error.dart';
-import 'package:pilipala/utils/feed_back.dart';
-import 'package:pilipala/utils/storage.dart';
+import 'package:piliotto/common/widgets/http_error.dart';
+import 'package:piliotto/utils/feed_back.dart';
+import 'package:piliotto/utils/storage.dart';
 
 class FavPanel extends StatefulWidget {
   const FavPanel({super.key, this.ctr, this.scrollController});

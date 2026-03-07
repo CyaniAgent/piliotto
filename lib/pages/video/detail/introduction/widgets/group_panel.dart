@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
 import 'package:hive/hive.dart';
-import 'package:pilipala/common/widgets/http_error.dart';
-import 'package:pilipala/http/member.dart';
-import 'package:pilipala/models/member/tags.dart';
-import 'package:pilipala/utils/feed_back.dart';
-import 'package:pilipala/utils/storage.dart';
+import 'package:piliotto/common/widgets/http_error.dart';
+import 'package:piliotto/http/member.dart';
+import 'package:piliotto/models/member/tags.dart';
+import 'package:piliotto/utils/feed_back.dart';
+import 'package:piliotto/utils/storage.dart';
 
 class GroupPanel extends StatefulWidget {
   final int? mid;

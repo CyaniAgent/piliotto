@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:pilipala/http/reply.dart';
-import 'package:pilipala/models/common/reply_type.dart';
-import 'package:pilipala/models/video/reply/item.dart';
-import 'package:pilipala/utils/feed_back.dart';
+import 'package:piliotto/http/reply.dart';
+import 'package:piliotto/models/common/reply_type.dart';
+import 'package:piliotto/models/video/reply/item.dart';
+import 'package:piliotto/utils/feed_back.dart';
 
 class ZanButton extends StatefulWidget {
   const ZanButton({
@@ -24,7 +24,7 @@ class _ZanButtonState extends State<ZanButton> {
   // 评论点赞
   Future onLikeReply() async {
     feedBack();
-    // SmartDialog.showLoading(msg: 'pilipala ...');
+    // SmartDialog.showLoading(msg: 'piliotto ...');
     final ReplyItemModel replyItem = widget.replyItem!;
     final int oid = replyItem.oid!;
     final int rpid = replyItem.rpid!;

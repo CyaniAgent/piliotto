@@ -9,7 +9,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:pilipala/utils/download.dart';
+import 'package:piliotto/utils/download.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:status_bar_control/status_bar_control.dart';
 import 'custom_dismissible.dart';

@@ -9,21 +9,21 @@ import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 import 'package:dynamic_color/dynamic_color.dart';
 import 'package:hive/hive.dart';
-import 'package:pilipala/common/widgets/custom_toast.dart';
-import 'package:pilipala/http/init.dart';
-import 'package:pilipala/models/common/color_type.dart';
-import 'package:pilipala/models/common/theme_type.dart';
-import 'package:pilipala/pages/search/index.dart';
-import 'package:pilipala/pages/video/detail/index.dart';
-import 'package:pilipala/router/app_pages.dart';
-import 'package:pilipala/pages/main/view.dart';
-import 'package:pilipala/services/service_locator.dart';
-import 'package:pilipala/utils/app_scheme.dart';
-import 'package:pilipala/utils/data.dart';
-import 'package:pilipala/utils/global_data_cache.dart';
-import 'package:pilipala/utils/storage.dart';
+import 'package:piliotto/common/widgets/custom_toast.dart';
+import 'package:piliotto/http/init.dart';
+import 'package:piliotto/models/common/color_type.dart';
+import 'package:piliotto/models/common/theme_type.dart';
+import 'package:piliotto/pages/search/index.dart';
+import 'package:piliotto/pages/video/detail/index.dart';
+import 'package:piliotto/router/app_pages.dart';
+import 'package:piliotto/pages/main/view.dart';
+import 'package:piliotto/services/service_locator.dart';
+import 'package:piliotto/utils/app_scheme.dart';
+import 'package:piliotto/utils/data.dart';
+import 'package:piliotto/utils/global_data_cache.dart';
+import 'package:piliotto/utils/storage.dart';
 import 'package:media_kit/media_kit.dart';
-import 'package:pilipala/utils/recommend_filter.dart';
+import 'package:piliotto/utils/recommend_filter.dart';
 import 'package:catcher_2/catcher_2.dart';
 import './services/loggeer.dart';
 
@@ -222,7 +222,7 @@ class BuildMainApp extends StatelessWidget {
     );
 
     return GetMaterialApp(
-      title: 'PiliPala',
+      title: 'PiliOtto',
       theme: ThemeData(
         colorScheme: currentThemeValue == ThemeType.dark
             ? darkColorScheme

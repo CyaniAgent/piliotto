@@ -60,8 +60,8 @@ class DownloadUtils {
       final SaveResult result = await SaverGallery.saveImage(
         Uint8List.fromList(response.data),
         name: '$picName.$imgSuffix',
-        // 保存到 PiliPala文件夹
-        androidRelativePath: "Pictures/PiliPala",
+        // 保存到 PiliOtto文件夹
+        androidRelativePath: "Pictures/PiliOtto",
         androidExistNotSave: false,
       );
       SmartDialog.dismiss();

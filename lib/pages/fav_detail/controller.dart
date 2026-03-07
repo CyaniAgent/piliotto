@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
-import 'package:pilipala/http/user.dart';
-import 'package:pilipala/http/video.dart';
-import 'package:pilipala/models/user/fav_detail.dart';
-import 'package:pilipala/models/user/fav_folder.dart';
-import 'package:pilipala/pages/fav/index.dart';
-import 'package:pilipala/utils/utils.dart';
+import 'package:piliotto/http/user.dart';
+import 'package:piliotto/http/video.dart';
+import 'package:piliotto/models/user/fav_detail.dart';
+import 'package:piliotto/models/user/fav_folder.dart';
+import 'package:piliotto/pages/fav/index.dart';
+import 'package:piliotto/utils/utils.dart';
 
 class FavDetailController extends GetxController {
   FavFolderItemData? item;

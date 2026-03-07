@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:pilipala/common/widgets/html_render.dart';
-import 'package:pilipala/common/widgets/network_img_layer.dart';
-import 'package:pilipala/models/read/opus.dart';
-import 'package:pilipala/models/read/read.dart';
-import 'package:pilipala/pages/opus/text_helper.dart';
-import 'package:pilipala/utils/utils.dart';
+import 'package:piliotto/common/widgets/html_render.dart';
+import 'package:piliotto/common/widgets/network_img_layer.dart';
+import 'package:piliotto/models/read/opus.dart';
+import 'package:piliotto/models/read/read.dart';
+import 'package:piliotto/pages/opus/text_helper.dart';
+import 'package:piliotto/utils/utils.dart';
 import 'controller.dart';
 
 class ReadPage extends StatefulWidget {

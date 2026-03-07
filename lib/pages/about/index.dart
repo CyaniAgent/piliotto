@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
 import 'package:package_info_plus/package_info_plus.dart';
-import 'package:pilipala/http/index.dart';
-import 'package:pilipala/models/github/latest.dart';
-import 'package:pilipala/utils/utils.dart';
+import 'package:piliotto/http/index.dart';
+import 'package:piliotto/models/github/latest.dart';
+import 'package:piliotto/utils/utils.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../utils/cache_manage.dart';
 
@@ -49,7 +48,7 @@ class _AboutPageState extends State<AboutPage> {
               width: 150,
             ),
             Text(
-              'PiliPala',
+              'PiliOtto',
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 6),
@@ -72,18 +71,6 @@ class _AboutPageState extends State<AboutPage> {
                               ListTile(
                                 onTap: () => _aboutController.githubRelease(),
                                 title: const Text('Github下载'),
-                              ),
-                              ListTile(
-                                onTap: () => _aboutController.panDownload(),
-                                title: const Text('网盘下载'),
-                              ),
-                              ListTile(
-                                onTap: () => _aboutController.webSiteUrl(),
-                                title: const Text('官网下载'),
-                              ),
-                              ListTile(
-                                onTap: () => _aboutController.qimiao(),
-                                title: const Text('奇妙应用'),
                               ),
                               SizedBox(
                                   height:
@@ -116,27 +103,8 @@ class _AboutPageState extends State<AboutPage> {
               onTap: () => _aboutController.githubUrl(),
               title: const Text('开源地址'),
               trailing: Text(
-                'github.com/guozhigq/pilipala',
+                'github.com/CyaniAgent/piliotto',
                 style: subTitleStyle,
-              ),
-            ),
-            ListTile(
-              onTap: () => _aboutController.webSiteUrl(),
-              title: const Text('访问官网'),
-              trailing: Text(
-                'https://pilipalanet.mysxl.cn',
-                style: subTitleStyle,
-              ),
-            ),
-            ListTile(
-              onTap: () => _aboutController.panDownload(),
-              title: const Text('网盘下载'),
-              trailing: Text(
-                '提取码：pili',
-                style: TextStyle(
-                  fontSize: 13,
-                  color: Theme.of(context).colorScheme.outline,
-                ),
               ),
             ),
             ListTile(
@@ -156,22 +124,6 @@ class _AboutPageState extends State<AboutPage> {
                     return Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        ListTile(
-                          onTap: () => _aboutController.qqChanel(),
-                          title: const Text('QQ群'),
-                          trailing: Text(
-                            '616150809',
-                            style: subTitleStyle,
-                          ),
-                        ),
-                        ListTile(
-                          onTap: () => _aboutController.tgChanel(),
-                          title: const Text('TG频道'),
-                          trailing: Text(
-                            'https://t.me/+lm_oOVmF0RJiODk1',
-                            style: subTitleStyle,
-                          ),
-                        ),
                         SizedBox(
                             height: MediaQuery.of(context).padding.bottom + 20)
                       ],
@@ -185,11 +137,6 @@ class _AboutPageState extends State<AboutPage> {
                 size: 16,
                 color: outline,
               ),
-            ),
-            ListTile(
-              onTap: () => _aboutController.aPay(),
-              title: const Text('赞助'),
-              trailing: Icon(Icons.arrow_forward_ios, size: 16, color: outline),
             ),
             ListTile(
               onTap: () => _aboutController.logs(),
@@ -260,9 +207,11 @@ class AboutController extends GetxController {
     }
     data = LatestDataModel.fromJson(result.data);
     remoteAppInfo = data;
-    remoteVersion.value = data.tagName!;
-    isUpdate.value =
-        Utils.needUpdate(currentVersion.value, remoteVersion.value);
+    remoteVersion.value = data.tagName ?? '';
+    if (remoteVersion.value.isNotEmpty) {
+      isUpdate.value =
+          Utils.needUpdate(currentVersion.value, remoteVersion.value);
+    }
   }
 
   // 跳转下载/本地更新
@@ -273,90 +222,23 @@ class AboutController extends GetxController {
   // 跳转github
   githubUrl() {
     launchUrl(
-      Uri.parse('https://github.com/guozhigq/pilipala'),
+      Uri.parse('https://github.com/CyaniAgent/piliotto'),
       mode: LaunchMode.externalApplication,
     );
   }
 
   githubRelease() {
     launchUrl(
-      Uri.parse('https://github.com/guozhigq/pilipala/releases'),
+      Uri.parse('https://github.com/CyaniAgent/piliotto/releases'),
       mode: LaunchMode.externalApplication,
-    );
-  }
-
-  // 从网盘下载
-  panDownload() {
-    Clipboard.setData(
-      const ClipboardData(text: 'pili'),
-    );
-    SmartDialog.showToast(
-      '已复制提取码：pili',
-      displayTime: const Duration(milliseconds: 500),
-    ).then(
-      (value) => launchUrl(
-        Uri.parse('https://www.123pan.com/s/9sVqVv-flu0A.html'),
-        mode: LaunchMode.externalApplication,
-      ),
     );
   }
 
   // 问题反馈
   feedback() {
     launchUrl(
-      Uri.parse('https://github.com/guozhigq/pilipala/issues'),
+      Uri.parse('https://github.com/CyaniAgent/piliotto/issues'),
       // 系统自带浏览器打开
-      mode: LaunchMode.externalApplication,
-    );
-  }
-
-  // qq频道
-  qqChanel() {
-    Clipboard.setData(
-      const ClipboardData(text: '616150809'),
-    );
-    SmartDialog.showToast('已复制QQ群号');
-  }
-
-  // tg频道
-  tgChanel() {
-    Clipboard.setData(
-      const ClipboardData(text: 'https://t.me/+lm_oOVmF0RJiODk1'),
-    );
-    SmartDialog.showToast(
-      '已复制，即将在浏览器打开',
-      displayTime: const Duration(milliseconds: 500),
-    ).then(
-      (value) => launchUrl(
-        Uri.parse('https://t.me/+lm_oOVmF0RJiODk1'),
-        mode: LaunchMode.externalApplication,
-      ),
-    );
-  }
-
-  aPay() {
-    try {
-      launchUrl(
-        Uri.parse(
-            'alipayqr://platformapi/startapp?saId=10000007&qrcode=https://qr.alipay.com/fkx14623ddwl1ping3ddd73'),
-        mode: LaunchMode.externalApplication,
-      );
-    } catch (e) {
-      print(e);
-    }
-  }
-
-  // 官网
-  webSiteUrl() {
-    launchUrl(
-      Uri.parse('https://pilipalanet.mysxl.cn'),
-      mode: LaunchMode.externalApplication,
-    );
-  }
-
-  qimiao() {
-    launchUrl(
-      Uri.parse('https://www.magicalapk.com/home'),
       mode: LaunchMode.externalApplication,
     );
   }

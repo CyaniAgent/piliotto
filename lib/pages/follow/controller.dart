@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
 import 'package:hive/hive.dart';
-import 'package:pilipala/http/follow.dart';
-import 'package:pilipala/http/member.dart';
-import 'package:pilipala/models/follow/result.dart';
-import 'package:pilipala/models/member/tags.dart';
-import 'package:pilipala/utils/storage.dart';
+import 'package:piliotto/http/follow.dart';
+import 'package:piliotto/http/member.dart';
+import 'package:piliotto/models/follow/result.dart';
+import 'package:piliotto/models/member/tags.dart';
+import 'package:piliotto/utils/storage.dart';
 
 /// 查看自己的关注时，可以查看分类
 /// 查看其他人的关注时，只可以看全部

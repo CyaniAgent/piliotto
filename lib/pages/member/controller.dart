@@ -2,14 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
 import 'package:hive/hive.dart';
-import 'package:pilipala/http/member.dart';
-import 'package:pilipala/http/user.dart';
-import 'package:pilipala/http/video.dart';
-import 'package:pilipala/models/member/archive.dart';
-import 'package:pilipala/models/member/coin.dart';
-import 'package:pilipala/models/member/info.dart';
-import 'package:pilipala/models/member/like.dart';
-import 'package:pilipala/utils/storage.dart';
+import 'package:piliotto/http/member.dart';
+import 'package:piliotto/http/user.dart';
+import 'package:piliotto/http/video.dart';
+import 'package:piliotto/models/member/archive.dart';
+import 'package:piliotto/models/member/coin.dart';
+import 'package:piliotto/models/member/info.dart';
+import 'package:piliotto/models/member/like.dart';
+import 'package:piliotto/utils/storage.dart';
 import 'package:share_plus/share_plus.dart';
 
 class MemberController extends GetxController {

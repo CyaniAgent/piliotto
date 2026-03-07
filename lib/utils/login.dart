@@ -7,13 +7,13 @@ import 'package:flutter/services.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
 import 'package:hive/hive.dart';
-import 'package:pilipala/http/user.dart';
-import 'package:pilipala/pages/dynamics/index.dart';
-import 'package:pilipala/pages/home/index.dart';
-import 'package:pilipala/pages/media/index.dart';
-import 'package:pilipala/pages/mine/index.dart';
-import 'package:pilipala/utils/cookie.dart';
-import 'package:pilipala/utils/storage.dart';
+import 'package:piliotto/http/user.dart';
+import 'package:piliotto/pages/dynamics/index.dart';
+import 'package:piliotto/pages/home/index.dart';
+import 'package:piliotto/pages/media/index.dart';
+import 'package:piliotto/pages/mine/index.dart';
+import 'package:piliotto/utils/cookie.dart';
+import 'package:piliotto/utils/storage.dart';
 import 'package:uuid/uuid.dart';
 
 class LoginUtils {

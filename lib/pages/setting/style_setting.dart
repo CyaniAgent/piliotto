@@ -4,12 +4,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
 import 'package:hive/hive.dart';
-import 'package:pilipala/models/common/theme_type.dart';
-import 'package:pilipala/pages/setting/pages/color_select.dart';
-import 'package:pilipala/pages/setting/widgets/select_dialog.dart';
-import 'package:pilipala/pages/setting/widgets/slide_dialog.dart';
-import 'package:pilipala/utils/global_data_cache.dart';
-import 'package:pilipala/utils/storage.dart';
+import 'package:piliotto/models/common/theme_type.dart';
+import 'package:piliotto/pages/setting/pages/color_select.dart';
+import 'package:piliotto/pages/setting/widgets/select_dialog.dart';
+import 'package:piliotto/pages/setting/widgets/slide_dialog.dart';
+import 'package:piliotto/utils/global_data_cache.dart';
+import 'package:piliotto/utils/storage.dart';
 
 import '../../models/common/dynamic_badge_mode.dart';
 import '../../models/common/nav_bar_config.dart';

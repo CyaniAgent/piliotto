@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:pilipala/models/user/info.dart';
+import 'package:piliotto/models/user/info.dart';
 
 class GStrorage {
   static late final Box<dynamic> userInfo;

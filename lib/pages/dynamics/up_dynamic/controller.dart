@@ -1,8 +1,8 @@
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
-import 'package:pilipala/http/dynamics.dart';
-import 'package:pilipala/models/dynamics/result.dart';
-import 'package:pilipala/models/dynamics/up.dart';
+import 'package:piliotto/http/dynamics.dart';
+import 'package:piliotto/models/dynamics/result.dart';
+import 'package:piliotto/models/dynamics/up.dart';
 
 class UpDynamicsController extends GetxController {
   UpDynamicsController(this.upInfo);

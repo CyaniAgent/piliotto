@@ -5,18 +5,18 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "pilipala",
+            "name": "piliotto",
             "request": "launch",
             "type": "dart"
         },
         {
-            "name": "pilipala (profile mode)",
+            "name": "piliotto (profile mode)",
             "request": "launch",
             "type": "dart",
             "flutterMode": "profile"
         },
         {
-            "name": "pilipala (release mode)",
+            "name": "piliotto (release mode)",
             "request": "launch",
             "type": "dart",
             "flutterMode": "release"

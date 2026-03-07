@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:pilipala/common/skeleton/video_card_h.dart';
-import 'package:pilipala/common/widgets/http_error.dart';
-import 'package:pilipala/common/widgets/video_card_h.dart';
+import 'package:piliotto/common/skeleton/video_card_h.dart';
+import 'package:piliotto/common/widgets/http_error.dart';
+import 'package:piliotto/common/widgets/video_card_h.dart';
 import './controller.dart';
 
 class RelatedVideoPanel extends StatefulWidget {

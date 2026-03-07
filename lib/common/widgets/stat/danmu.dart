@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:pilipala/utils/utils.dart';
+import 'package:piliotto/utils/utils.dart';
 
 class StatDanMu extends StatelessWidget {
   final String? theme;

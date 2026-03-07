@@ -2,13 +2,13 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
-import 'package:pilipala/http/dynamics.dart';
-import 'package:pilipala/http/video.dart';
-import 'package:pilipala/models/common/reply_type.dart';
-import 'package:pilipala/models/video/reply/emote.dart';
-import 'package:pilipala/models/video/reply/item.dart';
-import 'package:pilipala/pages/emote/index.dart';
-import 'package:pilipala/utils/feed_back.dart';
+import 'package:piliotto/http/dynamics.dart';
+import 'package:piliotto/http/video.dart';
+import 'package:piliotto/models/common/reply_type.dart';
+import 'package:piliotto/models/video/reply/emote.dart';
+import 'package:piliotto/models/video/reply/item.dart';
+import 'package:piliotto/pages/emote/index.dart';
+import 'package:piliotto/utils/feed_back.dart';
 
 import 'toolbar_icon_button.dart';
 

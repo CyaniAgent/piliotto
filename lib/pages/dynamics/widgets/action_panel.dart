@@ -3,11 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:get/get.dart';
-import 'package:pilipala/common/widgets/network_img_layer.dart';
-import 'package:pilipala/http/dynamics.dart';
-import 'package:pilipala/models/dynamics/result.dart';
-import 'package:pilipala/pages/dynamics/index.dart';
-import 'package:pilipala/utils/feed_back.dart';
+import 'package:piliotto/common/widgets/network_img_layer.dart';
+import 'package:piliotto/http/dynamics.dart';
+import 'package:piliotto/models/dynamics/result.dart';
+import 'package:piliotto/pages/dynamics/index.dart';
+import 'package:piliotto/utils/feed_back.dart';
 import 'package:status_bar_control/status_bar_control.dart';
 import 'rich_node_panel.dart';
 

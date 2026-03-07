@@ -3,7 +3,7 @@ import 'dart:developer';
 
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:html/parser.dart';
-import 'package:pilipala/models/video/later.dart';
+import 'package:piliotto/models/video/later.dart';
 import '../common/constants.dart';
 import '../models/model_hot_video_item.dart';
 import '../models/user/fav_detail.dart';

@@ -1,4 +1,4 @@
-import 'package:pilipala/common/constants.dart';
+import 'package:piliotto/common/constants.dart';
 import 'package:flutter/material.dart';
 import 'skeleton.dart';
 

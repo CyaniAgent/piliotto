@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:hive/hive.dart';
-import 'package:pilipala/http/live.dart';
-import 'package:pilipala/models/live/follow.dart';
-import 'package:pilipala/models/live/item.dart';
-import 'package:pilipala/utils/storage.dart';
+import 'package:piliotto/http/live.dart';
+import 'package:piliotto/models/live/follow.dart';
+import 'package:piliotto/models/live/item.dart';
+import 'package:piliotto/utils/storage.dart';
 
 class LiveController extends GetxController {
   final ScrollController scrollController = ScrollController();

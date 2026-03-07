@@ -1,8 +1,8 @@
 import 'package:get/get.dart';
-import 'package:pilipala/http/init.dart';
-import 'package:pilipala/utils/event_bus.dart';
-import 'package:pilipala/utils/id_utils.dart';
-import 'package:pilipala/utils/login.dart';
+import 'package:piliotto/http/init.dart';
+import 'package:piliotto/utils/event_bus.dart';
+import 'package:piliotto/utils/id_utils.dart';
+import 'package:piliotto/utils/login.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
 class WebviewController extends GetxController {

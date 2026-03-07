@@ -1,5 +1,5 @@
-import 'package:pilipala/http/constants.dart';
-import 'package:pilipala/http/init.dart';
+import 'package:piliotto/http/constants.dart';
+import 'package:piliotto/http/init.dart';
 import 'package:webview_cookie_manager/webview_cookie_manager.dart';
 
 class SetCookie {

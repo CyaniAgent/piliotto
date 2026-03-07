@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:hive/hive.dart';
-import 'package:pilipala/http/bangumi.dart';
-import 'package:pilipala/models/bangumi/list.dart';
-import 'package:pilipala/utils/storage.dart';
+import 'package:piliotto/http/bangumi.dart';
+import 'package:piliotto/models/bangumi/list.dart';
+import 'package:piliotto/utils/responsive_util.dart';
+import 'package:piliotto/utils/storage.dart';
 
 class BangumiController extends GetxController {
   final ScrollController scrollController = ScrollController();
@@ -15,6 +16,7 @@ class BangumiController extends GetxController {
   RxBool userLogin = false.obs;
   late int mid;
   var userInfo;
+  RxInt crossAxisCount = 3.obs;
 
   @override
   void onInit() {
@@ -24,6 +26,25 @@ class BangumiController extends GetxController {
       mid = userInfo.mid;
     }
     userLogin.value = userInfo != null;
+    // 初始列数设为3
+    crossAxisCount.value = 3;
+  }
+
+  // 根据屏幕宽度更新列数
+  void updateCrossAxisCount() {
+    try {
+      // 使用ResponsiveUtil计算列数
+      int baseCount = ResponsiveUtil.calculateCrossAxisCount(
+        baseCount: 3,
+        minCount: 1,
+        maxCount: 5,
+      );
+
+      crossAxisCount.value = baseCount;
+    } catch (e) {
+      // 捕获异常，避免在没有 context 时崩溃
+      crossAxisCount.value = 3;
+    }
   }
 
   Future queryBangumiListFeed({type = 'init'}) async {

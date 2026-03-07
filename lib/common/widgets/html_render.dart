@@ -1,9 +1,9 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_html/flutter_html.dart';
-import 'package:pilipala/plugin/pl_gallery/hero_dialog_route.dart';
-import 'package:pilipala/plugin/pl_gallery/interactiveviewer_gallery.dart';
-import 'package:pilipala/utils/highlight.dart';
+import 'package:piliotto/plugin/pl_gallery/hero_dialog_route.dart';
+import 'package:piliotto/plugin/pl_gallery/interactiveviewer_gallery.dart';
+import 'package:piliotto/utils/highlight.dart';
 
 // ignore: must_be_immutable
 class HtmlRender extends StatelessWidget {

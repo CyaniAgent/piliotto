@@ -1,6 +1,6 @@
 import 'package:get/get.dart';
-import 'package:pilipala/http/msg.dart';
-import 'package:pilipala/models/msg/reply.dart';
+import 'package:piliotto/http/msg.dart';
+import 'package:piliotto/models/msg/reply.dart';
 
 class MessageReplyController extends GetxController {
   Cursor? cursor;

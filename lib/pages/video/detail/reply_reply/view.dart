@@ -2,12 +2,12 @@ import 'package:easy_debounce/easy_throttle.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:hive/hive.dart';
-import 'package:pilipala/common/skeleton/video_reply.dart';
-import 'package:pilipala/common/widgets/http_error.dart';
-import 'package:pilipala/models/common/reply_type.dart';
-import 'package:pilipala/models/video/reply/item.dart';
-import 'package:pilipala/pages/video/detail/reply/widgets/reply_item.dart';
-import 'package:pilipala/utils/storage.dart';
+import 'package:piliotto/common/skeleton/video_reply.dart';
+import 'package:piliotto/common/widgets/http_error.dart';
+import 'package:piliotto/models/common/reply_type.dart';
+import 'package:piliotto/models/video/reply/item.dart';
+import 'package:piliotto/pages/video/detail/reply/widgets/reply_item.dart';
+import 'package:piliotto/utils/storage.dart';
 
 import 'controller.dart';
 

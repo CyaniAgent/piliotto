@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
 import 'package:hive/hive.dart';
-import 'package:pilipala/models/common/dynamics_type.dart';
-import 'package:pilipala/models/common/reply_sort_type.dart';
-import 'package:pilipala/pages/setting/widgets/select_dialog.dart';
-import 'package:pilipala/utils/storage.dart';
+import 'package:piliotto/models/common/dynamics_type.dart';
+import 'package:piliotto/models/common/reply_sort_type.dart';
+import 'package:piliotto/pages/setting/widgets/select_dialog.dart';
+import 'package:piliotto/utils/storage.dart';
 
 import '../home/index.dart';
 import 'widgets/switch_item.dart';

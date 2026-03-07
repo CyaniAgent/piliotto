@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get/get_rx/src/rx_workers/utils/debouncer.dart';
 import 'package:hive/hive.dart';
-import 'package:pilipala/http/search.dart';
-import 'package:pilipala/models/search/hot.dart';
-import 'package:pilipala/models/search/suggest.dart';
-import 'package:pilipala/utils/storage.dart';
+import 'package:piliotto/http/search.dart';
+import 'package:piliotto/models/search/hot.dart';
+import 'package:piliotto/models/search/suggest.dart';
+import 'package:piliotto/utils/storage.dart';
 
 class SSearchController extends GetxController {
   final FocusNode searchFocusNode = FocusNode();

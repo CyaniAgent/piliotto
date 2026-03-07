@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:hive/hive.dart';
-import 'package:pilipala/http/member.dart';
-import 'package:pilipala/models/common/rcmd_type.dart';
-import 'package:pilipala/pages/setting/widgets/select_dialog.dart';
-import 'package:pilipala/utils/recommend_filter.dart';
-import 'package:pilipala/utils/storage.dart';
+import 'package:piliotto/http/member.dart';
+import 'package:piliotto/models/common/rcmd_type.dart';
+import 'package:piliotto/pages/setting/widgets/select_dialog.dart';
+import 'package:piliotto/utils/recommend_filter.dart';
+import 'package:piliotto/utils/storage.dart';
 
 import 'widgets/switch_item.dart';
 
@@ -247,10 +247,9 @@ class _RecommendSettingState extends State<RecommendSetting> {
               '* 其它（如热门视频、手动搜索、链接跳转等）均不受过滤器影响。\n'
               '* 设定较严苛的条件可导致推荐项数锐减或多次请求，请酌情选择。\n'
               '* 后续可能会增加更多过滤条件，敬请期待。',
-              style: Theme.of(context)
-                  .textTheme
-                  .labelSmall!
-                  .copyWith(color: Theme.of(context).colorScheme.outline.withOpacity(0.7)),
+              style: Theme.of(context).textTheme.labelSmall!.copyWith(
+                  color:
+                      Theme.of(context).colorScheme.outline.withOpacity(0.7)),
             ),
           )
         ],

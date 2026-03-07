@@ -1,9 +1,9 @@
 import 'package:easy_debounce/easy_throttle.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:pilipala/common/widgets/http_error.dart';
-import 'package:pilipala/common/widgets/no_data.dart';
-import 'package:pilipala/models/fans/result.dart';
+import 'package:piliotto/common/widgets/http_error.dart';
+import 'package:piliotto/common/widgets/no_data.dart';
+import 'package:piliotto/models/fans/result.dart';
 
 import 'controller.dart';
 import 'widgets/fan_item.dart';

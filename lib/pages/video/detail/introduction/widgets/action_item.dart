@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:pilipala/common/constants.dart';
-import 'package:pilipala/utils/feed_back.dart';
+import 'package:piliotto/common/constants.dart';
+import 'package:piliotto/utils/feed_back.dart';
 
 class ActionItem extends StatelessWidget {
   final dynamic icon;

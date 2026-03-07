@@ -2,10 +2,11 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
 import 'package:hive/hive.dart';
-import 'package:pilipala/http/video.dart';
-import 'package:pilipala/models/home/rcmd/result.dart';
-import 'package:pilipala/models/model_rec_video_item.dart';
-import 'package:pilipala/utils/storage.dart';
+import 'package:piliotto/http/video.dart';
+import 'package:piliotto/models/home/rcmd/result.dart';
+import 'package:piliotto/models/model_rec_video_item.dart';
+import 'package:piliotto/utils/responsive_util.dart';
+import 'package:piliotto/utils/storage.dart';
 
 class RcmdController extends GetxController {
   final ScrollController scrollController = ScrollController();
@@ -23,8 +24,6 @@ class RcmdController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    crossAxisCount.value =
-        setting.get(SettingBoxKey.customRows, defaultValue: 2);
     enableSaveLastData =
         setting.get(SettingBoxKey.enableSaveLastData, defaultValue: false);
     defaultRcmdType =
@@ -33,6 +32,27 @@ class RcmdController extends GetxController {
       videoList = <RecVideoItemModel>[].obs;
     } else {
       videoList = <RecVideoItemAppModel>[].obs;
+    }
+    // 初始计算列数
+    updateCrossAxisCount();
+  }
+
+  // 根据屏幕宽度更新列数
+  void updateCrossAxisCount() {
+    try {
+      int customRows = setting.get(SettingBoxKey.customRows, defaultValue: 2);
+
+      // 使用ResponsiveUtil计算列数
+      int baseCount = ResponsiveUtil.calculateCrossAxisCount(
+        baseCount: customRows,
+        minCount: 1,
+        maxCount: 4,
+      );
+
+      crossAxisCount.value = baseCount;
+    } catch (e) {
+      // 捕获异常，避免在没有 context 时崩溃
+      crossAxisCount.value = 2;
     }
   }
 

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:pilipala/http/member.dart';
+import 'package:piliotto/http/member.dart';
 
 import '../../models/follow/result.dart';
 

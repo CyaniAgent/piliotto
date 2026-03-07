@@ -11,21 +11,22 @@ import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
 import 'package:lottie/lottie.dart';
-import 'package:pilipala/common/widgets/network_img_layer.dart';
-import 'package:pilipala/http/user.dart';
-import 'package:pilipala/models/common/search_type.dart';
-import 'package:pilipala/pages/bangumi/introduction/index.dart';
-import 'package:pilipala/pages/danmaku/view.dart';
-import 'package:pilipala/pages/main/index.dart';
-import 'package:pilipala/pages/video/detail/reply/index.dart';
-import 'package:pilipala/pages/video/detail/controller.dart';
-import 'package:pilipala/pages/video/detail/introduction/index.dart';
-import 'package:pilipala/pages/video/detail/related/index.dart';
-import 'package:pilipala/plugin/pl_player/index.dart';
-import 'package:pilipala/plugin/pl_player/models/play_repeat.dart';
-import 'package:pilipala/services/service_locator.dart';
-import 'package:pilipala/utils/storage.dart';
+import 'package:piliotto/common/widgets/network_img_layer.dart';
+import 'package:piliotto/http/user.dart';
+import 'package:piliotto/models/common/search_type.dart';
+import 'package:piliotto/pages/bangumi/introduction/index.dart';
+import 'package:piliotto/pages/danmaku/view.dart';
+import 'package:piliotto/pages/main/index.dart';
+import 'package:piliotto/pages/video/detail/reply/index.dart';
+import 'package:piliotto/pages/video/detail/controller.dart';
+import 'package:piliotto/pages/video/detail/introduction/index.dart';
+import 'package:piliotto/pages/video/detail/related/index.dart';
+import 'package:piliotto/plugin/pl_player/index.dart';
+import 'package:piliotto/plugin/pl_player/models/play_repeat.dart';
+import 'package:piliotto/services/service_locator.dart';
+import 'package:piliotto/utils/storage.dart';
 import 'package:status_bar_control/status_bar_control.dart';
+import 'package:universal_platform/universal_platform.dart';
 
 import '../../../plugin/pl_player/models/bottom_control_type.dart';
 import '../../../services/shutdown_timer_service.dart';
@@ -219,7 +220,19 @@ class _VideoDetailPageState extends State<VideoDetailPage>
   }
 
   getStatusHeight() async {
-    statusHeight = await StatusBarControl.getHeight;
+    // 只在移动平台上使用StatusBarControl
+    if (UniversalPlatform.isAndroid || UniversalPlatform.isIOS) {
+      try {
+        statusHeight = await StatusBarControl.getHeight;
+      } catch (e) {
+        // 捕获异常，避免初始化失败
+        print('StatusBarControl error: $e');
+        statusHeight = 0;
+      }
+    } else {
+      // 桌面平台默认状态栏高度为0
+      statusHeight = 0;
+    }
   }
 
   @override

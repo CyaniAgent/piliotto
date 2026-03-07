@@ -1,12 +1,13 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:easy_debounce/easy_throttle.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
-import 'package:pilipala/common/widgets/network_img_layer.dart';
-import 'package:pilipala/pages/mine/index.dart';
-import 'package:pilipala/utils/feed_back.dart';
+import 'package:piliotto/common/widgets/network_img_layer.dart';
+import 'package:piliotto/pages/mine/index.dart';
+import 'package:piliotto/utils/feed_back.dart';
 import './controller.dart';
 
 class HomePage extends StatefulWidget {
@@ -29,6 +30,16 @@ class _HomePageState extends State<HomePage>
   void initState() {
     super.initState();
     stream = _homeController.searchBarStream.stream;
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // 屏幕尺寸变化时的防抖处理
+    EasyThrottle.throttle(
+        'homePageDidChange', const Duration(milliseconds: 100), () {
+      // 这里可以添加需要在屏幕尺寸变化时执行的逻辑
+    });
   }
 
   showUserBottomSheet() {
@@ -373,7 +384,6 @@ class SearchBar extends StatelessWidget {
     final ColorScheme colorScheme = Theme.of(context).colorScheme;
     return Expanded(
       child: Container(
-        width: 250,
         height: 44,
         clipBehavior: Clip.hardEdge,
         decoration: BoxDecoration(
@@ -394,12 +404,14 @@ class SearchBar extends StatelessWidget {
                     color: colorScheme.onSecondaryContainer,
                   ),
                   const SizedBox(width: 10),
-                  Obx(
-                    () => Text(
-                      ctr!.defaultSearch.value,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(color: colorScheme.outline),
+                  Expanded(
+                    child: Obx(
+                      () => Text(
+                        ctr!.defaultSearch.value,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(color: colorScheme.outline),
+                      ),
                     ),
                   ),
                 ],

@@ -1,13 +1,15 @@
 import 'dart:async';
 
+import 'package:easy_debounce/easy_throttle.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:pilipala/common/constants.dart';
-import 'package:pilipala/common/skeleton/video_card_h.dart';
-import 'package:pilipala/common/widgets/http_error.dart';
-import 'package:pilipala/common/widgets/video_card_h.dart';
-import 'package:pilipala/pages/rank/zone/index.dart';
-import 'package:pilipala/utils/main_stream.dart';
+import 'package:piliotto/common/constants.dart';
+import 'package:piliotto/common/skeleton/video_card_h.dart';
+import 'package:piliotto/common/widgets/http_error.dart';
+import 'package:piliotto/common/widgets/video_card_h.dart';
+import 'package:piliotto/pages/rank/zone/index.dart';
+import 'package:piliotto/utils/main_stream.dart';
+import 'package:piliotto/utils/responsive_util.dart';
 
 class ZonePage extends StatefulWidget {
   const ZonePage({Key? key, required this.rid}) : super(key: key);
@@ -49,6 +51,24 @@ class _ZonePageState extends State<ZonePage>
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // 初始计算列数
+    _zoneController.updateCrossAxisCount();
+  }
+
+  @override
+  void didUpdateWidget(covariant ZonePage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // 屏幕尺寸变化时的防抖处理
+    EasyThrottle.throttle(
+        'zonePageDidChange', const Duration(milliseconds: 100), () {
+      // 更新列数
+      _zoneController.updateCrossAxisCount();
+    });
+  }
+
+  @override
   void dispose() {
     scrollController.removeListener(() {});
     super.dispose();
@@ -57,6 +77,10 @@ class _ZonePageState extends State<ZonePage>
   @override
   Widget build(BuildContext context) {
     super.build(context);
+    double screenWidth = MediaQuery.of(context).size.width;
+    bool isWideScreen = screenWidth > 768;
+    double maxContentWidth = 800;
+
     return RefreshIndicator(
       onRefresh: () async {
         return await _zoneController.onRefresh();
@@ -65,9 +89,8 @@ class _ZonePageState extends State<ZonePage>
         controller: _zoneController.scrollController,
         slivers: [
           SliverPadding(
-            // 单列布局 EdgeInsets.zero
-            padding:
-                const EdgeInsets.fromLTRB(0, StyleString.safeSpace - 5, 0, 0),
+            padding: const EdgeInsets.fromLTRB(StyleString.safeSpace,
+                StyleString.safeSpace - 5, StyleString.safeSpace, 0),
             sliver: FutureBuilder(
               future: _futureBuilderFuture,
               builder: (context, snapshot) {
@@ -75,29 +98,55 @@ class _ZonePageState extends State<ZonePage>
                   Map data = snapshot.data as Map;
                   if (data['status']) {
                     return Obx(
-                      () => SliverList(
-                        delegate: SliverChildBuilderDelegate((context, index) {
-                          return VideoCardH(
-                            videoItem: _zoneController.videoList[index],
-                            showPubdate: true,
-                          );
-                        }, childCount: _zoneController.videoList.length),
-                      ),
+                      () {
+                        return SliverGrid(
+                          gridDelegate:
+                              SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount:
+                                _zoneController.crossAxisCount.value,
+                            mainAxisSpacing: 16,
+                            crossAxisSpacing: 16,
+                            childAspectRatio: 3 / 1,
+                          ),
+                          delegate:
+                              SliverChildBuilderDelegate((context, index) {
+                            return VideoCardH(
+                              videoItem: _zoneController.videoList[index],
+                              showPubdate: true,
+                            );
+                          }, childCount: _zoneController.videoList.length),
+                        );
+                      },
                     );
                   } else {
-                    return HttpError(
-                      errMsg: data['msg'],
-                      fn: () {
-                        setState(() {
-                          _futureBuilderFuture =
-                              _zoneController.queryRankFeed('init', widget.rid);
-                        });
-                      },
+                    return SliverPadding(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: isWideScreen
+                            ? (screenWidth - maxContentWidth) / 2
+                            : 0,
+                      ),
+                      sliver: SliverToBoxAdapter(
+                        child: HttpError(
+                          errMsg: data['msg'],
+                          fn: () {
+                            setState(() {
+                              _futureBuilderFuture = _zoneController
+                                  .queryRankFeed('init', widget.rid);
+                            });
+                          },
+                        ),
+                      ),
                     );
                   }
                 } else {
                   // 骨架屏
-                  return SliverList(
+                  return SliverGrid(
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: _zoneController.crossAxisCount.value,
+                      mainAxisSpacing: 16,
+                      crossAxisSpacing: 16,
+                      childAspectRatio: 3 / 1,
+                    ),
                     delegate: SliverChildBuilderDelegate((context, index) {
                       return const VideoCardHSkeleton();
                     }, childCount: 10),

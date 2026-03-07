@@ -1,11 +1,11 @@
 import 'package:easy_debounce/easy_throttle.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:pilipala/common/widgets/network_img_layer.dart';
-import 'package:pilipala/models/dynamics/up.dart';
-import 'package:pilipala/models/live/item.dart';
-import 'package:pilipala/utils/feed_back.dart';
-import 'package:pilipala/utils/utils.dart';
+import 'package:piliotto/common/widgets/network_img_layer.dart';
+import 'package:piliotto/models/dynamics/up.dart';
+import 'package:piliotto/models/live/item.dart';
+import 'package:piliotto/utils/feed_back.dart';
+import 'package:piliotto/utils/utils.dart';
 
 class UpPanel extends StatefulWidget {
   final FollowUpModel upData;

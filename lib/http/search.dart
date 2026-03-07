@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:hive/hive.dart';
-import 'package:pilipala/models/search/all.dart';
-import 'package:pilipala/utils/wbi_sign.dart';
+import 'package:piliotto/models/search/all.dart';
+import 'package:piliotto/utils/wbi_sign.dart';
 import '../models/bangumi/info.dart';
 import '../models/common/search_type.dart';
 import '../models/search/hot.dart';

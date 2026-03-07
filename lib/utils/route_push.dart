@@ -1,9 +1,9 @@
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
-import 'package:pilipala/http/search.dart';
-import 'package:pilipala/models/bangumi/info.dart';
-import 'package:pilipala/models/common/search_type.dart';
-import 'package:pilipala/utils/utils.dart';
+import 'package:piliotto/http/search.dart';
+import 'package:piliotto/models/bangumi/info.dart';
+import 'package:piliotto/models/common/search_type.dart';
+import 'package:piliotto/utils/utils.dart';
 
 class RoutePush {
   // 番剧跳转

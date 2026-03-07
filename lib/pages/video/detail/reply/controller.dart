@@ -1,12 +1,12 @@
 import 'package:easy_debounce/easy_throttle.dart';
 import 'package:get/get.dart';
 import 'package:hive/hive.dart';
-import 'package:pilipala/http/reply.dart';
-import 'package:pilipala/models/common/reply_sort_type.dart';
-import 'package:pilipala/models/common/reply_type.dart';
-import 'package:pilipala/models/video/reply/item.dart';
-import 'package:pilipala/utils/feed_back.dart';
-import 'package:pilipala/utils/storage.dart';
+import 'package:piliotto/http/reply.dart';
+import 'package:piliotto/models/common/reply_sort_type.dart';
+import 'package:piliotto/models/common/reply_type.dart';
+import 'package:piliotto/models/video/reply/item.dart';
+import 'package:piliotto/utils/feed_back.dart';
+import 'package:piliotto/utils/storage.dart';
 
 class VideoReplyController extends GetxController {
   VideoReplyController(

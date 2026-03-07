@@ -3,9 +3,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:hive/hive.dart';
-import 'package:pilipala/models/common/rank_type.dart';
-import 'package:pilipala/pages/rank/zone/index.dart';
-import 'package:pilipala/utils/storage.dart';
+import 'package:piliotto/models/common/rank_type.dart';
+import 'package:piliotto/pages/rank/zone/index.dart';
+import 'package:piliotto/utils/storage.dart';
 
 class RankController extends GetxController with GetTickerProviderStateMixin {
   bool flag = false;

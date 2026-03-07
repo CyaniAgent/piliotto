@@ -5,8 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
-import 'package:pilipala/models/video/reply/item.dart';
-import 'package:pilipala/pages/video/detail/reply/widgets/reply_item.dart';
+import 'package:piliotto/models/video/reply/item.dart';
+import 'package:piliotto/pages/video/detail/reply/widgets/reply_item.dart';
 import 'package:saver_gallery/saver_gallery.dart';
 
 class ReplySave extends StatefulWidget {
@@ -33,7 +33,7 @@ class _ReplySaveState extends State<ReplySave> {
       final result = await SaverGallery.saveImage(
         Uint8List.fromList(pngBytes),
         name: '$picName.png',
-        androidRelativePath: "Pictures/PiliPala",
+        androidRelativePath: "Pictures/PiliOtto",
         androidExistNotSave: false,
       );
       if (result.isSuccess) {
@@ -61,7 +61,7 @@ class _ReplySaveState extends State<ReplySave> {
         child: Transform.rotate(
           angle: pi / 10,
           child: const Text(
-            'PiliPala',
+            'PiliOtto',
             style: TextStyle(
               color: Color(0x08000000),
               fontSize: 18,

@@ -1,9 +1,9 @@
 import 'package:easy_debounce/easy_throttle.dart';
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
-import 'package:pilipala/common/widgets/network_img_layer.dart';
-import 'package:pilipala/models/dynamics/up.dart';
-import 'package:pilipala/utils/feed_back.dart';
+import 'package:piliotto/common/widgets/network_img_layer.dart';
+import 'package:piliotto/models/dynamics/up.dart';
+import 'package:piliotto/utils/feed_back.dart';
 import '../controller.dart';
 import 'index.dart';
 

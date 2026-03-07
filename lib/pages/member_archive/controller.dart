@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:pilipala/http/member.dart';
-import 'package:pilipala/models/member/archive.dart';
+import 'package:piliotto/http/member.dart';
+import 'package:piliotto/models/member/archive.dart';
 
 class MemberArchiveController extends GetxController {
   final ScrollController scrollController = ScrollController();

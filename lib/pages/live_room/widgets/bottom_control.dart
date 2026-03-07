@@ -5,10 +5,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:hive/hive.dart';
-import 'package:pilipala/models/video/play/url.dart';
-import 'package:pilipala/pages/live_room/index.dart';
-import 'package:pilipala/plugin/pl_player/index.dart';
-import 'package:pilipala/utils/storage.dart';
+import 'package:piliotto/models/video/play/url.dart';
+import 'package:piliotto/pages/live_room/index.dart';
+import 'package:piliotto/plugin/pl_player/index.dart';
+import 'package:piliotto/utils/storage.dart';
 
 class BottomControl extends StatefulWidget implements PreferredSizeWidget {
   final PlPlayerController? controller;

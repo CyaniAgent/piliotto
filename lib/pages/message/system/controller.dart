@@ -1,7 +1,7 @@
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
-import 'package:pilipala/http/msg.dart';
-import 'package:pilipala/models/msg/system.dart';
+import 'package:piliotto/http/msg.dart';
+import 'package:piliotto/models/msg/system.dart';
 
 class MessageSystemController extends GetxController {
   RxList<MessageSystemModel> systemItems = <MessageSystemModel>[].obs;

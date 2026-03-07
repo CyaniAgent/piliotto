@@ -1,10 +1,10 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:pilipala/http/read.dart';
-import 'package:pilipala/models/read/read.dart';
-import 'package:pilipala/plugin/pl_gallery/hero_dialog_route.dart';
-import 'package:pilipala/plugin/pl_gallery/interactiveviewer_gallery.dart';
+import 'package:piliotto/http/read.dart';
+import 'package:piliotto/models/read/read.dart';
+import 'package:piliotto/plugin/pl_gallery/hero_dialog_route.dart';
+import 'package:piliotto/plugin/pl_gallery/interactiveviewer_gallery.dart';
 
 class ReadPageController extends GetxController {
   late String url;

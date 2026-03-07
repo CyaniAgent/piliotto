@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
 import 'package:hive/hive.dart';
-import 'package:pilipala/http/user.dart';
-import 'package:pilipala/models/model_hot_video_item.dart';
-import 'package:pilipala/models/user/info.dart';
-import 'package:pilipala/utils/storage.dart';
-import 'package:pilipala/utils/utils.dart';
+import 'package:piliotto/http/user.dart';
+import 'package:piliotto/models/model_hot_video_item.dart';
+import 'package:piliotto/models/user/info.dart';
+import 'package:piliotto/utils/storage.dart';
+import 'package:piliotto/utils/utils.dart';
 
 class LaterController extends GetxController {
   final ScrollController scrollController = ScrollController();

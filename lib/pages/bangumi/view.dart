@@ -3,9 +3,9 @@ import 'dart:async';
 import 'package:easy_debounce/easy_throttle.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:pilipala/common/constants.dart';
-import 'package:pilipala/common/widgets/http_error.dart';
-import 'package:pilipala/utils/main_stream.dart';
+import 'package:piliotto/common/constants.dart';
+import 'package:piliotto/common/widgets/http_error.dart';
+import 'package:piliotto/utils/main_stream.dart';
 
 import 'controller.dart';
 import 'widgets/bangumu_card_v.dart';
@@ -23,6 +23,7 @@ class _BangumiPageState extends State<BangumiPage>
   late Future? _futureBuilderFuture;
   late Future? _futureBuilderFutureFollow;
   late ScrollController scrollController;
+  late MediaQueryData _mediaQueryData;
 
   @override
   bool get wantKeepAlive => true;
@@ -45,6 +46,18 @@ class _BangumiPageState extends State<BangumiPage>
         handleScrollEvent(scrollController);
       },
     );
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // 初始化媒体查询数据
+    _mediaQueryData = MediaQuery.of(context);
+    // 屏幕尺寸变化时更新列数（使用防抖处理）
+    EasyThrottle.throttle(
+        'updateCrossAxisCount', const Duration(milliseconds: 100), () {
+      _bangumidController.updateCrossAxisCount();
+    });
   }
 
   @override
@@ -200,25 +213,30 @@ class _BangumiPageState extends State<BangumiPage>
   }
 
   Widget contentGrid(ctr, bangumiList) {
-    return SliverGrid(
-      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        // 行间距
-        mainAxisSpacing: StyleString.cardSpace - 2,
-        // 列间距
-        crossAxisSpacing: StyleString.cardSpace,
-        // 列数
-        crossAxisCount: 3,
-        mainAxisExtent: Get.size.width / 3 / 0.75 +
-            MediaQuery.textScalerOf(context).scale(42.0),
-      ),
-      delegate: SliverChildBuilderDelegate(
-        (BuildContext context, int index) {
-          return bangumiList!.isNotEmpty
-              ? BangumiCardV(bangumiItem: bangumiList[index])
-              : const SizedBox();
-        },
-        childCount: bangumiList!.isNotEmpty ? bangumiList!.length : 10,
-      ),
-    );
+    return Obx(() {
+      int crossAxisCount = ctr.crossAxisCount.value;
+      double mainAxisExtent = Get.size.width / crossAxisCount / 0.75 +
+          MediaQuery.textScalerOf(context).scale(42.0);
+
+      return SliverGrid(
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          // 行间距
+          mainAxisSpacing: StyleString.cardSpace - 2,
+          // 列间距
+          crossAxisSpacing: StyleString.cardSpace,
+          // 列数
+          crossAxisCount: crossAxisCount,
+          mainAxisExtent: mainAxisExtent,
+        ),
+        delegate: SliverChildBuilderDelegate(
+          (BuildContext context, int index) {
+            return bangumiList!.isNotEmpty
+                ? BangumiCardV(bangumiItem: bangumiList[index])
+                : const SizedBox();
+          },
+          childCount: bangumiList!.isNotEmpty ? bangumiList!.length : 10,
+        ),
+      );
+    });
   }
 }

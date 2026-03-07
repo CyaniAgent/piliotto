@@ -2,9 +2,9 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:hive/hive.dart';
-import 'package:pilipala/common/widgets/network_img_layer.dart';
-import 'package:pilipala/pages/mine/view.dart';
-import 'package:pilipala/utils/storage.dart';
+import 'package:piliotto/common/widgets/network_img_layer.dart';
+import 'package:piliotto/pages/mine/view.dart';
+import 'package:piliotto/utils/storage.dart';
 
 Box userInfoCache = GStrorage.userInfo;
 
@@ -31,7 +31,7 @@ class HomeAppBar extends StatelessWidget {
                 AppBar(
                   centerTitle: false,
                   title: const Text(
-                    'PiLiPaLa',
+                    'PiliOtto',
                     style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,

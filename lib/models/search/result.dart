@@ -1,5 +1,5 @@
-import 'package:pilipala/utils/em.dart';
-import 'package:pilipala/utils/utils.dart';
+import 'package:piliotto/utils/em.dart';
+import 'package:piliotto/utils/utils.dart';
 
 class SearchVideoModel {
   SearchVideoModel({this.list});

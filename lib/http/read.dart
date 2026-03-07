@@ -1,8 +1,8 @@
 import 'dart:convert';
 import 'package:html/parser.dart';
-import 'package:pilipala/models/read/opus.dart';
-import 'package:pilipala/models/read/read.dart';
-import 'package:pilipala/utils/wbi_sign.dart';
+import 'package:piliotto/models/read/opus.dart';
+import 'package:piliotto/models/read/read.dart';
+import 'package:piliotto/utils/wbi_sign.dart';
 import 'index.dart';
 
 class ReadHttp {

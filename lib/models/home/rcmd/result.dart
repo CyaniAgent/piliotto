@@ -1,4 +1,4 @@
-import 'package:pilipala/utils/id_utils.dart';
+import 'package:piliotto/utils/id_utils.dart';
 
 class RecVideoItemAppModel {
   RecVideoItemAppModel({

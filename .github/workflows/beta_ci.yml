@@ -1,4 +1,4 @@
-name: Pilipala Beta
+name: PiliOtto Beta
 
 on:
   workflow_dispatch:
@@ -131,7 +131,7 @@ jobs:
       - name: 上传
         uses: actions/upload-artifact@v3
         with:
-          name: Pilipala-Beta
+          name: PiliOtto-Beta
           path: |
             build/app/outputs/flutter-apk/Pili-*.apk
 
@@ -177,7 +177,7 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           if-no-files-found: error
-          name: Pilipala-Beta
+          name: PiliOtto-Beta
           path: |
             build/Pili-*.ipa
 
@@ -191,8 +191,8 @@ jobs:
     steps:
       - uses: actions/download-artifact@v3
         with:
-          name: Pilipala-Beta
-          path: ./Pilipala-Beta
+          name: PiliOtto-Beta
+          path: ./PiliOtto-Beta
 
       - name: 发送到Telegram频道
         uses: xireiki/channel-post@v1.0.7
@@ -203,6 +203,6 @@ jobs:
           api_id: ${{ secrets.TELEGRAM_API_ID }}
           api_hash: ${{ secrets.TELEGRAM_API_HASH }}
           method: sendFile
-          path: Pilipala-Beta/*
+          path: PiliOtto-Beta/*
           parse_mode: Markdown
           context: "*Beta版本: v${{ needs.update_version.outputs.new_version }}*\n更新内容: [${{ needs.update_version.outputs.last_commit }}]"

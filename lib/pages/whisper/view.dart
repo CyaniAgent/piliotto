@@ -2,10 +2,10 @@ import 'package:easy_debounce/easy_throttle.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
-import 'package:pilipala/common/constants.dart';
-import 'package:pilipala/common/skeleton/skeleton.dart';
-import 'package:pilipala/common/widgets/network_img_layer.dart';
-import 'package:pilipala/utils/utils.dart';
+import 'package:piliotto/common/constants.dart';
+import 'package:piliotto/common/skeleton/skeleton.dart';
+import 'package:piliotto/common/widgets/network_img_layer.dart';
+import 'package:piliotto/utils/utils.dart';
 
 import 'controller.dart';
 

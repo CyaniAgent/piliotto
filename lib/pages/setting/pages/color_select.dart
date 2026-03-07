@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:hive/hive.dart';
-import 'package:pilipala/models/common/color_type.dart';
-import 'package:pilipala/utils/storage.dart';
+import 'package:piliotto/models/common/color_type.dart';
+import 'package:piliotto/utils/storage.dart';
 
 class ColorSelectPage extends StatefulWidget {
   const ColorSelectPage({super.key});

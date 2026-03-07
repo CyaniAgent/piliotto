@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:pilipala/common/skeleton/video_card_h.dart';
-import 'package:pilipala/common/widgets/http_error.dart';
-import 'package:pilipala/common/widgets/no_data.dart';
-import 'package:pilipala/common/widgets/video_card_h.dart';
-import 'package:pilipala/pages/later/index.dart';
-import 'package:pilipala/utils/route_push.dart';
+import 'package:piliotto/common/skeleton/video_card_h.dart';
+import 'package:piliotto/common/widgets/http_error.dart';
+import 'package:piliotto/common/widgets/no_data.dart';
+import 'package:piliotto/common/widgets/video_card_h.dart';
+import 'package:piliotto/pages/later/index.dart';
+import 'package:piliotto/utils/route_push.dart';
 
 class LaterPage extends StatefulWidget {
   const LaterPage({super.key});

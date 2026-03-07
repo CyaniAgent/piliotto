@@ -1,4 +1,4 @@
-import 'package:pilipala/models/video/play/url.dart';
+import 'package:piliotto/models/video/play/url.dart';
 
 import '../models/live/room_info.dart';
 

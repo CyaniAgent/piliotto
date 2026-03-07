@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:hive/hive.dart';
-import 'package:pilipala/models/common/action_type.dart';
-import 'package:pilipala/utils/global_data_cache.dart';
+import 'package:piliotto/models/common/action_type.dart';
+import 'package:piliotto/utils/global_data_cache.dart';
 import '../../../utils/storage.dart';
 
 class ActionMenuSetPage extends StatefulWidget {

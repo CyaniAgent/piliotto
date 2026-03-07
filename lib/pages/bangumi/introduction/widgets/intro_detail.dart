@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
-import 'package:pilipala/common/widgets/stat/danmu.dart';
-import 'package:pilipala/common/widgets/stat/view.dart';
-import 'package:pilipala/utils/storage.dart';
+import 'package:piliotto/common/widgets/stat/danmu.dart';
+import 'package:piliotto/common/widgets/stat/view.dart';
+import 'package:piliotto/utils/storage.dart';
 
 Box localCache = GStrorage.localCache;
 late double sheetHeight;

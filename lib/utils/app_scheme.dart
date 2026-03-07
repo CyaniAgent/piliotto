@@ -3,7 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
-import 'package:pilipala/utils/route_push.dart';
+import 'package:universal_platform/universal_platform.dart';
+import 'package:piliotto/utils/route_push.dart';
 import '../http/search.dart';
 import 'id_utils.dart';
 import 'url_utils.dart';
@@ -12,25 +13,33 @@ import 'utils.dart';
 class PiliSchame {
   static AppScheme appScheme = AppSchemeImpl.getInstance()!;
   static Future<void> init() async {
-    ///
-    final SchemeEntity? value = await appScheme.getInitScheme();
-    if (value != null) {
-      _routePush(value);
+    // 只在移动平台上使用appscheme
+    if (UniversalPlatform.isAndroid || UniversalPlatform.isIOS) {
+      try {
+        ///
+        final SchemeEntity? value = await appScheme.getInitScheme();
+        if (value != null) {
+          _routePush(value);
+        }
+
+        /// 完整链接进入 b23.无效
+        appScheme.getLatestScheme().then((SchemeEntity? value) {
+          if (value != null) {
+            _routePush(value);
+          }
+        });
+
+        /// 注册从外部打开的Scheme监听信息 #
+        appScheme.registerSchemeListener().listen((SchemeEntity? event) {
+          if (event != null) {
+            _routePush(event);
+          }
+        });
+      } catch (e) {
+        // 捕获异常，避免初始化失败
+        print('AppScheme initialization error: $e');
+      }
     }
-
-    /// 完整链接进入 b23.无效
-    appScheme.getLatestScheme().then((SchemeEntity? value) {
-      if (value != null) {
-        _routePush(value);
-      }
-    });
-
-    /// 注册从外部打开的Scheme监听信息 #
-    appScheme.registerSchemeListener().listen((SchemeEntity? event) {
-      if (event != null) {
-        _routePush(event);
-      }
-    });
   }
 
   /// 路由跳转

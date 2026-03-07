@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:pilipala/http/msg.dart';
-import 'package:pilipala/models/msg/account.dart';
-import 'package:pilipala/models/msg/session.dart';
+import 'package:piliotto/http/msg.dart';
+import 'package:piliotto/models/msg/account.dart';
+import 'package:piliotto/models/msg/session.dart';
 
 class WhisperController extends GetxController {
   RxList<SessionList> sessionList = <SessionList>[].obs;

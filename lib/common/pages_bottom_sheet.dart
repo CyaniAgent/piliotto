@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
-import 'package:pilipala/common/widgets/network_img_layer.dart';
+import 'package:piliotto/common/widgets/network_img_layer.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 import '../models/common/video_episode_type.dart';
 

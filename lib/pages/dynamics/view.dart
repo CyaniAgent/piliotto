@@ -5,15 +5,16 @@ import 'package:easy_debounce/easy_throttle.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:hive/hive.dart';
-import 'package:pilipala/common/skeleton/dynamic_card.dart';
-import 'package:pilipala/common/widgets/http_error.dart';
-import 'package:pilipala/common/widgets/no_data.dart';
-import 'package:pilipala/models/dynamics/result.dart';
-import 'package:pilipala/plugin/pl_popup/index.dart';
-import 'package:pilipala/utils/feed_back.dart';
-import 'package:pilipala/utils/main_stream.dart';
-import 'package:pilipala/utils/route_push.dart';
-import 'package:pilipala/utils/storage.dart';
+import 'package:piliotto/common/skeleton/dynamic_card.dart';
+import 'package:piliotto/common/widgets/http_error.dart';
+import 'package:piliotto/common/widgets/no_data.dart';
+import 'package:piliotto/models/dynamics/result.dart';
+import 'package:piliotto/plugin/pl_popup/index.dart';
+import 'package:piliotto/utils/feed_back.dart';
+import 'package:piliotto/utils/main_stream.dart';
+import 'package:piliotto/utils/responsive_util.dart';
+import 'package:piliotto/utils/route_push.dart';
+import 'package:piliotto/utils/storage.dart';
 
 import '../mine/controller.dart';
 import 'controller.dart';
@@ -36,6 +37,7 @@ class _DynamicsPageState extends State<DynamicsPage>
   late Future _futureBuilderFutureUp;
   Box userInfoCache = GStrorage.userInfo;
   late ScrollController scrollController;
+  late MediaQueryData _mediaQueryData;
 
   @override
   bool get wantKeepAlive => true;
@@ -70,6 +72,26 @@ class _DynamicsPageState extends State<DynamicsPage>
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // 初始化媒体查询数据
+    _mediaQueryData = MediaQuery.of(context);
+    // 初始计算列数
+    _dynamicsController.updateCrossAxisCount();
+  }
+
+  @override
+  void didUpdateWidget(covariant DynamicsPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // 屏幕尺寸变化时的防抖处理
+    EasyThrottle.throttle(
+        'dynamicsPageDidChange', const Duration(milliseconds: 100), () {
+      // 更新列数
+      _dynamicsController.updateCrossAxisCount();
+    });
+  }
+
+  @override
   void dispose() {
     scrollController.removeListener(() {});
     super.dispose();
@@ -78,6 +100,9 @@ class _DynamicsPageState extends State<DynamicsPage>
   @override
   Widget build(BuildContext context) {
     super.build(context);
+    bool isWideScreen = ResponsiveUtil.isMd;
+    double screenWidth = MediaQuery.of(context).size.width;
+
     return Scaffold(
       appBar: AppBar(
         elevation: 0,
@@ -249,41 +274,58 @@ class _DynamicsPageState extends State<DynamicsPage>
                           if (_dynamicsController.isLoadingDynamic.value) {
                             return skeleton();
                           } else {
-                            return const NoData();
+                            return const SliverToBoxAdapter(child: NoData());
                           }
                         } else {
-                          return SliverList(
-                            delegate: SliverChildBuilderDelegate(
-                              (context, index) {
-                                return DynamicPanel(item: list[index]);
-                              },
-                              childCount: list.length,
+                          return SliverPadding(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: isWideScreen ? screenWidth * 0.2 : 0,
+                            ),
+                            sliver: SliverList(
+                              delegate: SliverChildBuilderDelegate(
+                                (context, index) {
+                                  return DynamicPanel(item: list[index]);
+                                },
+                                childCount: list.length,
+                              ),
                             ),
                           );
                         }
                       },
                     );
                   } else {
-                    return HttpError(
-                      errMsg: data?['msg'] ?? '请求异常',
-                      btnText: data?['code'] == -101 ? '去登录' : null,
-                      fn: () {
-                        if (data?['code'] == -101) {
-                          RoutePush.loginRedirectPush();
-                        } else {
-                          setState(() {
-                            _futureBuilderFuture =
-                                _dynamicsController.queryFollowDynamic();
-                            _futureBuilderFutureUp =
-                                _dynamicsController.queryFollowUp();
-                          });
-                        }
-                      },
+                    return SliverPadding(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: isWideScreen ? screenWidth * 0.2 : 0,
+                      ),
+                      sliver: SliverToBoxAdapter(
+                        child: HttpError(
+                          errMsg: data?['msg'] ?? '请求异常',
+                          btnText: data?['code'] == -101 ? '去登录' : null,
+                          fn: () {
+                            if (data?['code'] == -101) {
+                              RoutePush.loginRedirectPush();
+                            } else {
+                              setState(() {
+                                _futureBuilderFuture =
+                                    _dynamicsController.queryFollowDynamic();
+                                _futureBuilderFutureUp =
+                                    _dynamicsController.queryFollowUp();
+                              });
+                            }
+                          },
+                        ),
+                      ),
                     );
                   }
                 } else {
                   // 骨架屏
-                  return skeleton();
+                  return SliverPadding(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: isWideScreen ? screenWidth * 0.2 : 0,
+                    ),
+                    sliver: skeleton(),
+                  );
                 }
               },
             ),

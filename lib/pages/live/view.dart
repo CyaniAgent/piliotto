@@ -3,12 +3,12 @@ import 'dart:async';
 import 'package:easy_debounce/easy_throttle.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:pilipala/common/constants.dart';
-import 'package:pilipala/common/skeleton/video_card_v.dart';
-import 'package:pilipala/common/widgets/http_error.dart';
-import 'package:pilipala/common/widgets/network_img_layer.dart';
-import 'package:pilipala/models/live/follow.dart';
-import 'package:pilipala/utils/main_stream.dart';
+import 'package:piliotto/common/constants.dart';
+import 'package:piliotto/common/skeleton/video_card_v.dart';
+import 'package:piliotto/common/widgets/http_error.dart';
+import 'package:piliotto/common/widgets/network_img_layer.dart';
+import 'package:piliotto/models/live/follow.dart';
+import 'package:piliotto/utils/main_stream.dart';
 
 import 'controller.dart';
 import 'widgets/live_item.dart';

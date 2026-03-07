@@ -3,16 +3,16 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:hive/hive.dart';
-import 'package:pilipala/pages/fav_edit/index.dart';
-import 'package:pilipala/pages/follow_search/view.dart';
-import 'package:pilipala/pages/member_article/index.dart';
-import 'package:pilipala/pages/message/at/index.dart';
-import 'package:pilipala/pages/message/like/index.dart';
-import 'package:pilipala/pages/message/reply/index.dart';
-import 'package:pilipala/pages/message/system/index.dart';
-import 'package:pilipala/pages/opus/index.dart';
-import 'package:pilipala/pages/read/index.dart';
-import 'package:pilipala/pages/setting/pages/logs.dart';
+import 'package:piliotto/pages/fav_edit/index.dart';
+import 'package:piliotto/pages/follow_search/view.dart';
+import 'package:piliotto/pages/member_article/index.dart';
+import 'package:piliotto/pages/message/at/index.dart';
+import 'package:piliotto/pages/message/like/index.dart';
+import 'package:piliotto/pages/message/reply/index.dart';
+import 'package:piliotto/pages/message/system/index.dart';
+import 'package:piliotto/pages/opus/index.dart';
+import 'package:piliotto/pages/read/index.dart';
+import 'package:piliotto/pages/setting/pages/logs.dart';
 
 import '../pages/about/index.dart';
 import '../pages/blacklist/index.dart';

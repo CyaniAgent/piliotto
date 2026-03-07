@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:pilipala/common/widgets/http_error.dart';
-import 'package:pilipala/models/msg/system.dart';
+import 'package:piliotto/common/widgets/http_error.dart';
+import 'package:piliotto/models/msg/system.dart';
 import 'controller.dart';
 
 class MessageSystemPage extends StatefulWidget {

@@ -3,12 +3,12 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:hive/hive.dart';
-import 'package:pilipala/common/widgets/network_img_layer.dart';
-import 'package:pilipala/models/video/reply/emote.dart';
-import 'package:pilipala/pages/emote/index.dart';
-import 'package:pilipala/pages/video/detail/reply_new/toolbar_icon_button.dart';
-import 'package:pilipala/pages/whisper_detail/controller.dart';
-import 'package:pilipala/utils/feed_back.dart';
+import 'package:piliotto/common/widgets/network_img_layer.dart';
+import 'package:piliotto/models/video/reply/emote.dart';
+import 'package:piliotto/pages/emote/index.dart';
+import 'package:piliotto/pages/video/detail/reply_new/toolbar_icon_button.dart';
+import 'package:piliotto/pages/whisper_detail/controller.dart';
+import 'package:piliotto/utils/feed_back.dart';
 import '../../utils/storage.dart';
 import 'widget/chat_item.dart';
 

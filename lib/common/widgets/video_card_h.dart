@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
-import 'package:pilipala/http/constants.dart';
-import 'package:pilipala/utils/feed_back.dart';
-import 'package:pilipala/utils/image_save.dart';
-import 'package:pilipala/utils/route_push.dart';
-import 'package:pilipala/utils/url_utils.dart';
+import 'package:piliotto/http/constants.dart';
+import 'package:piliotto/utils/feed_back.dart';
+import 'package:piliotto/utils/image_save.dart';
+import 'package:piliotto/utils/route_push.dart';
+import 'package:piliotto/utils/url_utils.dart';
 import '../../http/search.dart';
 import '../../http/user.dart';
 import '../../http/video.dart';

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:pilipala/common/widgets/network_img_layer.dart';
-import 'package:pilipala/models/video_detail_res.dart';
-import 'package:pilipala/utils/utils.dart';
+import 'package:piliotto/common/widgets/network_img_layer.dart';
+import 'package:piliotto/models/video_detail_res.dart';
+import 'package:piliotto/utils/utils.dart';
 
 class StaffUpItem extends StatelessWidget {
   final Staff item;

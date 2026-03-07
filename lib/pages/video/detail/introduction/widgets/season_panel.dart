@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:pilipala/common/pages_bottom_sheet.dart';
-import 'package:pilipala/models/video_detail_res.dart';
-import 'package:pilipala/pages/video/detail/index.dart';
-import 'package:pilipala/utils/id_utils.dart';
+import 'package:piliotto/common/pages_bottom_sheet.dart';
+import 'package:piliotto/models/video_detail_res.dart';
+import 'package:piliotto/pages/video/detail/index.dart';
+import 'package:piliotto/utils/id_utils.dart';
 import '../../../../../models/common/video_episode_type.dart';
 import '../controller.dart';
 

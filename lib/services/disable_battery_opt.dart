@@ -1,7 +1,7 @@
 import 'dart:io';
 
 import 'package:disable_battery_optimization/disable_battery_optimization.dart';
-import 'package:pilipala/utils/storage.dart';
+import 'package:piliotto/utils/storage.dart';
 
 void DisableBatteryOpt() async {
   if (!Platform.isAndroid) {

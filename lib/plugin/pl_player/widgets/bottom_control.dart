@@ -1,8 +1,8 @@
 import 'package:audio_video_progress_bar/audio_video_progress_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:pilipala/plugin/pl_player/index.dart';
-import 'package:pilipala/utils/feed_back.dart';
+import 'package:piliotto/plugin/pl_player/index.dart';
+import 'package:piliotto/utils/feed_back.dart';
 
 class BottomControl extends StatelessWidget implements PreferredSizeWidget {
   final PlPlayerController? controller;
