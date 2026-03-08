@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
-import 'package:piliotto/http/constants.dart';
+
 import 'package:piliotto/utils/feed_back.dart';
 import 'package:piliotto/utils/image_save.dart';
-import 'package:piliotto/utils/route_push.dart';
-import 'package:piliotto/utils/url_utils.dart';
+
 import '../../http/search.dart';
-import '../../http/user.dart';
 import '../../http/video.dart';
+import '../../api/models/video.dart';
+import '../../services/ottohub_service.dart';
 import '../../utils/utils.dart';
 import '../constants.dart';
 import 'badge.dart';
@@ -42,127 +42,190 @@ class VideoCardH extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final int aid = videoItem.aid;
-    final String bvid = videoItem.bvid;
-    String type = 'video';
-    try {
-      type = videoItem.type;
-    } catch (_) {}
-    final String heroTag = Utils.makeHeroTag(aid);
-    return InkWell(
-      onTap: () async {
-        try {
-          if (type == 'ketang') {
-            SmartDialog.showToast('课堂视频暂不支持播放');
-            return;
-          }
-          if (showCharge && videoItem?.typeid == 33) {
-            final String redirectUrl = await UrlUtils.parseRedirectUrl(
-                '${HttpString.baseUrl}/video/$bvid/');
-            final String lastPathSegment = redirectUrl.split('/').last;
-            if (lastPathSegment.contains('ss')) {
-              RoutePush.bangumiPush(
-                  Utils.matchNum(lastPathSegment).first, null);
-            }
-            if (lastPathSegment.contains('ep')) {
-              RoutePush.bangumiPush(
-                  null, Utils.matchNum(lastPathSegment).first);
-            }
-            return;
-          }
-          final int cid =
-              videoItem.cid ?? await SearchHttp.ab2c(aid: aid, bvid: bvid);
-          Get.toNamed('/video?bvid=$bvid&cid=$cid',
-              arguments: {'videoItem': videoItem, 'heroTag': heroTag});
-        } catch (err) {
-          SmartDialog.showToast(err.toString());
-        }
-      },
-      onLongPress: () => imageSaveDialog(
-        context,
-        videoItem,
-        SmartDialog.dismiss,
-      ),
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(
-            StyleString.safeSpace, 5, StyleString.safeSpace, 5),
-        child: LayoutBuilder(
-          builder: (BuildContext context, BoxConstraints boxConstraints) {
-            final double width = (boxConstraints.maxWidth -
-                    StyleString.cardSpace *
-                        6 /
-                        MediaQuery.textScalerOf(context).scale(1.0)) /
-                2;
-            return Container(
-              constraints: const BoxConstraints(minHeight: 88),
-              height: width / StyleString.aspectRatio,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.start,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  AspectRatio(
-                    aspectRatio: StyleString.aspectRatio,
-                    child: LayoutBuilder(
-                      builder: (BuildContext context,
-                          BoxConstraints boxConstraints) {
-                        final double maxWidth = boxConstraints.maxWidth;
-                        final double maxHeight = boxConstraints.maxHeight;
-                        return Stack(
-                          children: [
-                            Hero(
-                              tag: heroTag,
-                              child: NetworkImgLayer(
-                                src: videoItem.pic as String,
-                                width: maxWidth,
-                                height: maxHeight,
-                              ),
-                            ),
-                            if (videoItem.duration != 0)
-                              PBadge(
-                                text: Utils.timeFormat(videoItem.duration!),
-                                right: 6.0,
-                                bottom: 6.0,
-                                type: 'gray',
-                              ),
-                            if (type != 'video')
-                              PBadge(
-                                text: type,
-                                left: 6.0,
-                                bottom: 6.0,
-                                type: 'primary',
-                              ),
-                            // if (videoItem.rcmdReason != null &&
-                            //     videoItem.rcmdReason.content != '')
-                            //   pBadge(videoItem.rcmdReason.content, context,
-                            //       6.0, 6.0, null, null),
-                            if (showCharge && videoItem?.isChargingSrc)
-                              const PBadge(
-                                text: '充电专属',
-                                right: 6.0,
-                                top: 6.0,
-                                type: 'primary',
-                              ),
-                          ],
-                        );
-                      },
-                    ),
-                  ),
-                  VideoContent(
-                    videoItem: videoItem,
-                    source: source,
-                    showOwner: showOwner,
-                    showView: showView,
-                    showDanmaku: showDanmaku,
-                    showPubdate: showPubdate,
-                    onPressedFn: onPressedFn,
-                  )
-                ],
-              ),
-            );
-          },
+    // 处理Ottohub的Video模型
+    if (videoItem is Video) {
+      final String heroTag = Utils.makeHeroTag(videoItem.vid.toString());
+      return InkWell(
+        onTap: () async {
+          Get.toNamed('/video?vid=${videoItem.vid}', arguments: {
+            'pic': videoItem.coverUrl,
+            'heroTag': heroTag,
+          });
+        },
+        onLongPress: () => imageSaveDialog(
+          context,
+          videoItem,
+          SmartDialog.dismiss,
         ),
-      ),
-    );
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(
+              StyleString.safeSpace, 5, StyleString.safeSpace, 5),
+          child: LayoutBuilder(
+            builder: (BuildContext context, BoxConstraints boxConstraints) {
+              final double width = (boxConstraints.maxWidth -
+                      StyleString.cardSpace *
+                          6 /
+                          MediaQuery.textScalerOf(context).scale(1.0)) /
+                  2;
+              return Container(
+                constraints: const BoxConstraints(minHeight: 88),
+                height: width / StyleString.aspectRatio,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    AspectRatio(
+                      aspectRatio: StyleString.aspectRatio,
+                      child: LayoutBuilder(
+                        builder: (BuildContext context,
+                            BoxConstraints boxConstraints) {
+                          final double maxWidth = boxConstraints.maxWidth;
+                          final double maxHeight = boxConstraints.maxHeight;
+                          return Stack(
+                            children: [
+                              Hero(
+                                tag: heroTag,
+                                child: NetworkImgLayer(
+                                  src: videoItem.coverUrl ?? '',
+                                  width: maxWidth,
+                                  height: maxHeight,
+                                ),
+                              ),
+                              if (videoItem.duration != null &&
+                                  videoItem.duration! > 0)
+                                PBadge(
+                                  text: Utils.timeFormat(videoItem.duration!),
+                                  right: 6.0,
+                                  bottom: 6.0,
+                                  type: 'gray',
+                                ),
+                            ],
+                          );
+                        },
+                      ),
+                    ),
+                    VideoContent(
+                      videoItem: videoItem,
+                      source: source,
+                      showOwner: showOwner,
+                      showView: showView,
+                      showDanmaku: showDanmaku,
+                      showPubdate: showPubdate,
+                      onPressedFn: onPressedFn,
+                    )
+                  ],
+                ),
+              );
+            },
+          ),
+        ),
+      );
+    } else {
+      final int aid = videoItem.aid;
+      final String bvid = videoItem.bvid;
+      String type = 'video';
+      try {
+        type = videoItem.type;
+      } catch (_) {}
+      final String heroTag = Utils.makeHeroTag(aid);
+      return InkWell(
+        onTap: () async {
+          try {
+            if (type == 'ketang') {
+              SmartDialog.showToast('课堂视频暂不支持播放');
+              return;
+            }
+            if (showCharge && videoItem?.typeid == 33) {}
+            final int cid =
+                videoItem.cid ?? await SearchHttp.ab2c(aid: aid, bvid: bvid);
+            Get.toNamed('/video?bvid=$bvid&cid=$cid',
+                arguments: {'videoItem': videoItem, 'heroTag': heroTag});
+          } catch (err) {
+            SmartDialog.showToast(err.toString());
+          }
+        },
+        onLongPress: () => imageSaveDialog(
+          context,
+          videoItem,
+          SmartDialog.dismiss,
+        ),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(
+              StyleString.safeSpace, 5, StyleString.safeSpace, 5),
+          child: LayoutBuilder(
+            builder: (BuildContext context, BoxConstraints boxConstraints) {
+              final double width = (boxConstraints.maxWidth -
+                      StyleString.cardSpace *
+                          6 /
+                          MediaQuery.textScalerOf(context).scale(1.0)) /
+                  2;
+              return Container(
+                constraints: const BoxConstraints(minHeight: 88),
+                height: width / StyleString.aspectRatio,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    AspectRatio(
+                      aspectRatio: StyleString.aspectRatio,
+                      child: LayoutBuilder(
+                        builder: (BuildContext context,
+                            BoxConstraints boxConstraints) {
+                          final double maxWidth = boxConstraints.maxWidth;
+                          final double maxHeight = boxConstraints.maxHeight;
+                          return Stack(
+                            children: [
+                              Hero(
+                                tag: heroTag,
+                                child: NetworkImgLayer(
+                                  src: videoItem.pic as String,
+                                  width: maxWidth,
+                                  height: maxHeight,
+                                ),
+                              ),
+                              if (videoItem.duration != 0)
+                                PBadge(
+                                  text: Utils.timeFormat(videoItem.duration!),
+                                  right: 6.0,
+                                  bottom: 6.0,
+                                  type: 'gray',
+                                ),
+                              if (type != 'video')
+                                PBadge(
+                                  text: type,
+                                  left: 6.0,
+                                  bottom: 6.0,
+                                  type: 'primary',
+                                ),
+                              if (showCharge && videoItem?.isChargingSrc)
+                                const PBadge(
+                                  text: '充电专属',
+                                  right: 6.0,
+                                  top: 6.0,
+                                  type: 'primary',
+                                ),
+                            ],
+                          );
+                        },
+                      ),
+                    ),
+                    VideoContent(
+                      videoItem: videoItem,
+                      source: source,
+                      showOwner: showOwner,
+                      showView: showView,
+                      showDanmaku: showDanmaku,
+                      showPubdate: showPubdate,
+                      onPressedFn: onPressedFn,
+                    )
+                  ],
+                ),
+              );
+            },
+          ),
+        ),
+      );
+    }
   }
 }
 
@@ -189,15 +252,16 @@ class VideoContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Expanded(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(10, 0, 6, 0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (source == 'normal' || source == 'later') ...[
+    // 处理Ottohub的Video模型
+    if (videoItem is Video) {
+      return Expanded(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(10, 0, 6, 0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
               Text(
-                videoItem.title as String,
+                videoItem.title,
                 textAlign: TextAlign.start,
                 style: const TextStyle(
                   fontWeight: FontWeight.w500,
@@ -205,117 +269,189 @@ class VideoContent extends StatelessWidget {
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
               ),
-            ] else ...[
-              RichText(
-                maxLines: 2,
-                text: TextSpan(
+              const Spacer(),
+              if (showPubdate)
+                Text(
+                  Utils.dateFormat(videoItem.time),
+                  style: TextStyle(
+                      fontSize: 11,
+                      color: Theme.of(context).colorScheme.outline),
+                ),
+              if (showOwner)
+                Row(
                   children: [
-                    for (final i in videoItem.titleList) ...[
-                      TextSpan(
-                        text: i['text'] as String,
-                        style: TextStyle(
-                          fontWeight: FontWeight.w500,
-                          letterSpacing: 0.3,
-                          color: i['type'] == 'em'
-                              ? Theme.of(context).colorScheme.primary
-                              : Theme.of(context).colorScheme.onSurface,
-                        ),
+                    Text(
+                      videoItem.username,
+                      style: TextStyle(
+                        fontSize:
+                            Theme.of(context).textTheme.labelMedium!.fontSize,
+                        color: Theme.of(context).colorScheme.outline,
                       ),
-                    ]
+                    ),
                   ],
                 ),
-              ),
-            ],
-            const Spacer(),
-            // if (videoItem.rcmdReason != null &&
-            //     videoItem.rcmdReason.content != '')
-            //   Container(
-            //     padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 5),
-            //     decoration: BoxDecoration(
-            //       borderRadius: BorderRadius.circular(4),
-            //       border: Border.all(
-            //           color: Theme.of(context).colorScheme.surfaceTint),
-            //     ),
-            //     child: Text(
-            //       videoItem.rcmdReason.content,
-            //       style: TextStyle(
-            //           fontSize: 9,
-            //           color: Theme.of(context).colorScheme.surfaceTint),
-            //     ),
-            //   ),
-            // const SizedBox(height: 4),
-            if (showPubdate)
-              Text(
-                Utils.dateFormat(videoItem.pubdate!),
-                style: TextStyle(
-                    fontSize: 11, color: Theme.of(context).colorScheme.outline),
-              ),
-            if (showOwner)
               Row(
                 children: [
-                  Text(
-                    videoItem.owner.name as String,
-                    style: TextStyle(
-                      fontSize:
-                          Theme.of(context).textTheme.labelMedium!.fontSize,
-                      color: Theme.of(context).colorScheme.outline,
-                    ),
-                  ),
-                ],
-              ),
-            Row(
-              children: [
-                if (showView) ...[
-                  StatView(view: videoItem.stat.view as int),
-                  const SizedBox(width: 8),
-                ],
-                if (showDanmaku)
-                  StatDanMu(danmu: videoItem.stat.danmaku as int),
-                const Spacer(),
-                if (source == 'normal')
-                  SizedBox(
-                    width: 24,
-                    height: 24,
-                    child: IconButton(
-                      padding: EdgeInsets.zero,
-                      onPressed: () {
-                        feedBack();
-                        showModalBottomSheet(
-                          context: context,
-                          useRootNavigator: true,
-                          isScrollControlled: true,
-                          builder: (context) {
-                            return MorePanel(videoItem: videoItem);
-                          },
-                        );
-                      },
-                      icon: Icon(
-                        Icons.more_vert_outlined,
-                        color: Theme.of(context).colorScheme.outline,
-                        size: 14,
+                  if (showView) ...[
+                    StatView(view: videoItem.viewCount),
+                    const SizedBox(width: 8),
+                  ],
+                  const Spacer(),
+                  if (source == 'normal')
+                    SizedBox(
+                      width: 24,
+                      height: 24,
+                      child: IconButton(
+                        padding: EdgeInsets.zero,
+                        onPressed: () {
+                          feedBack();
+                          showModalBottomSheet(
+                            context: context,
+                            useRootNavigator: true,
+                            isScrollControlled: true,
+                            builder: (context) {
+                              return MorePanel(videoItem: videoItem);
+                            },
+                          );
+                        },
+                        icon: Icon(
+                          Icons.more_vert_outlined,
+                          color: Theme.of(context).colorScheme.outline,
+                          size: 14,
+                        ),
                       ),
                     ),
-                  ),
-                if (source == 'later') ...[
-                  IconButton(
-                    style: ButtonStyle(
-                      padding: WidgetStateProperty.all(EdgeInsets.zero),
-
-                    ),
-                    onPressed: () => onPressedFn?.call(),
-                    icon: Icon(
-                      Icons.clear_outlined,
-                      color: Theme.of(context).colorScheme.outline,
-                      size: 18,
-                    ),
-                  )
+                  if (source == 'later') ...[
+                    IconButton(
+                      style: ButtonStyle(
+                        padding: WidgetStateProperty.all(EdgeInsets.zero),
+                      ),
+                      onPressed: () => onPressedFn?.call(),
+                      icon: Icon(
+                        Icons.clear_outlined,
+                        color: Theme.of(context).colorScheme.outline,
+                        size: 18,
+                      ),
+                    )
+                  ],
                 ],
-              ],
-            ),
-          ],
+              ),
+            ],
+          ),
         ),
-      ),
-    );
+      );
+    } else {
+      return Expanded(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(10, 0, 6, 0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (source == 'normal' || source == 'later') ...[
+                Text(
+                  videoItem.title as String,
+                  textAlign: TextAlign.start,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w500,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ] else ...[
+                RichText(
+                  maxLines: 2,
+                  text: TextSpan(
+                    children: [
+                      for (final i in videoItem.titleList) ...[
+                        TextSpan(
+                          text: i['text'] as String,
+                          style: TextStyle(
+                            fontWeight: FontWeight.w500,
+                            letterSpacing: 0.3,
+                            color: i['type'] == 'em'
+                                ? Theme.of(context).colorScheme.primary
+                                : Theme.of(context).colorScheme.onSurface,
+                          ),
+                        ),
+                      ]
+                    ],
+                  ),
+                ),
+              ],
+              const Spacer(),
+              if (showPubdate)
+                Text(
+                  Utils.dateFormat(videoItem.pubdate!),
+                  style: TextStyle(
+                      fontSize: 11,
+                      color: Theme.of(context).colorScheme.outline),
+                ),
+              if (showOwner)
+                Row(
+                  children: [
+                    Text(
+                      videoItem.owner.name as String,
+                      style: TextStyle(
+                        fontSize:
+                            Theme.of(context).textTheme.labelMedium!.fontSize,
+                        color: Theme.of(context).colorScheme.outline,
+                      ),
+                    ),
+                  ],
+                ),
+              Row(
+                children: [
+                  if (showView) ...[
+                    StatView(view: videoItem.stat.view as int),
+                    const SizedBox(width: 8),
+                  ],
+                  if (showDanmaku)
+                    StatDanMu(danmu: videoItem.stat.danmaku as int),
+                  const Spacer(),
+                  if (source == 'normal')
+                    SizedBox(
+                      width: 24,
+                      height: 24,
+                      child: IconButton(
+                        padding: EdgeInsets.zero,
+                        onPressed: () {
+                          feedBack();
+                          showModalBottomSheet(
+                            context: context,
+                            useRootNavigator: true,
+                            isScrollControlled: true,
+                            builder: (context) {
+                              return MorePanel(videoItem: videoItem);
+                            },
+                          );
+                        },
+                        icon: Icon(
+                          Icons.more_vert_outlined,
+                          color: Theme.of(context).colorScheme.outline,
+                          size: 14,
+                        ),
+                      ),
+                    ),
+                  if (source == 'later') ...[
+                    IconButton(
+                      style: ButtonStyle(
+                        padding: WidgetStateProperty.all(EdgeInsets.zero),
+                      ),
+                      onPressed: () => onPressedFn?.call(),
+                      icon: Icon(
+                        Icons.clear_outlined,
+                        color: Theme.of(context).colorScheme.outline,
+                        size: 18,
+                      ),
+                    )
+                  ],
+                ],
+              ),
+            ],
+          ),
+        ),
+      );
+    }
   }
 }
 
@@ -328,11 +464,6 @@ class MorePanel extends StatelessWidget {
       case 'block':
         blockUser();
         break;
-      case 'watchLater':
-        var res = await UserHttp.toViewLater(bvid: videoItem.bvid as String);
-        SmartDialog.showToast(res['msg']);
-        Get.back();
-        break;
       default:
     }
   }
@@ -342,10 +473,20 @@ class MorePanel extends StatelessWidget {
       useSystem: true,
       animationType: SmartAnimationType.centerFade_otherSlide,
       builder: (BuildContext context) {
+        String username;
+        int userId;
+
+        if (videoItem is Video) {
+          username = videoItem.username;
+          userId = videoItem.uid;
+        } else {
+          username = videoItem.owner.name;
+          userId = videoItem.owner.mid;
+        }
+
         return AlertDialog(
           title: const Text('提示'),
-          content: Text('确定拉黑:${videoItem.owner.name}(${videoItem.owner.mid})?'
-              '\n\n注：被拉黑的Up可以在隐私设置-黑名单管理中解除'),
+          content: Text('确定拉黑:$username($userId)?\n\n注：被拉黑的Up可以在隐私设置-黑名单管理中解除'),
           actions: [
             TextButton(
               onPressed: () => SmartDialog.dismiss(),
@@ -356,13 +497,29 @@ class MorePanel extends StatelessWidget {
             ),
             TextButton(
               onPressed: () async {
-                var res = await VideoHttp.relationMod(
-                  mid: videoItem.owner.mid,
-                  act: 5,
-                  reSrc: 11,
-                );
-                SmartDialog.dismiss();
-                SmartDialog.showToast(res['msg'] ?? '成功');
+                // 处理Ottohub的Video模型
+                if (videoItem is Video) {
+                  // 使用Ottohub的blockUser方法
+                  try {
+                    await OttohubService.blockUser(
+                      blockedId: userId,
+                    );
+                    SmartDialog.dismiss();
+                    SmartDialog.showToast('拉黑成功');
+                  } catch (error) {
+                    SmartDialog.dismiss();
+                    SmartDialog.showToast('拉黑失败: $error');
+                  }
+                } else {
+                  // 使用旧的API
+                  var res = await VideoHttp.relationMod(
+                    mid: userId,
+                    act: 5,
+                    reSrc: 11,
+                  );
+                  SmartDialog.dismiss();
+                  SmartDialog.showToast(res['msg'] ?? '成功');
+                }
               },
               child: const Text('确认'),
             )
@@ -400,16 +557,9 @@ class MorePanel extends StatelessWidget {
             minLeadingWidth: 0,
             leading: const Icon(Icons.block, size: 19),
             title: Text(
-              '拉黑up主 「${videoItem.owner.name}」',
+              '拉黑up主 「${videoItem is Video ? videoItem.username : videoItem.owner.name}」',
               style: Theme.of(context).textTheme.titleSmall,
             ),
-          ),
-          ListTile(
-            onTap: () async => await menuActionHandler('watchLater'),
-            minLeadingWidth: 0,
-            leading: const Icon(Icons.watch_later_outlined, size: 19),
-            title:
-                Text('添加至稍后再看', style: Theme.of(context).textTheme.titleSmall),
           ),
           ListTile(
             onTap: () =>

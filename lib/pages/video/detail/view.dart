@@ -11,7 +11,6 @@ import 'package:hive/hive.dart';
 import 'package:lottie/lottie.dart';
 import 'package:piliotto/common/widgets/network_img_layer.dart';
 import 'package:piliotto/models/common/search_type.dart';
-import 'package:piliotto/pages/bangumi/introduction/index.dart';
 import 'package:piliotto/pages/danmaku/view.dart';
 import 'package:piliotto/pages/main/index.dart';
 import 'package:piliotto/pages/video/detail/reply/index.dart';
@@ -46,7 +45,6 @@ class _VideoDetailPageState extends State<VideoDetailPage>
   final ScrollController _extendNestCtr = ScrollController();
   late StreamController<double> appbarStream;
   late VideoIntroController videoIntroController;
-  late BangumiIntroController bangumiIntroController;
   late String heroTag;
 
   Rx<PlayerStatus> playerStatus = PlayerStatus.playing.obs;
@@ -74,22 +72,12 @@ class _VideoDetailPageState extends State<VideoDetailPage>
     heroTag = Get.arguments['heroTag'];
     vdCtr = Get.put(VideoDetailController(), tag: heroTag);
     vdCtr.sheetHeight.value = localCache.get('sheetHeight');
-    videoIntroController = Get.put(
-        VideoIntroController(bvid: Get.parameters['bvid']!),
-        tag: heroTag);
+    videoIntroController =
+        Get.put(VideoIntroController(vid: vdCtr.vid), tag: heroTag);
     videoIntroController.videoDetail.listen((value) {
-      videoPlayerServiceHandler.onVideoDetailChange(value, vdCtr.cid.value);
+      videoPlayerServiceHandler.onVideoDetailChange(value, vdCtr.vid);
     });
-    if (vdCtr.videoType == SearchType.media_bangumi) {
-      bangumiIntroController = Get.put(BangumiIntroController(), tag: heroTag);
-      bangumiIntroController.bangumiDetail.listen((value) {
-        videoPlayerServiceHandler.onVideoDetailChange(value, vdCtr.cid.value);
-      });
-      vdCtr.cid.listen((p0) {
-        videoPlayerServiceHandler.onVideoDetailChange(
-            bangumiIntroController.bangumiDetail.value, p0);
-      });
-    }
+
     statusBarHeight = localCache.get('statusBarHeight');
     autoExitFullcreen =
         setting.get(SettingBoxKey.enableAutoExit, defaultValue: false);
@@ -109,7 +97,7 @@ class _VideoDetailPageState extends State<VideoDetailPage>
 
   // 获取视频资源，初始化播放器
   Future<void> videoSourceInit() async {
-    _futureBuilderFuture = vdCtr.queryVideoUrl();
+    _futureBuilderFuture = vdCtr.getVideoDetail();
     if (vdCtr.autoPlay.value) {
       plPlayerController = vdCtr.plPlayerController;
       plPlayerController!.addStatusLister(playerListener);
@@ -145,9 +133,6 @@ class _VideoDetailPageState extends State<VideoDetailPage>
           plPlayerController!.playRepeat != PlayRepeat.singleCycle) {
         if (vdCtr.videoType == SearchType.video) {
           videoIntroController.nextPlay();
-        }
-        if (vdCtr.videoType == SearchType.media_bangumi) {
-          bangumiIntroController.nextPlay();
         }
       }
 
@@ -194,18 +179,6 @@ class _VideoDetailPageState extends State<VideoDetailPage>
         vdCtr.hiddenReplyReplyPanel();
         if (vdCtr.videoType == SearchType.video) {
           videoIntroController.hiddenEpisodeBottomSheet();
-          if (videoIntroController.videoDetail.value.ugcSeason != null ||
-              (videoIntroController.videoDetail.value.pages != null &&
-                  videoIntroController.videoDetail.value.pages!.length > 1)) {
-            vdCtr.bottomList.insert(3, BottomControlType.episode);
-          }
-        }
-        if (vdCtr.videoType == SearchType.media_bangumi) {
-          bangumiIntroController.hiddenEpisodeBottomSheet();
-          if (bangumiIntroController.bangumiDetail.value.episodes != null &&
-              bangumiIntroController.bangumiDetail.value.episodes!.length > 1) {
-            vdCtr.bottomList.insert(3, BottomControlType.episode);
-          }
         }
       } else {
         if (vdCtr.bottomList.contains(BottomControlType.episode)) {
@@ -348,9 +321,6 @@ class _VideoDetailPageState extends State<VideoDetailPage>
           vdCtr.hiddenReplyReplyPanel();
           if (vdCtr.videoType == SearchType.video) {
             videoIntroController.hiddenEpisodeBottomSheet();
-          }
-          if (vdCtr.videoType == SearchType.media_bangumi) {
-            bangumiIntroController.hiddenEpisodeBottomSheet();
           }
         }
         break;
@@ -544,21 +514,21 @@ class _VideoDetailPageState extends State<VideoDetailPage>
       return Center(child: Lottie.asset('assets/loading.json', width: 200));
     }
 
-    Widget buildVideoPlayerWidget(AsyncSnapshot snapshot) {
+    Widget buildVideoPlayerWidget() {
       return Obx(() => !vdCtr.autoPlay.value
           ? const SizedBox()
           : PLVideoPlayer(
               controller: plPlayerController!,
               headerControl: vdCtr.headerControl,
               danmuWidget: PlDanmaku(
-                key: Key(vdCtr.danmakuCid.value.toString()),
-                cid: vdCtr.danmakuCid.value,
+                key: Key(vdCtr.vid.toString()),
+                cid: vdCtr.vid,
                 playerController: plPlayerController!,
               ),
               bottomList: vdCtr.bottomList,
               showEposideCb: () => vdCtr.videoType == SearchType.video
                   ? videoIntroController.showEposideHandler()
-                  : bangumiIntroController.showEposideHandler(),
+                  : null,
               fullScreenCb: (bool status) {
                 videoHeight.value =
                     status ? Get.size.height : defaultVideoHeight;
@@ -566,7 +536,7 @@ class _VideoDetailPageState extends State<VideoDetailPage>
             ));
     }
 
-    Widget buildErrorWidget(dynamic error) {
+    Widget buildErrorWidget() {
       return Obx(
         () => SizedBox(
           height: videoHeight.value,
@@ -576,12 +546,11 @@ class _VideoDetailPageState extends State<VideoDetailPage>
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               const Text('加载失败', style: TextStyle(color: Colors.white)),
-              Text('$error', style: const TextStyle(color: Colors.white)),
               const SizedBox(height: 10),
               IconButton.filled(
                 onPressed: () {
                   setState(() {
-                    _futureBuilderFuture = vdCtr.queryVideoUrl();
+                    _futureBuilderFuture = vdCtr.getVideoDetail();
                   });
                 },
                 icon: const Icon(Icons.refresh),
@@ -600,13 +569,11 @@ class _VideoDetailPageState extends State<VideoDetailPage>
           if (snapshot.connectionState == ConnectionState.waiting) {
             return buildLoadingWidget();
           } else if (snapshot.connectionState == ConnectionState.done) {
-            if (snapshot.hasData && snapshot.data['status']) {
-              return buildVideoPlayerWidget(snapshot);
-            } else {
-              return buildErrorWidget(snapshot.error);
-            }
+            return Obx(() => vdCtr.isEffective.value
+                ? buildVideoPlayerWidget()
+                : buildErrorWidget());
           } else {
-            return buildErrorWidget('未知错误');
+            return buildErrorWidget();
           }
         },
       );
@@ -629,10 +596,7 @@ class _VideoDetailPageState extends State<VideoDetailPage>
                       key: const PageStorageKey<String>('简介'),
                       slivers: <Widget>[
                         if (vdCtr.videoType == SearchType.video) ...[
-                          VideoIntroPanel(bvid: vdCtr.bvid),
-                        ] else if (vdCtr.videoType ==
-                            SearchType.media_bangumi) ...[
-                          Obx(() => BangumiIntroPanel(cid: vdCtr.cid.value)),
+                          VideoIntroPanel(vid: vdCtr.vid),
                         ],
                         SliverToBoxAdapter(
                           child: Divider(
@@ -649,8 +613,7 @@ class _VideoDetailPageState extends State<VideoDetailPage>
                 ),
                 Obx(
                   () => VideoReplyPanel(
-                    bvid: vdCtr.bvid,
-                    oid: vdCtr.oid.value,
+                    vid: vdCtr.vid,
                     onControllerCreated: vdCtr.onControllerCreated,
                   ),
                 )
@@ -806,11 +769,7 @@ class _VideoDetailPageState extends State<VideoDetailPage>
                                 key: const PageStorageKey<String>('简介'),
                                 slivers: <Widget>[
                                   if (vdCtr.videoType == SearchType.video) ...[
-                                    VideoIntroPanel(bvid: vdCtr.bvid),
-                                  ] else if (vdCtr.videoType ==
-                                      SearchType.media_bangumi) ...[
-                                    Obx(() => BangumiIntroPanel(
-                                        cid: vdCtr.cid.value)),
+                                    VideoIntroPanel(vid: vdCtr.vid),
                                   ],
                                   SliverToBoxAdapter(
                                     child: Divider(
@@ -827,8 +786,7 @@ class _VideoDetailPageState extends State<VideoDetailPage>
                           ),
                           Obx(
                             () => VideoReplyPanel(
-                              bvid: vdCtr.bvid,
-                              oid: vdCtr.oid.value,
+                              vid: vdCtr.vid,
                               onControllerCreated: vdCtr.onControllerCreated,
                             ),
                           )

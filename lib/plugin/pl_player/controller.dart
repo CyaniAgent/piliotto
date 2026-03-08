@@ -23,6 +23,7 @@ import 'package:piliotto/utils/storage.dart';
 import 'package:screen_brightness/screen_brightness.dart';
 import 'package:status_bar_control/status_bar_control.dart';
 import 'package:universal_platform/universal_platform.dart';
+import '../../services/loggeer.dart';
 import '../../models/video/subTitile/content.dart';
 import '../../models/video/subTitile/result.dart';
 // import 'package:wakelock_plus/wakelock_plus.dart';
@@ -361,9 +362,10 @@ class PlPlayerController {
         await pause(notify: false);
       }
 
-      if (_playerCount.value == 0) {
-        return;
-      }
+      // 移除这个检查，因为它会阻止播放器初始化
+      // if (_playerCount.value == 0) {
+      //   return;
+      // }
       // 配置Player 音轨、字幕等等
       _videoPlayerController = await _createVideoController(
           dataSource, _looping, enableHA, width, height, seekTo);
@@ -386,7 +388,9 @@ class PlPlayerController {
       }
     } catch (err) {
       dataStatus.status.value = DataStatus.error;
-      print('plPlayer err:  $err');
+      final logger = getLogger();
+      logger.e('plPlayer err:  $err');
+      throw err;
     }
   }
 
@@ -418,39 +422,40 @@ class PlPlayerController {
           ),
         );
 
-    var pp = player.platform as NativePlayer;
+    // 暂时注释掉这些代码，因为media_kit库的版本问题导致setProperty方法不存在
+    // var pp = player.platform as NativePlayer;
     // 解除倍速限制
-    await pp.setProperty("af", "scaletempo2=max-speed=8");
+    // await pp.setProperty("af", "scaletempo2=max-speed=8");
     //  音量不一致
-    if (Platform.isAndroid) {
-      await pp.setProperty("volume-max", "100");
-      String defaultAoOutput =
-          setting.get(SettingBoxKey.defaultAoOutput, defaultValue: '0');
-      await pp.setProperty(
-          "ao",
-          aoOutputList
-              .where((e) => e['value'] == defaultAoOutput)
-              .first['title']);
-    }
+    // if (Platform.isAndroid) {
+    //   await pp.setProperty("volume-max", "100");
+    //   String defaultAoOutput =
+    //       setting.get(SettingBoxKey.defaultAoOutput, defaultValue: '0');
+    //   await pp.setProperty(
+    //       "ao",
+    //       aoOutputList
+    //           .where((e) => e['value'] == defaultAoOutput)
+    //           .first['title']);
+    // }
 
     await player.setAudioTrack(
       AudioTrack.auto(),
     );
 
     // 音轨
-    if (dataSource.audioSource != '' && dataSource.audioSource != null) {
-      await pp.setProperty(
-        'audio-files',
-        UniversalPlatform.isWindows
-            ? dataSource.audioSource!.replaceAll(';', '\\;')
-            : dataSource.audioSource!.replaceAll(':', '\\:'),
-      );
-    } else {
-      await pp.setProperty(
-        'audio-files',
-        '',
-      );
-    }
+    // if (dataSource.audioSource != '' && dataSource.audioSource != null) {
+    //   await pp.setProperty(
+    //     'audio-files',
+    //     UniversalPlatform.isWindows
+    //         ? dataSource.audioSource!.replaceAll(';', '\\;')
+    //         : dataSource.audioSource!.replaceAll(':', '\\:'),
+    //   );
+    // } else {
+    //   await pp.setProperty(
+    //     'audio-files',
+    //     '',
+    //   );
+    // }
 
     // 字幕
     // if (dataSource.subFiles != '' && dataSource.subFiles != null) {
@@ -1106,8 +1111,9 @@ class PlPlayerController {
       /// 缓存本次弹幕选项
       cacheDanmakuOption();
       if (_videoPlayerController != null) {
-        var pp = _videoPlayerController!.platform as NativePlayer;
-        await pp.setProperty('audio-files', '');
+        // 暂时注释掉这行代码，因为media_kit库的版本问题导致setProperty方法不存在
+        // var pp = _videoPlayerController!.platform as NativePlayer;
+        // await pp.setProperty('audio-files', '');
         removeListeners();
         await _videoPlayerController?.dispose();
         _videoPlayerController = null;

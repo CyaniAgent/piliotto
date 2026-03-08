@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 
 import 'package:piliotto/common/constants.dart';
 import 'package:piliotto/common/widgets/badge.dart';
 import 'package:piliotto/common/widgets/network_img_layer.dart';
 
-import 'package:piliotto/utils/route_push.dart';
 import 'package:piliotto/utils/utils.dart';
 
 Widget searchMbangumiPanel(BuildContext context, ctr, list) {
@@ -107,7 +107,7 @@ Widget searchMbangumiPanel(BuildContext context, ctr, list) {
                       height: 32,
                       child: ElevatedButton(
                         onPressed: () {
-                          RoutePush.bangumiPush(i.seasonId, null);
+                          SmartDialog.showToast('暂不支持番剧观看');
                         },
                         child: const Text('观看'),
                       ),

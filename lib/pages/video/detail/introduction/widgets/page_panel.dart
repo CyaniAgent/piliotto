@@ -2,11 +2,10 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:piliotto/models/video_detail_res.dart';
-import 'package:piliotto/pages/video/detail/index.dart';
+
 import 'package:piliotto/pages/video/detail/introduction/index.dart';
-import '../../../../../common/pages_bottom_sheet.dart';
-import '../../../../../models/common/video_episode_type.dart';
 
 class PagesPanel extends StatefulWidget {
   const PagesPanel({
@@ -32,7 +31,6 @@ class _PagesPanelState extends State<PagesPanel> {
   late int cid;
   late RxInt currentIndex = (-1).obs;
   final String heroTag = Get.arguments['heroTag'];
-  late VideoDetailController _videoDetailController;
   final ScrollController listViewScrollCtr = ScrollController();
   late PersistentBottomSheetController? _bottomSheetController;
 
@@ -41,14 +39,9 @@ class _PagesPanelState extends State<PagesPanel> {
     super.initState();
     cid = widget.cid;
     episodes = widget.pages;
-    _videoDetailController = Get.find<VideoDetailController>(tag: heroTag);
     currentIndex.value = episodes.indexWhere((Part e) => e.cid == cid);
     scrollToIndex();
-    _videoDetailController.cid.listen((int p0) {
-      cid = p0;
-      currentIndex.value = episodes.indexWhere((Part e) => e.cid == cid);
-      scrollToIndex();
-    });
+    // Ottohub API 暂不支持分页功能，移除cid监听
   }
 
   @override
@@ -58,10 +51,9 @@ class _PagesPanelState extends State<PagesPanel> {
   }
 
   void changeFucCall(item, i) async {
-    widget.changeFuc?.call(item.cid, item.cover);
-    currentIndex.value = i;
+    // Ottohub API 暂不支持分页功能
+    SmartDialog.showToast('暂不支持此功能');
     _bottomSheetController?.close();
-    scrollToIndex();
   }
 
   void scrollToIndex() {
@@ -109,15 +101,8 @@ class _PagesPanelState extends State<PagesPanel> {
                     padding: WidgetStateProperty.all(EdgeInsets.zero),
                   ),
                   onPressed: () {
-                    widget.videoIntroCtr.bottomSheetController =
-                        _bottomSheetController = EpisodeBottomSheet(
-                      currentCid: cid,
-                      episodes: episodes,
-                      changeFucCall: changeFucCall,
-                      sheetHeight: widget.sheetHeight,
-                      dataType: VideoEpidoesType.videoPart,
-                      context: context,
-                    ).show(context);
+                    // Ottohub API 暂不支持分页功能
+                    SmartDialog.showToast('暂不支持此功能');
                   },
                   child: Text(
                     '共${widget.pages.length}集',

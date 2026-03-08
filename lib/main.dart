@@ -25,11 +25,16 @@ import 'package:piliotto/utils/storage.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:piliotto/utils/recommend_filter.dart';
 import 'package:catcher_2/catcher_2.dart';
+import 'package:logging/logging.dart';
 import './services/loggeer.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   MediaKit.ensureInitialized();
+
+  // 设置Catcher 2的日志级别为WARNING，减少信息性日志
+  Logger.root.level = Level.WARNING;
+
   await SystemChrome.setPreferredOrientations(
       [DeviceOrientation.portraitUp, DeviceOrientation.portraitDown]);
   await GStrorage.init();

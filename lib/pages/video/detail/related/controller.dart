@@ -1,22 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:piliotto/http/video.dart';
-import '../../../../models/model_hot_video_item.dart';
+import 'package:piliotto/services/ottohub_service.dart';
+import '../../../../api/models/video.dart';
 
-class ReleatedController extends GetxController {
-  // 视频aid
-  String bvid = Get.parameters['bvid'] ?? "";
+class RelatedController extends GetxController {
+  // 视频vid
+  int vid = int.parse(Get.parameters['vid'] ?? '0');
   // 推荐视频列表
-  RxList relatedVideoList = <HotVideoItemModel>[].obs;
+  RxList relatedVideoList = <Video>[].obs;
 
   OverlayEntry? popupDialog;
 
   Future<dynamic> queryRelatedVideo() async {
-    return VideoHttp.relatedVideoList(bvid: bvid).then((value) {
-      if (value['status']) {
-        relatedVideoList.value = value['data'];
-      }
-      return value;
-    });
+    try {
+      final VideoListResponse response =
+          await OttohubService.getRelatedVideos(vid);
+      relatedVideoList.value = response.videoList;
+      return {'status': true, 'data': response.videoList};
+    } catch (e) {
+      return {'status': false, 'message': e.toString()};
+    }
   }
 }

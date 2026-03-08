@@ -37,8 +37,13 @@ class NetworkImgLayer extends StatelessWidget {
     if (src == '' || src == null) {
       return placeholder(context);
     }
-    final String imageUrl =
-        '${src!.startsWith('//') ? 'https:${src!}' : src!}@${quality ?? defaultImgQuality}q.webp';
+    // 检查是否是Ottohub的图片URL，如果是则不添加后缀
+    String imageUrl;
+    if (src!.contains('ottohub.cn')) {
+      imageUrl = src!.startsWith('//') ? 'https:${src!}' : src!;
+    } else {
+      imageUrl = '${src!.startsWith('//') ? 'https:${src!}' : src!}@${quality ?? defaultImgQuality}q.webp';
+    }
     int? memCacheWidth, memCacheHeight;
     double aspectRatio = (width / height).toDouble();
 

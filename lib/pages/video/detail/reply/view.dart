@@ -3,27 +3,24 @@ import 'dart:async';
 import 'package:easy_debounce/easy_throttle.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
 import 'package:piliotto/common/skeleton/video_reply.dart';
 import 'package:piliotto/common/widgets/http_error.dart';
 import 'package:piliotto/models/common/reply_type.dart';
-import 'package:piliotto/pages/video/detail/index.dart';
-import 'package:piliotto/pages/video/detail/reply_new/index.dart';
+
 import 'package:piliotto/utils/feed_back.dart';
-import 'package:piliotto/utils/id_utils.dart';
 import 'controller.dart';
 import 'widgets/reply_item.dart';
 
 class VideoReplyPanel extends StatefulWidget {
-  final String? bvid;
-  final int? oid;
+  final int vid;
   final int rpid;
   final String? replyLevel;
   final Function(ScrollController)? onControllerCreated;
 
   const VideoReplyPanel({
-    this.bvid,
-    this.oid,
+    required this.vid,
     this.rpid = 0,
     this.replyLevel,
     this.onControllerCreated,
@@ -52,17 +49,14 @@ class _VideoReplyPanelState extends State<VideoReplyPanel>
   @override
   void initState() {
     super.initState();
-    // int oid = widget.bvid != null ? IdUtils.bv2av(widget.bvid!) : 0;
     heroTag = Get.arguments['heroTag'];
     replyLevel = widget.replyLevel ?? '1';
     if (replyLevel == '2') {
-      _videoReplyController = Get.put(
-          VideoReplyController(widget.oid, widget.rpid.toString(), replyLevel),
+      _videoReplyController = Get.put(VideoReplyController(widget.vid),
           tag: widget.rpid.toString());
     } else {
-      _videoReplyController = Get.put(
-          VideoReplyController(widget.oid, '', replyLevel),
-          tag: heroTag);
+      _videoReplyController =
+          Get.put(VideoReplyController(widget.vid), tag: heroTag);
     }
 
     fabAnimationCtr = AnimationController(
@@ -113,15 +107,8 @@ class _VideoReplyPanelState extends State<VideoReplyPanel>
 
   // 展示二级回复
   void replyReply(replyItem, currentReply, loadMore) {
-    final VideoDetailController videoDetailCtr =
-        Get.find<VideoDetailController>(tag: heroTag);
-    if (replyItem != null) {
-      videoDetailCtr.oid.value = replyItem.oid;
-      videoDetailCtr.fRpid = replyItem.rpid!;
-      videoDetailCtr.firstFloor = replyItem;
-      videoDetailCtr.showReplyReplyPanel(
-          replyItem.oid, replyItem.rpid!, replyItem, currentReply, loadMore);
-    }
+    // Ottohub API 暂不支持二级回复
+    SmartDialog.showToast('暂不支持二级回复');
   }
 
   @override
@@ -167,11 +154,9 @@ class _VideoReplyPanelState extends State<VideoReplyPanel>
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Obx(
-                          () => Text(
-                            '${_videoReplyController.sortTypeLabel.value}评论',
-                            style: const TextStyle(fontSize: 13),
-                          ),
+                        Text(
+                          '评论',
+                          style: const TextStyle(fontSize: 13),
                         ),
                         SizedBox(
                           height: 35,
@@ -179,11 +164,9 @@ class _VideoReplyPanelState extends State<VideoReplyPanel>
                             onPressed: () =>
                                 _videoReplyController.queryBySort(),
                             icon: const Icon(Icons.sort, size: 16),
-                            label: Obx(
-                              () => Text(
-                                _videoReplyController.sortTypeLabel.value,
-                                style: const TextStyle(fontSize: 13),
-                              ),
+                            label: Text(
+                              '排序',
+                              style: const TextStyle(fontSize: 13),
                             ),
                           ),
                         )
@@ -197,64 +180,64 @@ class _VideoReplyPanelState extends State<VideoReplyPanel>
                 builder: (BuildContext context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.done) {
                     var data = snapshot.data;
-                    if (_videoReplyController.replyList.isNotEmpty ||
-                        (data != null && data['status'])) {
+                    // 不直接访问可观察变量，而是使用data的状态来判断
+                    if ((data != null && data['status'])) {
                       // 请求成功
                       return Obx(
-                        () => _videoReplyController.isLoadingMore &&
-                                _videoReplyController.replyList.isEmpty
-                            ? SliverList(
-                                delegate: SliverChildBuilderDelegate(
+                        () {
+                          // 直接访问可观察变量以确保GetX能够正确追踪
+                          final replyList = _videoReplyController.replyList;
+                          final isEmpty = replyList.isEmpty;
+
+                          return isEmpty
+                              ? SliverList(
+                                  delegate: SliverChildBuilderDelegate(
+                                      (BuildContext context, index) {
+                                    return const VideoReplySkeleton();
+                                  }, childCount: 5),
+                                )
+                              : SliverList(
+                                  delegate: SliverChildBuilderDelegate(
                                     (BuildContext context, index) {
-                                  return const VideoReplySkeleton();
-                                }, childCount: 5),
-                              )
-                            : SliverList(
-                                delegate: SliverChildBuilderDelegate(
-                                  (BuildContext context, index) {
-                                    double bottom =
-                                        MediaQuery.of(context).padding.bottom;
-                                    if (index ==
-                                        _videoReplyController
-                                            .replyList.length) {
-                                      return Container(
-                                        padding:
-                                            EdgeInsets.only(bottom: bottom),
-                                        height: bottom + 100,
-                                        child: Center(
-                                          child: Obx(
-                                            () => Text(
-                                              _videoReplyController
-                                                  .noMore.value,
-                                              style: TextStyle(
-                                                fontSize: 12,
-                                                color: Theme.of(context)
-                                                    .colorScheme
-                                                    .outline,
+                                      double bottom =
+                                          MediaQuery.of(context).padding.bottom;
+                                      if (index == replyList.length) {
+                                        return Container(
+                                          padding:
+                                              EdgeInsets.only(bottom: bottom),
+                                          height: bottom + 100,
+                                          child: Center(
+                                            child: Obx(
+                                              () => Text(
+                                                _videoReplyController
+                                                    .noMore.value,
+                                                style: TextStyle(
+                                                  fontSize: 12,
+                                                  color: Theme.of(context)
+                                                      .colorScheme
+                                                      .outline,
+                                                ),
                                               ),
                                             ),
                                           ),
-                                        ),
-                                      );
-                                    } else {
-                                      return ReplyItem(
-                                        replyItem: _videoReplyController
-                                            .replyList[index],
-                                        showReplyRow: true,
-                                        replyLevel: replyLevel,
-                                        replyReply: (replyItem, currentReply,
-                                                loadMore) =>
-                                            replyReply(replyItem, currentReply,
-                                                loadMore),
-                                        replyType: ReplyType.video,
-                                      );
-                                    }
-                                  },
-                                  childCount:
-                                      _videoReplyController.replyList.length +
-                                          1,
-                                ),
-                              ),
+                                        );
+                                      } else {
+                                        return ReplyItem(
+                                          replyItem: replyList[index],
+                                          showReplyRow: true,
+                                          replyLevel: replyLevel,
+                                          replyReply: (replyItem, currentReply,
+                                                  loadMore) =>
+                                              replyReply(replyItem,
+                                                  currentReply, loadMore),
+                                          replyType: ReplyType.video,
+                                        );
+                                      }
+                                    },
+                                    childCount: replyList.length + 1,
+                                  ),
+                                );
+                        },
                       );
                     } else {
                       // 请求错误
@@ -292,39 +275,15 @@ class _VideoReplyPanelState extends State<VideoReplyPanel>
                 parent: fabAnimationCtr,
                 curve: Curves.easeInOut,
               )),
-              child: Obx(
-                () => _videoReplyController.replyReqCode.value == 12061
-                    ? const SizedBox()
-                    : FloatingActionButton(
-                        heroTag: null,
-                        onPressed: () {
-                          feedBack();
-                          showModalBottomSheet(
-                            context: context,
-                            isScrollControlled: true,
-                            builder: (BuildContext context) {
-                              return VideoReplyNewDialog(
-                                oid: _videoReplyController.aid ??
-                                    IdUtils.bv2av(Get.parameters['bvid']!),
-                                root: 0,
-                                parent: 0,
-                                replyType: ReplyType.video,
-                              );
-                            },
-                          ).then(
-                            (value) => {
-                              // 完成评论，数据添加
-                              if (value != null && value['data'] != null)
-                                {
-                                  _videoReplyController.replyList
-                                      .add(value['data'])
-                                }
-                            },
-                          );
-                        },
-                        tooltip: '发表评论',
-                        child: const Icon(Icons.reply),
-                      ),
+              child: FloatingActionButton(
+                heroTag: null,
+                onPressed: () {
+                  feedBack();
+                  // Ottohub API 暂不支持发表评论
+                  SmartDialog.showToast('暂不支持发表评论');
+                },
+                tooltip: '发表评论',
+                child: const Icon(Icons.reply),
               ),
             ),
           ),

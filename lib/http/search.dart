@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:hive/hive.dart';
 import 'package:piliotto/models/search/all.dart';
 import 'package:piliotto/utils/wbi_sign.dart';
-import '../models/bangumi/info.dart';
+
 import '../models/common/search_type.dart';
 import '../models/search/hot.dart';
 import '../models/search/result.dart';
@@ -147,30 +147,6 @@ class SearchHttp {
       return res.data['data'].first['cid'];
     } else {
       return -1;
-    }
-  }
-
-  static Future<Map<String, dynamic>> bangumiInfo(
-      {int? seasonId, int? epId}) async {
-    final Map<String, dynamic> data = {};
-    if (seasonId != null) {
-      data['season_id'] = seasonId;
-    } else if (epId != null) {
-      data['ep_id'] = epId;
-    }
-    final dynamic res =
-        await Request().get(Api.bangumiInfo, data: <String, dynamic>{...data});
-    if (res.data['code'] == 0) {
-      return {
-        'status': true,
-        'data': BangumiInfoModel.fromJson(res.data['result']),
-      };
-    } else {
-      return {
-        'status': false,
-        'data': [],
-        'msg': '请求错误 🙅',
-      };
     }
   }
 

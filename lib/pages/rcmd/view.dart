@@ -81,65 +81,45 @@ class _RcmdPageState extends State<RcmdPage>
       decoration: const BoxDecoration(
         borderRadius: BorderRadius.all(StyleString.imgRadius),
       ),
-      child: RefreshIndicator(
-        onRefresh: () async {
-          await _rcmdController.onRefresh();
-          await Future.delayed(const Duration(milliseconds: 300));
+      child: FutureBuilder(
+        future: _futureBuilderFuture,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.done) {
+            if (snapshot.data != null) {
+              Map data = snapshot.data as Map;
+              if (data['status']) {
+                return Obx(() {
+                  return RefreshIndicator(
+                    onRefresh: () async {
+                      await _rcmdController.onRefresh();
+                      await Future.delayed(const Duration(milliseconds: 300));
+                    },
+                    child:
+                        contentGrid(_rcmdController, _rcmdController.videoList),
+                  );
+                });
+              } else {
+                return HttpError(
+                  errMsg: data['msg'],
+                  fn: () {
+                    setState(() {
+                      _rcmdController.isLoadingMore = true;
+                      _futureBuilderFuture =
+                          _rcmdController.queryRcmdFeed('init');
+                    });
+                  },
+                );
+              }
+            } else {
+              return const NoData();
+            }
+          } else {
+            // 骨架屏
+            return Obx(() {
+              return contentGrid(_rcmdController, []);
+            });
+          }
         },
-        child: CustomScrollView(
-          controller: _rcmdController.scrollController,
-          physics: const AlwaysScrollableScrollPhysics(),
-          slivers: [
-            SliverPadding(
-              padding:
-                  const EdgeInsets.fromLTRB(0, StyleString.safeSpace, 0, 0),
-              sliver: FutureBuilder(
-                future: _futureBuilderFuture,
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.done) {
-                    if (snapshot.data != null) {
-                      Map data = snapshot.data as Map;
-                      if (data['status']) {
-                        return Obx(
-                          () {
-                            if (_rcmdController.isLoadingMore &&
-                                _rcmdController.videoList.isEmpty) {
-                              return contentGrid(_rcmdController, []);
-                            } else {
-                              // 显示视频列表
-                              return contentGrid(
-                                  _rcmdController, _rcmdController.videoList);
-                            }
-                          },
-                        );
-                      } else {
-                        return SliverToBoxAdapter(
-                          child: HttpError(
-                            errMsg: data['msg'],
-                            fn: () {
-                              setState(() {
-                                _rcmdController.isLoadingMore = true;
-                                _futureBuilderFuture =
-                                    _rcmdController.queryRcmdFeed('init');
-                              });
-                            },
-                          ),
-                        );
-                      }
-                    } else {
-                      return const SliverToBoxAdapter(
-                        child: NoData(),
-                      );
-                    }
-                  } else {
-                    // 骨架屏
-                    return contentGrid(_rcmdController, []);
-                  }
-                },
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }
@@ -152,7 +132,8 @@ class _RcmdPageState extends State<RcmdPage>
       textHeight:
           crossAxisCount == 1 ? 68 : MediaQuery.textScalerOf(context).scale(86),
     );
-    return SliverGrid(
+    return GridView.builder(
+      controller: ctr.scrollController,
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
         // 行间距
         mainAxisSpacing: StyleString.safeSpace,
@@ -162,18 +143,18 @@ class _RcmdPageState extends State<RcmdPage>
         crossAxisCount: crossAxisCount,
         mainAxisExtent: mainAxisExtent,
       ),
-      delegate: SliverChildBuilderDelegate(
-        (BuildContext context, int index) {
-          return videoList!.isNotEmpty
-              ? VideoCardV(
-                  videoItem: videoList[index],
-                  crossAxisCount: crossAxisCount,
-                  blockUserCb: (mid) => ctr.blockUserCb(mid),
-                )
-              : const VideoCardVSkeleton();
-        },
-        childCount: videoList!.isNotEmpty ? videoList!.length : 10,
-      ),
+      itemBuilder: (BuildContext context, int index) {
+        return videoList!.isNotEmpty
+            ? VideoCardV(
+                videoItem: videoList[index],
+                crossAxisCount: crossAxisCount,
+                blockUserCb: (mid) => ctr.blockUserCb(mid),
+              )
+            : const VideoCardVSkeleton();
+      },
+      itemCount: videoList!.isNotEmpty ? videoList!.length : 10,
+      padding: const EdgeInsets.fromLTRB(
+          0, StyleString.safeSpace, 0, StyleString.safeSpace),
     );
   }
 }

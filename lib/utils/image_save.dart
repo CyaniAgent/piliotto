@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
+import 'package:piliotto/api/models/video.dart';
 import 'package:piliotto/common/constants.dart';
 import 'package:piliotto/common/widgets/network_img_layer.dart';
 import 'package:piliotto/utils/download.dart';
@@ -24,7 +25,9 @@ Future imageSaveDialog(context, videoItem, closeFn) {
               NetworkImgLayer(
                 width: imgWidth,
                 height: imgWidth / StyleString.aspectRatio,
-                src: videoItem.pic! as String,
+                src: videoItem is Video
+                    ? videoItem.coverUrl
+                    : (videoItem.pic! as String),
                 quality: 100,
               ),
               Positioned(
@@ -66,11 +69,15 @@ Future imageSaveDialog(context, videoItem, closeFn) {
                 IconButton(
                   tooltip: '保存封面图',
                   onPressed: () async {
-                    bool saveStatus = await DownloadUtils.downloadImg(
-                      videoItem.pic != null
-                          ? videoItem.pic as String
-                          : videoItem.cover as String,
-                    );
+                    String imageUrl;
+                    if (videoItem is Video) {
+                      imageUrl = videoItem.coverUrl;
+                    } else if (videoItem.pic != null) {
+                      imageUrl = videoItem.pic as String;
+                    } else {
+                      imageUrl = videoItem.cover as String;
+                    }
+                    bool saveStatus = await DownloadUtils.downloadImg(imageUrl);
                     // 保存成功，自动关闭弹窗
                     if (saveStatus) {
                       closeFn?.call();

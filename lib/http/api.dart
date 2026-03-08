@@ -198,9 +198,6 @@ class Api {
   // 查询视频分P列表 (avid/bvid转cid)
   static const String ab2c = '/x/player/pagelist';
 
-  // 番剧/剧集明细
-  static const String bangumiInfo = '/pgc/view/web/season';
-
   // 全部关注的up
   // vmid 用户id pn 页码 ps 每页个数，最大50 order: desc
   // order_type 排序规则 最近访问传空，最常访问传 attention
@@ -273,37 +270,6 @@ class Api {
 
   // 清空稍后再看
   static const String toViewClear = '/x/v2/history/toview/clear';
-
-  // 追番
-  static const String bangumiAdd = '/pgc/web/follow/add';
-
-  // 取消追番
-  static const String bangumiDel = '/pgc/web/follow/del';
-
-  // 番剧列表
-  // https://api.bilibili.com/pgc/season/index/result?
-  // st=1&
-  // order=3
-  // season_version=-1  全部-1 正片1 电影2 其他3
-  // spoken_language_type=-1  全部-1 原生1 中文配音2
-  // area=-1&
-  // is_finish=-1&
-  // copyright=-1&
-  // season_status=-1&
-  // season_month=-1&
-  // year=-1&
-  // style_id=-1&
-  // sort=0&
-  // page=1&
-  // season_type=1&
-  // pagesize=20&
-  // type=1
-  static const String bangumiList =
-      '/pgc/season/index/result?st=1&order=3&season_version=-1&spoken_language_type=-1&area=-1&is_finish=-1&copyright=-1&season_status=-1&season_month=-1&year=-1&style_id=-1&sort=0&season_type=1&pagesize=20&type=1';
-
-  // 我的订阅
-  static const String bangumiFollow =
-      '/x/space/bangumi/follow/list?type=1&follow_status=0&pn=1&ps=15&ts=1691544359969';
 
   // 黑名单
   static const String blackLst = '/x/relation/blacks';
@@ -467,9 +433,6 @@ class Api {
 
   /// 最近点赞的视频
   static const getRecentLikeVideoApi = '/x/space/like/video';
-
-  /// 最近追番
-  static const getRecentBangumiApi = '/x/space/bangumi/follow/list';
 
   /// 用户专栏
   static const getMemberSeasonsApi = '/x/polymer/web-space/home/seasons_series';

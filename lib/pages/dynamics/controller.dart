@@ -13,7 +13,7 @@ import 'package:piliotto/models/live/item.dart';
 import 'package:piliotto/utils/feed_back.dart';
 import 'package:piliotto/utils/id_utils.dart';
 import 'package:piliotto/utils/responsive_util.dart';
-import 'package:piliotto/utils/route_push.dart';
+
 import 'package:piliotto/utils/storage.dart';
 
 class DynamicsController extends GetxController {
@@ -243,10 +243,7 @@ class DynamicsController extends GetxController {
       /// 番剧查看
       case 'DYNAMIC_TYPE_PGC_UNION':
         print('DYNAMIC_TYPE_PGC_UNION 番剧');
-        DynamicArchiveModel pgc = item.modules.moduleDynamic.major.pgc;
-        if (pgc.epid != null) {
-          RoutePush.bangumiPush(null, pgc.epid);
-        }
+        SmartDialog.showToast('暂不支持番剧观看');
         break;
     }
   }

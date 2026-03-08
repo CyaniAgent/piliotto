@@ -87,36 +87,32 @@ class _HomePageState extends State<HomePage>
             callback: showUserBottomSheet,
           ),
           if (_homeController.tabs.length > 1) ...[
-            if (_homeController.enableGradientBg) ...[
-              const CustomTabs(),
-            ] else ...[
-              Container(
-                width: double.infinity,
-                height: 42,
-                padding: const EdgeInsets.only(top: 4),
-                child: Align(
-                  alignment: Alignment.center,
-                  child: TabBar(
-                    controller: _homeController.tabController,
-                    tabs: [
-                      for (var i in _homeController.tabs) Tab(text: i['label'])
-                    ],
-                    isScrollable: true,
-                    dividerColor: Colors.transparent,
-                    enableFeedback: true,
-                    splashBorderRadius: BorderRadius.circular(10),
-                    tabAlignment: TabAlignment.center,
-                    onTap: (value) {
-                      feedBack();
-                      if (_homeController.initialIndex.value == value) {
-                        _homeController.tabsCtrList[value]().animateToTop();
-                      }
-                      _homeController.initialIndex.value = value;
-                    },
-                  ),
+            const SizedBox(height: 4),
+            SizedBox(
+              width: double.infinity,
+              height: 42,
+              child: Align(
+                alignment: Alignment.center,
+                child: TabBar(
+                  controller: _homeController.tabController,
+                  tabs: [
+                    for (var i in _homeController.tabs) Tab(text: i['label'])
+                  ],
+                  isScrollable: true,
+                  dividerColor: Colors.transparent,
+                  enableFeedback: true,
+                  splashBorderRadius: BorderRadius.circular(10),
+                  tabAlignment: TabAlignment.center,
+                  onTap: (value) {
+                    feedBack();
+                    if (_homeController.initialIndex.value == value) {
+                      _homeController.tabsCtrList[value]().animateToTop();
+                    }
+                    _homeController.initialIndex.value = value;
+                  },
                 ),
               ),
-            ],
+            ),
           ] else ...[
             const SizedBox(height: 6),
           ],
@@ -288,85 +284,24 @@ class CustomTabs extends StatefulWidget {
 class _CustomTabsState extends State<CustomTabs> {
   final HomeController _homeController = Get.put(HomeController());
 
-  void onTap(int index) {
-    feedBack();
-    if (_homeController.initialIndex.value == index) {
-      _homeController.tabsCtrList[index]().animateToTop();
-    }
-    _homeController.initialIndex.value = index;
-    _homeController.tabController.index = index;
-  }
-
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 44,
-      margin: const EdgeInsets.only(top: 8),
-      child: Obx(
-        () => ListView.separated(
-          padding: const EdgeInsets.symmetric(horizontal: 14.0),
-          scrollDirection: Axis.horizontal,
-          itemCount: _homeController.tabs.length,
-          separatorBuilder: (BuildContext context, int index) {
-            return const SizedBox(width: 10);
-          },
-          itemBuilder: (BuildContext context, int index) {
-            String label = _homeController.tabs[index]['label'];
-            return Obx(
-              () => CustomChip(
-                onTap: () => onTap(index),
-                label: label,
-                selected: index == _homeController.initialIndex.value,
-              ),
-            );
-          },
-        ),
+      height: 36,
+      margin: const EdgeInsets.only(top: 4),
+      child: TabBar(
+        controller: _homeController.tabController,
+        tabs: [for (var i in _homeController.tabs) Tab(text: i['label'])],
+        isScrollable: true,
+        dividerColor: Colors.transparent,
+        onTap: (value) {
+          feedBack();
+          if (_homeController.initialIndex.value == value) {
+            _homeController.tabsCtrList[value]().animateToTop();
+          }
+          _homeController.initialIndex.value = value;
+        },
       ),
-    );
-  }
-}
-
-class CustomChip extends StatelessWidget {
-  final Function onTap;
-  final String label;
-  final bool selected;
-  const CustomChip({
-    super.key,
-    required this.onTap,
-    required this.label,
-    required this.selected,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final ColorScheme colorTheme = Theme.of(context).colorScheme;
-    final Color secondaryContainer = colorTheme.secondaryContainer;
-    final Color onPrimary = colorTheme.onPrimary;
-    final Color primary = colorTheme.primary;
-    final TextStyle chipTextStyle = selected
-        ? TextStyle(fontSize: 13, color: onPrimary)
-        : TextStyle(fontSize: 13, color: colorTheme.onSecondaryContainer);
-    const VisualDensity visualDensity =
-        VisualDensity(horizontal: -4.0, vertical: -2.0);
-    return InputChip(
-      side: BorderSide.none,
-      backgroundColor: secondaryContainer,
-      color: WidgetStateProperty.resolveWith((states) {
-        if (states.contains(WidgetState.selected) ||
-            states.contains(WidgetState.hovered)) {
-          return primary;
-        }
-        return colorTheme.secondaryContainer;
-      }),
-      padding: const EdgeInsets.fromLTRB(6, 1, 6, 1),
-      label: Text(label, style: chipTextStyle),
-      onPressed: () => onTap(),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(6),
-      ),
-      selected: selected,
-      showCheckmark: false,
-      visualDensity: visualDensity,
     );
   }
 }

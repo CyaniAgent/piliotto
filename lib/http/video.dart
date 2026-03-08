@@ -424,38 +424,6 @@ class VideoHttp {
     );
   }
 
-  // 添加追番
-  static Future bangumiAdd({int? seasonId}) async {
-    var res = await Request().post(
-      Api.bangumiAdd,
-      data: {
-        'season_id': seasonId,
-        'csrf': await Request.getCsrf(),
-      },
-    );
-    if (res.data['code'] == 0) {
-      return {'status': true, 'msg': res.data['result']['toast']};
-    } else {
-      return {'status': false, 'msg': res.data['result']['toast']};
-    }
-  }
-
-  // 取消追番
-  static Future bangumiDel({int? seasonId}) async {
-    var res = await Request().post(
-      Api.bangumiDel,
-      data: {
-        'season_id': seasonId,
-        'csrf': await Request.getCsrf(),
-      },
-    );
-    if (res.data['code'] == 0) {
-      return {'status': true, 'msg': res.data['result']['toast']};
-    } else {
-      return {'status': false, 'msg': res.data['result']['toast']};
-    }
-  }
-
   // 查看视频同时在看人数
   static Future onlineTotal({int? aid, String? bvid, int? cid}) async {
     var res = await Request().get(Api.onlineTotal, data: {

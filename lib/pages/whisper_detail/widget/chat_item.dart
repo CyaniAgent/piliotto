@@ -8,7 +8,7 @@ import 'package:get/get.dart';
 import 'package:piliotto/common/widgets/network_img_layer.dart';
 import 'package:piliotto/plugin/pl_gallery/hero_dialog_route.dart';
 import 'package:piliotto/plugin/pl_gallery/interactiveviewer_gallery.dart';
-import 'package:piliotto/utils/route_push.dart';
+
 import 'package:piliotto/utils/utils.dart';
 import 'package:piliotto/utils/storage.dart';
 import '../../../http/search.dart';
@@ -193,7 +193,6 @@ class ChatItem extends StatelessWidget {
                   final String bvid = content["bvid"];
                   // 16番剧 5投稿
                   final int source = content["source"];
-                  final String? url = content["url"];
 
                   final int cid = await SearchHttp.ab2c(bvid: bvid);
                   final String heroTag = Utils.makeHeroTag(bvid);
@@ -208,14 +207,7 @@ class ChatItem extends StatelessWidget {
                     );
                   }
                   if (source == 16) {
-                    if (url != null) {
-                      final String area = url.split('/').last;
-                      if (area.startsWith('ep')) {
-                        RoutePush.bangumiPush(null, Utils.matchNum(area).first);
-                      } else if (area.startsWith('ss')) {
-                        RoutePush.bangumiPush(Utils.matchNum(area).first, null);
-                      }
-                    }
+                    SmartDialog.showToast('暂不支持番剧观看');
                   }
                 },
                 child: NetworkImgLayer(

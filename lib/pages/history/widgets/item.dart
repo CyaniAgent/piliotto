@@ -13,7 +13,7 @@ import 'package:piliotto/models/live/item.dart';
 import 'package:piliotto/pages/history_search/index.dart';
 import 'package:piliotto/utils/feed_back.dart';
 import 'package:piliotto/utils/id_utils.dart';
-import 'package:piliotto/utils/route_push.dart';
+
 import 'package:piliotto/utils/utils.dart';
 
 class HistoryItem extends StatelessWidget {
@@ -104,11 +104,7 @@ class HistoryItem extends StatelessWidget {
             }
           } else {
             if (videoItem.history.epid != '') {
-              RoutePush.bangumiPush(
-                null,
-                videoItem.history.epid,
-                heroTag: heroTag,
-              );
+              SmartDialog.showToast('暂不支持番剧观看');
             }
           }
         } else {
@@ -203,8 +199,8 @@ class HistoryItem extends StatelessWidget {
                                   decoration: BoxDecoration(
                                     borderRadius: BorderRadius.circular(
                                         StyleString.imgRadius.x),
-                                    color: Colors.black.withValues(alpha: 
-                                        ctr!.enableMultiple.value &&
+                                    color: Colors.black.withValues(
+                                        alpha: ctr!.enableMultiple.value &&
                                                 videoItem.checked
                                             ? 0.6
                                             : 0),
@@ -223,15 +219,13 @@ class HistoryItem extends StatelessWidget {
                                             padding: WidgetStateProperty.all(
                                                 EdgeInsets.zero),
                                             backgroundColor:
-                                                WidgetStateProperty
-                                                    .resolveWith(
+                                                WidgetStateProperty.resolveWith(
                                               (states) {
-                                                return Colors.white
-                                                    .withValues(alpha: 0.8 * 255);
+                                                return Colors.white.withValues(
+                                                    alpha: 0.8 * 255);
                                               },
                                             ),
                                           ),
-
                                           onPressed: () {
                                             feedBack();
                                             onChoose!();

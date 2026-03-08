@@ -3,12 +3,13 @@ import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
 import 'package:piliotto/utils/feed_back.dart';
 import 'package:piliotto/utils/image_save.dart';
-import 'package:piliotto/utils/route_push.dart';
+
 import '../../models/model_rec_video_item.dart';
+import '../../api/models/video.dart';
+import '../../services/ottohub_service.dart';
 import 'stat/danmu.dart';
 import 'stat/view.dart';
 import '../../http/dynamics.dart';
-import '../../http/user.dart';
 import '../../http/video.dart';
 import '../../utils/id_utils.dart';
 import '../../utils/utils.dart';
@@ -35,20 +36,21 @@ class VideoCardV extends StatelessWidget {
   }
 
   void onPushDetail(heroTag) async {
+    // 处理Ottohub的Video模型
+    if (videoItem is Video) {
+      Get.toNamed('/video?vid=${videoItem.vid}', arguments: {
+        'pic': videoItem.coverUrl,
+        'heroTag': heroTag,
+      });
+      return;
+    }
+
+    // 处理旧的模型
     String goto = videoItem.goto;
     switch (goto) {
       case 'bangumi':
-        if (videoItem.bangumiBadge == '电影') {
-          SmartDialog.showToast('暂不支持电影观看');
-          return;
-        }
-        int epId = videoItem.param;
-        RoutePush.bangumiPush(
-          null,
-          epId,
-          heroTag: heroTag,
-        );
-        break;
+        SmartDialog.showToast('暂不支持番剧观看');
+        return;
       case 'av':
         String bvid = videoItem.bvid ?? IdUtils.av2bv(videoItem.aid);
         Get.toNamed('/video?bvid=$bvid&cid=${videoItem.cid}', arguments: {
@@ -108,7 +110,14 @@ class VideoCardV extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    String heroTag = Utils.makeHeroTag(videoItem.id);
+    // 为不同模型生成heroTag
+    String heroTag;
+    if (videoItem is Video) {
+      heroTag = Utils.makeHeroTag(videoItem.vid.toString());
+    } else {
+      heroTag = Utils.makeHeroTag(videoItem.id);
+    }
+
     return InkWell(
       onTap: () async => onPushDetail(heroTag),
       onLongPress: () => imageSaveDialog(
@@ -129,17 +138,30 @@ class VideoCardV extends StatelessWidget {
                   Hero(
                     tag: heroTag,
                     child: NetworkImgLayer(
-                      src: videoItem.pic,
+                      src: (videoItem is Video
+                              ? videoItem.coverUrl
+                              : videoItem.pic) ??
+                          '',
                       width: maxWidth,
                       height: maxHeight,
                     ),
                   ),
-                  if (videoItem.duration > 0)
+                  // 显示视频时长
+                  if ((videoItem is Video
+                              ? videoItem.duration
+                              : videoItem.duration) !=
+                          null &&
+                      (videoItem is Video
+                              ? videoItem.duration
+                              : videoItem.duration) >
+                          0)
                     if (crossAxisCount == 1) ...[
                       PBadge(
                         bottom: 10,
                         right: 10,
-                        text: Utils.timeFormat(videoItem.duration),
+                        text: Utils.timeFormat(videoItem is Video
+                            ? videoItem.duration!
+                            : videoItem.duration),
                       )
                     ] else ...[
                       PBadge(
@@ -147,7 +169,9 @@ class VideoCardV extends StatelessWidget {
                         right: 7,
                         size: 'small',
                         type: 'gray',
-                        text: Utils.timeFormat(videoItem.duration),
+                        text: Utils.timeFormat(videoItem is Video
+                            ? videoItem.duration!
+                            : videoItem.duration),
                       )
                     ],
                 ],
@@ -208,16 +232,24 @@ class VideoContent extends StatelessWidget {
           if (crossAxisCount == 1) const SizedBox(height: 4),
           Row(
             children: [
-              if (videoItem.goto == 'bangumi')
-                _buildBadge(videoItem.bangumiBadge, 'line', 9),
-              if (videoItem.rcmdReason != null)
-                _buildBadge(videoItem.rcmdReason, 'color'),
-              if (videoItem.goto == 'picture') _buildBadge('动态', 'line', 9),
-              if (videoItem.isFollowed == 1) _buildBadge('已关注', 'color'),
+              // 处理Ottohub的Video模型
+              if (videoItem is Video) ...[
+                // 可以添加Ottohub特有的徽章
+              ] else ...[
+                // 处理旧的模型
+                if (videoItem.goto == 'bangumi')
+                  _buildBadge(videoItem.bangumiBadge, 'line', 9),
+                if (videoItem.rcmdReason != null)
+                  _buildBadge(videoItem.rcmdReason, 'color'),
+                if (videoItem.goto == 'picture') _buildBadge('动态', 'line', 9),
+                if (videoItem.isFollowed == 1) _buildBadge('已关注', 'color'),
+              ],
               Expanded(
                 flex: crossAxisCount == 1 ? 0 : 1,
                 child: Text(
-                  videoItem.owner.name,
+                  videoItem is Video
+                      ? videoItem.username
+                      : videoItem.owner.name,
                   maxLines: 1,
                   style: TextStyle(
                     fontSize: Theme.of(context).textTheme.labelMedium!.fontSize,
@@ -233,7 +265,37 @@ class VideoContent extends StatelessWidget {
                 ),
                 const Spacer(),
               ],
-              if (videoItem.goto == 'av')
+              // 显示更多按钮
+              if (videoItem is! Video) ...[
+                if (videoItem.goto == 'av')
+                  SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: IconButton(
+                      padding: EdgeInsets.zero,
+                      onPressed: () {
+                        feedBack();
+                        showModalBottomSheet(
+                          context: context,
+                          useRootNavigator: true,
+                          isScrollControlled: true,
+                          builder: (context) {
+                            return MorePanel(
+                              videoItem: videoItem,
+                              blockUserCb: blockUserCb,
+                            );
+                          },
+                        );
+                      },
+                      icon: Icon(
+                        Icons.more_vert_outlined,
+                        color: Theme.of(context).colorScheme.outline,
+                        size: 14,
+                      ),
+                    ),
+                  )
+              ] else ...[
+                // 为Ottohub的Video模型添加更多按钮
                 SizedBox(
                   width: 24,
                   height: 24,
@@ -260,6 +322,7 @@ class VideoContent extends StatelessWidget {
                     ),
                   ),
                 )
+              ]
             ],
           ),
         ],
@@ -282,10 +345,12 @@ class VideoStat extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        StatView(view: videoItem.stat.view),
-        const SizedBox(width: 8),
-        StatDanMu(danmu: videoItem.stat.danmu),
-        if (videoItem is RecVideoItemModel) ...<Widget>[
+        // 处理Ottohub的Video模型
+        if (videoItem is Video) ...[
+          StatView(view: videoItem.viewCount),
+          const SizedBox(width: 8),
+          // Ottohub模型没有danmu字段，这里可以留空或者显示其他信息
+          const SizedBox(width: 20), // 保持布局一致
           crossAxisCount > 1 ? const Spacer() : const SizedBox(width: 8),
           RichText(
             maxLines: 1,
@@ -294,9 +359,27 @@ class VideoStat extends StatelessWidget {
                   fontSize: Theme.of(context).textTheme.labelSmall!.fontSize,
                   color: Theme.of(context).colorScheme.outline,
                 ),
-                text: Utils.formatTimestampToRelativeTime(videoItem.pubdate)),
+                text: Utils.formatTimestampToRelativeTime(videoItem.time)),
           ),
           const SizedBox(width: 4),
+        ] else ...[
+          // 处理旧的模型
+          StatView(view: videoItem.stat.view),
+          const SizedBox(width: 8),
+          StatDanMu(danmu: videoItem.stat.danmu),
+          if (videoItem is RecVideoItemModel) ...<Widget>[
+            crossAxisCount > 1 ? const Spacer() : const SizedBox(width: 8),
+            RichText(
+              maxLines: 1,
+              text: TextSpan(
+                  style: TextStyle(
+                    fontSize: Theme.of(context).textTheme.labelSmall!.fontSize,
+                    color: Theme.of(context).colorScheme.outline,
+                  ),
+                  text: Utils.formatTimestampToRelativeTime(videoItem.pubdate)),
+            ),
+            const SizedBox(width: 4),
+          ]
         ]
       ],
     );
@@ -318,11 +401,6 @@ class MorePanel extends StatelessWidget {
         Get.back();
         blockUser();
         break;
-      case 'watchLater':
-        var res = await UserHttp.toViewLater(bvid: videoItem.bvid as String);
-        SmartDialog.showToast(res['msg']);
-        Get.back();
-        break;
       default:
     }
   }
@@ -332,10 +410,21 @@ class MorePanel extends StatelessWidget {
       useSystem: true,
       animationType: SmartAnimationType.centerFade_otherSlide,
       builder: (BuildContext context) {
+        // 获取用户名和ID
+        String username;
+        int userId;
+
+        if (videoItem is Video) {
+          username = videoItem.username;
+          userId = videoItem.uid;
+        } else {
+          username = videoItem.owner.name;
+          userId = videoItem.owner.mid;
+        }
+
         return AlertDialog(
           title: const Text('提示'),
-          content: Text('确定拉黑:${videoItem.owner.name}(${videoItem.owner.mid})?'
-              '\n\n注：被拉黑的Up可以在隐私设置-黑名单管理中解除'),
+          content: Text('确定拉黑:$username($userId)?\n\n注：被拉黑的Up可以在隐私设置-黑名单管理中解除'),
           actions: [
             TextButton(
               onPressed: () => SmartDialog.dismiss(),
@@ -346,16 +435,33 @@ class MorePanel extends StatelessWidget {
             ),
             TextButton(
               onPressed: () async {
-                var res = await VideoHttp.relationMod(
-                  mid: videoItem.owner.mid,
-                  act: 5,
-                  reSrc: 11,
-                );
-                SmartDialog.dismiss();
-                if (res['status']) {
-                  blockUserCb?.call(videoItem.owner.mid);
+                // 调用Ottohub的拉黑API
+                if (videoItem is Video) {
+                  // 使用Ottohub的blockUser方法
+                  try {
+                    await OttohubService.blockUser(
+                      blockedId: userId,
+                    );
+                    SmartDialog.dismiss();
+                    blockUserCb?.call(userId);
+                    SmartDialog.showToast('拉黑成功');
+                  } catch (error) {
+                    SmartDialog.dismiss();
+                    SmartDialog.showToast('拉黑失败: $error');
+                  }
+                } else {
+                  // 使用旧的API
+                  var res = await VideoHttp.relationMod(
+                    mid: userId,
+                    act: 5,
+                    reSrc: 11,
+                  );
+                  SmartDialog.dismiss();
+                  if (res['status']) {
+                    blockUserCb?.call(userId);
+                  }
+                  SmartDialog.showToast(res['msg']);
                 }
-                SmartDialog.showToast(res['msg']);
               },
               child: const Text('确认'),
             )
@@ -393,16 +499,9 @@ class MorePanel extends StatelessWidget {
             minLeadingWidth: 0,
             leading: const Icon(Icons.block, size: 19),
             title: Text(
-              '拉黑up主 「${videoItem.owner.name}」',
+              '拉黑up主 「${videoItem is Video ? videoItem.username : videoItem.owner.name}」',
               style: Theme.of(context).textTheme.titleSmall,
             ),
-          ),
-          ListTile(
-            onTap: () async => await menuActionHandler('watchLater'),
-            minLeadingWidth: 0,
-            leading: const Icon(Icons.watch_later_outlined, size: 19),
-            title:
-                Text('添加至稍后再看', style: Theme.of(context).textTheme.titleSmall),
           ),
           ListTile(
             onTap: () =>

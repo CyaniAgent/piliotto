@@ -7,7 +7,7 @@ import 'package:piliotto/common/widgets/badge.dart';
 import 'package:piliotto/common/widgets/network_img_layer.dart';
 import 'package:piliotto/common/widgets/stat/danmu.dart';
 import 'package:piliotto/common/widgets/stat/view.dart';
-import 'package:piliotto/http/search.dart';
+
 import 'package:piliotto/http/user.dart';
 import 'package:piliotto/models/video/later.dart';
 import 'package:piliotto/utils/utils.dart';
@@ -18,7 +18,7 @@ class MediaListPanel extends StatefulWidget {
     required this.mediaList,
     this.changeMediaList,
     this.panelTitle,
-    this.bvid,
+    this.vid,
     this.mediaId,
     this.hasMore = false,
     super.key,
@@ -28,7 +28,7 @@ class MediaListPanel extends StatefulWidget {
   final List<MediaVideoItemModel> mediaList;
   final Function? changeMediaList;
   final String? panelTitle;
-  final String? bvid;
+  final int? vid;
   final int? mediaId;
   final bool hasMore;
 
@@ -109,12 +109,9 @@ class _MediaListPanelState extends State<MediaListPanel> {
                     var item = mediaList[index];
                     return InkWell(
                       onTap: () async {
-                        String bvid = item.bvid!;
-                        int? aid = item.id;
+                        int vid = item.id!;
                         String cover = item.cover ?? '';
-                        final int cid =
-                            await SearchHttp.ab2c(aid: aid, bvid: bvid);
-                        widget.changeMediaList?.call(bvid, cid, aid, cover);
+                        widget.changeMediaList?.call(vid, cover);
                       },
                       child: Padding(
                         padding: const EdgeInsets.symmetric(
@@ -173,7 +170,7 @@ class _MediaListPanelState extends State<MediaListPanel> {
                                             overflow: TextOverflow.ellipsis,
                                             style: TextStyle(
                                               fontWeight: FontWeight.w500,
-                                              color: item.bvid == widget.bvid
+                                              color: item.id == widget.vid
                                                   ? Theme.of(context)
                                                       .colorScheme
                                                       .primary

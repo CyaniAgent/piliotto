@@ -4,7 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
 import 'package:universal_platform/universal_platform.dart';
-import 'package:piliotto/utils/route_push.dart';
+
 import '../http/search.dart';
 import 'id_utils.dart';
 import 'url_utils.dart';
@@ -75,18 +75,9 @@ class PiliSchame {
             SmartDialog.showToast('投稿匹配失败');
           }
           break;
-        case 'live':
-          final String roomId = path.split('/').last;
-          Get.toNamed<dynamic>(
-            '/liveRoom?roomid=$roomId',
-            arguments: <String, String?>{'liveItem': null, 'heroTag': roomId},
-          );
-          break;
+
         case 'bangumi':
-          if (path.startsWith('/season')) {
-            final String seasonId = path.split('/').last;
-            RoutePush.bangumiPush(int.parse(seasonId), null);
-          }
+          SmartDialog.showToast('暂不支持番剧观看');
           break;
         case 'opus':
           if (path.startsWith('/detail')) {
@@ -113,11 +104,7 @@ class PiliSchame {
           );
           break;
         case 'pgc':
-          if (path.contains('ep')) {
-            final String lastPathSegment = path.split('/').last;
-            RoutePush.bangumiPush(
-                null, int.parse(lastPathSegment.split('?').first));
-          }
+          SmartDialog.showToast('暂不支持番剧观看');
           break;
         default:
           SmartDialog.showToast('未匹配地址，请联系开发者');
@@ -166,8 +153,7 @@ class PiliSchame {
     Map<String, String>? query = value.query;
     RegExp regExp = RegExp(r'^((www\.)|(m\.))?bilibili\.com$');
     if (regExp.hasMatch(host)) {
-      final String lastPathSegment = path!.split('/').last;
-      if (path.startsWith('/video')) {
+      if (path!.startsWith('/video')) {
         Map matchRes = IdUtils.matchAvorBv(input: path);
         if (matchRes.containsKey('AV')) {
           _videoPush(matchRes['AV']! as int, null);
@@ -178,24 +164,13 @@ class PiliSchame {
         }
       }
       if (path.startsWith('/bangumi')) {
-        if (lastPathSegment.contains('ss')) {
-          RoutePush.bangumiPush(Utils.matchNum(lastPathSegment).first, null);
-        }
-        if (lastPathSegment.contains('ep')) {
-          RoutePush.bangumiPush(null, Utils.matchNum(lastPathSegment).first);
-        }
+        SmartDialog.showToast('暂不支持番剧观看');
       } else if (path.startsWith('/BV')) {
         final String bvid = path.split('?').first.split('/').last;
         _videoPush(null, bvid);
       } else if (path.startsWith('/av')) {
         _videoPush(Utils.matchNum(path.split('?').first).first, null);
       }
-    } else if (host.contains('live')) {
-      int roomId = int.parse(path!.split('/').last);
-      Get.toNamed(
-        '/liveRoom?roomid=$roomId',
-        arguments: {'liveItem': null, 'heroTag': roomId.toString()},
-      );
     } else if (host.contains('space')) {
       var mid = path!.split('/').last;
       Get.toNamed('/member?mid=$mid', arguments: {'face': ''});
@@ -216,10 +191,9 @@ class PiliSchame {
         } else {
           SmartDialog.showToast('投稿匹配失败');
         }
-      } else if (lastPathSegment.startsWith('ep')) {
-        _handleEpisodePath(lastPathSegment, redirectUrl);
-      } else if (lastPathSegment.startsWith('ss')) {
-        _handleSeasonPath(lastPathSegment, redirectUrl);
+      } else if (lastPathSegment.startsWith('ep') ||
+          lastPathSegment.startsWith('ss')) {
+        SmartDialog.showToast('暂不支持番剧观看');
       } else if (lastPathSegment.startsWith('BV')) {
         UrlUtils.matchUrlPush(
           lastPathSegment,
@@ -237,11 +211,7 @@ class PiliSchame {
       switch (area) {
         case 'bangumi':
           // 番剧
-          if (area.startsWith('ep')) {
-            RoutePush.bangumiPush(null, Utils.matchNum(area).first);
-          } else if (area.startsWith('ss')) {
-            RoutePush.bangumiPush(Utils.matchNum(area).first, null);
-          }
+          SmartDialog.showToast('暂不支持番剧观看');
           break;
         case 'video':
           // 投稿
@@ -288,19 +258,5 @@ class PiliSchame {
           break;
       }
     }
-  }
-
-  static void _handleEpisodePath(String lastPathSegment, String redirectUrl) {
-    final String seasonId = _extractIdFromPath(lastPathSegment);
-    RoutePush.bangumiPush(null, Utils.matchNum(seasonId).first);
-  }
-
-  static void _handleSeasonPath(String lastPathSegment, String redirectUrl) {
-    final String seasonId = _extractIdFromPath(lastPathSegment);
-    RoutePush.bangumiPush(Utils.matchNum(seasonId).first, null);
-  }
-
-  static String _extractIdFromPath(String lastPathSegment) {
-    return lastPathSegment.split('/').last;
   }
 }

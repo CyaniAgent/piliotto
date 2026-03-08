@@ -29,8 +29,9 @@ import '../pages/home/index.dart';
 import '../pages/hot/index.dart';
 import '../pages/html/index.dart';
 import '../pages/later/index.dart';
-import '../pages/live_room/view.dart';
+
 import '../pages/login/index.dart';
+import '../pages/register/view.dart';
 import '../pages/media/index.dart';
 import '../pages/member/index.dart';
 import '../pages/member_archive/index.dart';
@@ -101,8 +102,7 @@ class Routes {
     CustomGetPage(name: '/follow', page: () => const FollowPage()),
     // 粉丝
     CustomGetPage(name: '/fan', page: () => const FansPage()),
-    // 直播详情
-    CustomGetPage(name: '/liveRoom', page: () => const LiveRoomPage()),
+
     // 用户中心
     CustomGetPage(name: '/member', page: () => const MemberPage()),
     CustomGetPage(name: '/memberSearch', page: () => const MemberSearchPage()),
@@ -148,6 +148,8 @@ class Routes {
         name: '/whisperDetail', page: () => const WhisperDetailPage()),
     // 登录页面
     CustomGetPage(name: '/loginPage', page: () => const LoginPage()),
+    // 注册页面
+    CustomGetPage(name: '/register', page: () => const RegisterPage()),
     // 用户动态
     CustomGetPage(
         name: '/memberDynamics', page: () => const MemberDynamicsPage()),

@@ -14,7 +14,7 @@ class RelatedVideoPanel extends StatefulWidget {
 
 class _RelatedVideoPanelState extends State<RelatedVideoPanel>
     with AutomaticKeepAliveClientMixin {
-  late ReleatedController _releatedController;
+  late RelatedController _releatedController;
   late Future _futureBuilder;
 
   @override
@@ -24,7 +24,7 @@ class _RelatedVideoPanelState extends State<RelatedVideoPanel>
   void initState() {
     super.initState();
     _releatedController =
-        Get.put(ReleatedController(), tag: Get.arguments?['heroTag']);
+        Get.put(RelatedController(), tag: Get.arguments?['heroTag']);
     _futureBuilder = _releatedController.queryRelatedVideo();
   }
 

@@ -2,37 +2,26 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
 import 'package:hive/hive.dart';
-import 'package:piliotto/http/video.dart';
-import 'package:piliotto/models/home/rcmd/result.dart';
-import 'package:piliotto/models/model_rec_video_item.dart';
+import 'package:piliotto/services/ottohub_service.dart';
+import 'package:piliotto/api/models/video.dart';
 import 'package:piliotto/utils/responsive_util.dart';
 import 'package:piliotto/utils/storage.dart';
 
 class RcmdController extends GetxController {
   final ScrollController scrollController = ScrollController();
-  int _currentPage = 0;
-  // RxList<RecVideoItemAppModel> appVideoList = <RecVideoItemAppModel>[].obs;
-  // RxList<RecVideoItemModel> webVideoList = <RecVideoItemModel>[].obs;
   bool isLoadingMore = true;
   OverlayEntry? popupDialog;
   Box setting = GStrorage.setting;
   RxInt crossAxisCount = 2.obs;
   late bool enableSaveLastData;
-  late String defaultRcmdType = 'web';
-  late RxList<dynamic> videoList;
+  late RxList<Video> videoList;
 
   @override
   void onInit() {
     super.onInit();
     enableSaveLastData =
         setting.get(SettingBoxKey.enableSaveLastData, defaultValue: false);
-    defaultRcmdType =
-        setting.get(SettingBoxKey.defaultRcmdType, defaultValue: 'web');
-    if (defaultRcmdType == 'web') {
-      videoList = <RecVideoItemModel>[].obs;
-    } else {
-      videoList = <RecVideoItemAppModel>[].obs;
-    }
+    videoList = <Video>[].obs;
     // 初始计算列数
     updateCrossAxisCount();
   }
@@ -61,60 +50,49 @@ class RcmdController extends GetxController {
     if (isLoadingMore == false) {
       return;
     }
-    if (type == 'onRefresh') {
-      _currentPage = 0;
-    }
-    late final Map<String, dynamic> res;
-    switch (defaultRcmdType) {
-      case 'app':
-      case 'notLogin':
-        res = await VideoHttp.rcmdVideoListApp(
-          loginStatus: defaultRcmdType != 'notLogin',
-          freshIdx: _currentPage,
-        );
-        break;
-      default: //'web'
-        res = await VideoHttp.rcmdVideoList(
-          freshIdx: _currentPage,
-          ps: 20,
-        );
-    }
-    if (res['status']) {
+    try {
+      final response = await OttohubService.getRandomVideos(num: 20);
+      final List<Video> videos = response.videoList;
+
       if (type == 'init') {
-        if (videoList.isNotEmpty) {
-          videoList.addAll(res['data']);
-        } else {
-          videoList.value = res['data'];
-        }
+        videoList.clear();
+        videoList.addAll(videos);
       } else if (type == 'onRefresh') {
         if (enableSaveLastData) {
-          videoList.insertAll(0, res['data']);
+          videoList.insertAll(0, videos);
         } else {
-          videoList.value = res['data'];
+          videoList.clear();
+          videoList.addAll(videos);
         }
       } else if (type == 'onLoad') {
-        videoList.addAll(res['data']);
+        videoList.addAll(videos);
       }
-      _currentPage += 1;
       // 若videoList数量太小，可能会影响翻页，此时再次请求
       // 为避免请求到的数据太少时还在反复请求，要求本次返回数据大于1条才触发
-      if (res['data'].length > 1 && videoList.length < 10) {
-        queryRcmdFeed('onLoad');
+      if (videos.length > 1 && videoList.length < 10) {
+        await queryRcmdFeed('onLoad');
       }
+      isLoadingMore = false;
+      return {'status': true, 'data': videos};
+    } catch (error) {
+      isLoadingMore = false;
+      print('Error fetching videos: $error');
+      return {'status': false, 'data': [], 'msg': error.toString()};
     }
-    isLoadingMore = false;
-    return res;
   }
 
   // 下拉刷新
   Future onRefresh() async {
     isLoadingMore = true;
-    queryRcmdFeed('onRefresh');
+    await queryRcmdFeed('onRefresh');
   }
 
   // 上拉加载
   Future onLoad() async {
-    queryRcmdFeed('onLoad');
+    if (!isLoadingMore) {
+      isLoadingMore = true;
+      await queryRcmdFeed('onLoad');
+    }
   }
 
   // 返回顶部
@@ -128,8 +106,8 @@ class RcmdController extends GetxController {
     }
   }
 
-  void blockUserCb(mid) {
-    videoList.removeWhere((e) => e.owner.mid == mid);
+  void blockUserCb(int uid) {
+    videoList.removeWhere((e) => e.uid == uid);
     videoList.refresh();
     SmartDialog.showToast('已移除相关视频');
   }

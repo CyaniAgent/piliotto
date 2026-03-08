@@ -69,9 +69,10 @@ class Utils {
   }
 
   // 完全相对时间显示
-  static String formatTimestampToRelativeTime(timeStamp) {
+  static String formatTimestampToRelativeTime(dynamic timeStamp) {
+    int timestamp = _convertToTimestamp(timeStamp);
     var difference = DateTime.now()
-        .difference(DateTime.fromMillisecondsSinceEpoch(timeStamp * 1000));
+        .difference(DateTime.fromMillisecondsSinceEpoch(timestamp * 1000));
 
     if (difference.inDays > 365) {
       return '${difference.inDays ~/ 365}年前';
@@ -89,14 +90,15 @@ class Utils {
   }
 
   // 时间显示，刚刚，x分钟前
-  static String dateFormat(timeStamp, {formatType = 'list'}) {
+  static String dateFormat(dynamic timeStamp, {formatType = 'list'}) {
     if (timeStamp == 0 || timeStamp == null || timeStamp == '') {
       return '';
     }
     // 当前时间
     int time = (DateTime.now().millisecondsSinceEpoch / 1000).round();
     // 对比
-    int distance = (time - timeStamp).toInt();
+    int timestamp = _convertToTimestamp(timeStamp);
+    int distance = (time - timestamp).toInt();
     // 当前年日期
     String currentYearStr = 'MM月DD日 hh:mm';
     String lastYearStr = 'YY年MM月DD日 hh:mm';
@@ -104,7 +106,7 @@ class Utils {
       currentYearStr = 'MM-DD hh:mm';
       lastYearStr = 'YY-MM-DD hh:mm';
       return CustomStamp_str(
-          timestamp: timeStamp,
+          timestamp: timestamp,
           date: lastYearStr,
           toInt: false,
           formatType: formatType);
@@ -116,15 +118,15 @@ class Utils {
     } else if (distance <= 43200) {
       return '${(distance / 60 / 60).floor()}小时前';
     } else if (DateTime.fromMillisecondsSinceEpoch(time * 1000).year ==
-        DateTime.fromMillisecondsSinceEpoch(timeStamp * 1000).year) {
+        DateTime.fromMillisecondsSinceEpoch(timestamp * 1000).year) {
       return CustomStamp_str(
-          timestamp: timeStamp,
+          timestamp: timestamp,
           date: currentYearStr,
           toInt: false,
           formatType: formatType);
     } else {
       return CustomStamp_str(
-          timestamp: timeStamp,
+          timestamp: timestamp,
           date: lastYearStr,
           toInt: false,
           formatType: formatType);
@@ -133,13 +135,16 @@ class Utils {
 
   // 时间戳转时间
   static String CustomStamp_str(
-      {int? timestamp, // 为空则显示当前时间
+      {dynamic timestamp, // 为空则显示当前时间
       String? date, // 显示格式，比如：'YY年MM月DD日 hh:mm:ss'
       bool toInt = true, // 去除0开头
       String? formatType}) {
-    timestamp ??= (DateTime.now().millisecondsSinceEpoch / 1000).round();
+    int ts = _convertToTimestamp(timestamp);
+    if (ts == 0) {
+      ts = (DateTime.now().millisecondsSinceEpoch / 1000).round();
+    }
     String timeStr =
-        (DateTime.fromMillisecondsSinceEpoch(timestamp * 1000)).toString();
+        (DateTime.fromMillisecondsSinceEpoch(ts * 1000)).toString();
 
     dynamic dateArr = timeStr.split(' ')[0];
     dynamic timeArr = timeStr.split(' ')[1];
@@ -185,6 +190,29 @@ class Utils {
       }
     }
     return date;
+  }
+
+  // 转换为时间戳
+  static int _convertToTimestamp(dynamic value) {
+    if (value == null) return 0;
+    if (value is int) return value;
+    if (value is String) {
+      try {
+        return int.parse(value);
+      } catch (e) {
+        // 尝试解析日期字符串
+        try {
+          DateTime date = DateTime.parse(value);
+          return (date.millisecondsSinceEpoch / 1000).round();
+        } catch (e) {
+          return 0;
+        }
+      }
+    }
+    if (value is DateTime) {
+      return (value.millisecondsSinceEpoch / 1000).round();
+    }
+    return 0;
   }
 
   static String makeHeroTag(v) {
