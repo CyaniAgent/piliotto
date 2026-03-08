@@ -55,7 +55,7 @@ List<Map> actionMenuConfig = [
     'icon': Image.asset(
       'assets/images/coin.png',
       width: 26,
-      color: IconTheme.of(Get.context!).color!.withOpacity(0.65),
+      color: IconTheme.of(Get.context!).color!.withValues(alpha: 0.65),
     ),
     'label': '投币',
     'value': ActionType.coin,

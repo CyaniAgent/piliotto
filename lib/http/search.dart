@@ -123,7 +123,7 @@ class SearchHttp {
           'data': data,
         };
       } catch (err) {
-        print(err);
+        // 错误处理
       }
     } else {
       return {

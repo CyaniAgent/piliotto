@@ -94,7 +94,7 @@ class _LiveDlnaPageState extends State<LiveDlnaPage> {
       title: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text('查找设备'),
+          const Text('查找设备'),
           IconButton(
             onPressed: startSearch,
             icon: const Icon(Icons.refresh_rounded),

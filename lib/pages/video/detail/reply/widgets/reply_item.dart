@@ -88,8 +88,10 @@ class ReplyItem extends StatelessWidget {
               border: Border(
                   bottom: BorderSide(
             width: 1,
-            color:
-                Theme.of(context).colorScheme.onInverseSurface.withOpacity(0.5),
+            color: Theme.of(context)
+                .colorScheme
+                .onInverseSurface
+                .withValues(alpha: 0.5),
           ))),
           child: content(context),
         ),
@@ -135,7 +137,7 @@ class ReplyItem extends StatelessWidget {
             child: Container(
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(7),
-                color: colorScheme.background,
+                color: colorScheme.surface,
               ),
               child: Image.asset(
                 'assets/images/big-vip.png',
@@ -318,7 +320,8 @@ class ReplyItem extends StatelessWidget {
             child: Row(children: [
               if (!replySave!) ...[
                 Icon(Icons.reply,
-                    size: 18, color: colorScheme.outline.withOpacity(0.8)),
+                    size: 18,
+                    color: colorScheme.outline.withValues(alpha: 0.8)),
                 const SizedBox(width: 3),
                 Text(
                   '回复',
@@ -600,7 +603,7 @@ InlineSpan buildContent(
           initIndex: initIndex,
           onPageChanged: (int pageIndex) {},
           onDismissed: (int value) {
-            print('onDismissed');
+            // onDismissed
             final MainController mainController = Get.find<MainController>();
             mainController.imgPreviewStatus = false;
           },

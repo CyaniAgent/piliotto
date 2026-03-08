@@ -11,10 +11,10 @@ class SelectDialog<T> extends StatefulWidget {
       required this.title});
 
   @override
-  _SelectDialogState<T> createState() => _SelectDialogState<T>();
+  SelectDialogState<T> createState() => SelectDialogState<T>();
 }
 
-class _SelectDialogState<T> extends State<SelectDialog<T>> {
+class SelectDialogState<T> extends State<SelectDialog<T>> {
   late T _tempValue;
 
   @override
@@ -36,7 +36,7 @@ class _SelectDialogState<T> extends State<SelectDialog<T>> {
             mainAxisSize: MainAxisSize.min,
             children: [
               for (var i in widget.values) ...[
-                RadioListTile(
+                RadioListTile<T>(
                   value: i['value'],
                   title: Text(i['title'], style: titleStyle),
                   groupValue: _tempValue,

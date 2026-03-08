@@ -13,7 +13,7 @@ class DynamicCardSkeleton extends StatelessWidget {
           border: Border(
             bottom: BorderSide(
               width: 8,
-              color: Theme.of(context).dividerColor.withOpacity(0.05),
+              color: Theme.of(context).dividerColor.withValues(alpha: 0.05),
             ),
           ),
         ),
@@ -102,7 +102,7 @@ class DynamicCardSkeleton extends StatelessWidget {
                       foregroundColor: Theme.of(context)
                           .colorScheme
                           .outline
-                          .withOpacity(0.2),
+                          .withValues(alpha: 0.2),
                     ),
                     label: Text(
                       i == 0

@@ -203,7 +203,7 @@ class HistoryItem extends StatelessWidget {
                                   decoration: BoxDecoration(
                                     borderRadius: BorderRadius.circular(
                                         StyleString.imgRadius.x),
-                                    color: Colors.black.withOpacity(
+                                    color: Colors.black.withValues(alpha: 
                                         ctr!.enableMultiple.value &&
                                                 videoItem.checked
                                             ? 0.6
@@ -220,17 +220,18 @@ class HistoryItem extends StatelessWidget {
                                         curve: Curves.easeInOut,
                                         child: IconButton(
                                           style: ButtonStyle(
-                                            padding: MaterialStateProperty.all(
+                                            padding: WidgetStateProperty.all(
                                                 EdgeInsets.zero),
                                             backgroundColor:
-                                                MaterialStateProperty
+                                                WidgetStateProperty
                                                     .resolveWith(
                                               (states) {
                                                 return Colors.white
-                                                    .withOpacity(0.8);
+                                                    .withValues(alpha: 0.8 * 255);
                                               },
                                             ),
                                           ),
+
                                           onPressed: () {
                                             feedBack();
                                             onChoose!();

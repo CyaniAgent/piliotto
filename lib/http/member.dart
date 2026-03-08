@@ -379,7 +379,7 @@ class MemberHttp {
           'data': MemberSeasonsList.fromJson(res.data['data'])
         };
       } catch (err) {
-        print(err);
+        // 错误处理: $err
       }
     } else {
       return {
@@ -554,7 +554,7 @@ class MemberHttp {
           'data': MemberSeasonsDataModel.fromJson(res.data['data'])
         };
       } catch (err) {
-        print(err);
+        // 错误处理: $err
       }
     } else {
       return {

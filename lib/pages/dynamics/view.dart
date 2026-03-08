@@ -37,7 +37,6 @@ class _DynamicsPageState extends State<DynamicsPage>
   late Future _futureBuilderFutureUp;
   Box userInfoCache = GStrorage.userInfo;
   late ScrollController scrollController;
-  late MediaQueryData _mediaQueryData;
 
   @override
   bool get wantKeepAlive => true;
@@ -74,8 +73,6 @@ class _DynamicsPageState extends State<DynamicsPage>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // 初始化媒体查询数据
-    _mediaQueryData = MediaQuery.of(context);
     // 初始计算列数
     _dynamicsController.updateCrossAxisCount();
   }
@@ -188,8 +185,8 @@ class _DynamicsPageState extends State<DynamicsPage>
                                 decoration: BoxDecoration(
                                   color: Theme.of(context)
                                       .colorScheme
-                                      .surfaceVariant
-                                      .withOpacity(0.7),
+                                      .surfaceContainerHighest
+                                      .withValues(alpha: 0.7),
                                   borderRadius: BorderRadius.circular(20),
                                 ),
                                 thumbDecoration: BoxDecoration(

@@ -126,7 +126,7 @@ class Request {
     var html = await Request().get(Api.dynamicSpmPrefix);
     String spmPrefix = spmPrefixExp.firstMatch(html.data)!.group(1)!;
     Random rand = Random();
-    String rand_png_end = base64.encode(
+    String randPngEnd = base64.encode(
         List<int>.generate(32, (_) => rand.nextInt(256)) +
             List<int>.filled(4, 0) +
             [73, 69, 78, 68] +
@@ -134,10 +134,10 @@ class Request {
 
     String jsonData = json.encode({
       '3064': 1,
-      '39c8': '${spmPrefix}.fp.risk',
+      '39c8': '$spmPrefix.fp.risk',
       '3c43': {
         'adca': 'Linux',
-        'bfe9': rand_png_end.substring(rand_png_end.length - 50),
+        'bfe9': randPngEnd.substring(randPngEnd.length - 50),
       },
     });
 

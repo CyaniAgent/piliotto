@@ -249,7 +249,7 @@ class _RecommendSettingState extends State<RecommendSetting> {
               '* 后续可能会增加更多过滤条件，敬请期待。',
               style: Theme.of(context).textTheme.labelSmall!.copyWith(
                   color:
-                      Theme.of(context).colorScheme.outline.withOpacity(0.7)),
+                      Theme.of(context).colorScheme.outline.withValues(alpha: 0.7)),
             ),
           )
         ],

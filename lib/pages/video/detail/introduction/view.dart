@@ -15,7 +15,7 @@ import 'package:piliotto/common/widgets/stat/danmu.dart';
 import 'package:piliotto/common/widgets/stat/view.dart';
 import 'package:piliotto/models/video_detail_res.dart';
 import 'package:piliotto/pages/video/detail/introduction/controller.dart';
-import 'package:piliotto/pages/video/detail/widgets/ai_detail.dart';
+
 import 'package:piliotto/utils/feed_back.dart';
 import 'package:piliotto/utils/global_data_cache.dart';
 import 'package:piliotto/utils/storage.dart';
@@ -143,7 +143,7 @@ class _VideoInfoState extends State<VideoInfo> with TickerProviderStateMixin {
   late final dynamic owner;
   late int mid;
   late String memberHeroTag;
-  late bool enableAi;
+
   bool isProcessing = false;
   RxBool isExpand = false.obs;
   late ExpandableController _expandableCtr;
@@ -168,7 +168,6 @@ class _VideoInfoState extends State<VideoInfo> with TickerProviderStateMixin {
     sheetHeight = localCache.get('sheetHeight');
 
     owner = widget.videoDetail!.owner;
-    enableAi = setting.get(SettingBoxKey.enableAi, defaultValue: true);
     _expandableCtr = ExpandableController(initialExpanded: false);
   }
 
@@ -237,16 +236,7 @@ class _VideoInfoState extends State<VideoInfo> with TickerProviderStateMixin {
         arguments: {'face': face, 'heroTag': memberHeroTag});
   }
 
-  // ai总结
-  showAiBottomSheet() {
-    showBottomSheet(
-      context: context,
-      enableDrag: true,
-      builder: (BuildContext context) {
-        return AiDetail(modelResult: videoIntroController.modelResult);
-      },
-    );
-  }
+
 
   @override
   void dispose() {
@@ -307,63 +297,45 @@ class _VideoInfoState extends State<VideoInfo> with TickerProviderStateMixin {
               ),
             ),
           ),
-          Stack(
-            children: [
-              GestureDetector(
-                behavior: HitTestBehavior.translucent,
-                onTap: () => showIntroDetail(),
-                child: Padding(
-                  padding: const EdgeInsets.only(top: 7, bottom: 6),
-                  child: Row(
-                    children: [
-                      StatView(
-                        view: widget.videoDetail!.stat!.view,
-                        size: 'medium',
-                      ),
-                      const SizedBox(width: 10),
-                      StatDanMu(
-                        danmu: widget.videoDetail!.stat!.danmaku,
-                        size: 'medium',
-                      ),
-                      const SizedBox(width: 10),
-                      Text(
-                        Utils.dateFormat(widget.videoDetail!.pubdate,
-                            formatType: 'detail'),
+          GestureDetector(
+            behavior: HitTestBehavior.translucent,
+            onTap: () => showIntroDetail(),
+            child: Padding(
+              padding: const EdgeInsets.only(top: 7, bottom: 6),
+              child: Row(
+                children: [
+                  StatView(
+                    view: widget.videoDetail!.stat!.view,
+                    size: 'medium',
+                  ),
+                  const SizedBox(width: 10),
+                  StatDanMu(
+                    danmu: widget.videoDetail!.stat!.danmaku,
+                    size: 'medium',
+                  ),
+                  const SizedBox(width: 10),
+                  Text(
+                    Utils.dateFormat(widget.videoDetail!.pubdate,
+                        formatType: 'detail'),
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: t.colorScheme.outline,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  if (videoIntroController.isShowOnlineTotal)
+                    Obx(
+                      () => Text(
+                        '${videoIntroController.total.value}人在看',
                         style: TextStyle(
                           fontSize: 12,
                           color: t.colorScheme.outline,
                         ),
                       ),
-                      const SizedBox(width: 10),
-                      if (videoIntroController.isShowOnlineTotal)
-                        Obx(
-                          () => Text(
-                            '${videoIntroController.total.value}人在看',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: t.colorScheme.outline,
-                            ),
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
+                    ),
+                ],
               ),
-              if (enableAi)
-                Positioned(
-                  right: 10,
-                  top: 6,
-                  child: GestureDetector(
-                    onTap: () async {
-                      final res = await videoIntroController.aiConclusion();
-                      if (res['status']) {
-                        showAiBottomSheet();
-                      }
-                    },
-                    child: Image.asset('assets/images/ai.png', height: 22),
-                  ),
-                )
-            ],
+            ),
           ),
 
           /// 视频简介
@@ -616,16 +588,11 @@ class _VideoInfoState extends State<VideoInfo> with TickerProviderStateMixin {
       list.add(menuListWidgets[actionTypeSort[i]]!);
     }
 
-    return LayoutBuilder(
-        builder: (BuildContext context, BoxConstraints constraints) {
-      return Container(
-        margin: const EdgeInsets.only(top: 6, bottom: 4),
-        height: constraints.maxWidth / 5,
-        child: ListView(
-          scrollDirection: Axis.horizontal,
-          children: list,
-        ),
-      );
-    });
+    return Container(
+      margin: const EdgeInsets.only(top: 6, bottom: 4),
+      child: Row(
+        children: list.map((item) => Expanded(child: item)).toList(),
+      ),
+    );
   }
 }

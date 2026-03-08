@@ -212,7 +212,7 @@ class UserInfoWidget extends StatelessWidget {
               splashColor: Theme.of(context)
                   .colorScheme
                   .primaryContainer
-                  .withOpacity(0.3),
+                  .withValues(alpha: 0.3),
               borderRadius: const BorderRadius.all(
                 Radius.circular(50),
               ),
@@ -259,12 +259,12 @@ class DefaultUser extends StatelessWidget {
       height: 38,
       child: IconButton(
         style: ButtonStyle(
-          padding: MaterialStateProperty.all(EdgeInsets.zero),
-          backgroundColor: MaterialStateProperty.resolveWith((states) {
+          padding: WidgetStateProperty.all(EdgeInsets.zero),
+          backgroundColor: WidgetStateProperty.resolveWith((states) {
             return Theme.of(context)
                 .colorScheme
                 .onSecondaryContainer
-                .withOpacity(0.05);
+                .withValues(alpha: 0.05);
           }),
         ),
         onPressed: () => callback?.call(),
@@ -351,9 +351,9 @@ class CustomChip extends StatelessWidget {
     return InputChip(
       side: BorderSide.none,
       backgroundColor: secondaryContainer,
-      color: MaterialStateProperty.resolveWith((states) {
-        if (states.contains(MaterialState.selected) ||
-            states.contains(MaterialState.hovered)) {
+      color: WidgetStateProperty.resolveWith((states) {
+        if (states.contains(WidgetState.selected) ||
+            states.contains(WidgetState.hovered)) {
           return primary;
         }
         return colorTheme.secondaryContainer;
@@ -390,9 +390,9 @@ class SearchBar extends StatelessWidget {
           borderRadius: BorderRadius.circular(25),
         ),
         child: Material(
-          color: colorScheme.onSecondaryContainer.withOpacity(0.05),
+          color: colorScheme.onSecondaryContainer.withValues(alpha: 0.05),
           child: InkWell(
-            splashColor: colorScheme.primaryContainer.withOpacity(0.3),
+            splashColor: colorScheme.primaryContainer.withValues(alpha: 0.3),
             onTap: () => Get.toNamed('/search',
                 parameters: {'hintText': ctr!.defaultSearch.value}),
             child: Padding(

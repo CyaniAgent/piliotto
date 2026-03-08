@@ -15,7 +15,7 @@ class BangumiController extends GetxController {
   Box userInfoCache = GStrorage.userInfo;
   RxBool userLogin = false.obs;
   late int mid;
-  var userInfo;
+  dynamic userInfo;
   RxInt crossAxisCount = 3.obs;
 
   @override

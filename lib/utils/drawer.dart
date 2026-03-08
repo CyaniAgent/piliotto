@@ -19,7 +19,7 @@ class DrawerUtils {
         );
       },
       useSystem: useSystem,
-      maskColor: Colors.black.withOpacity(0.5),
+      maskColor: Colors.black.withValues(alpha: 0.5),
       animationTime: const Duration(milliseconds: 200),
       builder: (context) => Container(
         width: width,

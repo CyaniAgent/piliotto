@@ -56,7 +56,7 @@ class _MessageSystemPageState extends State<MessageSystemPage> {
                         indent: 14,
                         endIndent: 14,
                         height: 1,
-                        color: Colors.grey.withOpacity(0.1),
+                        color: Colors.grey.withValues(alpha: 0.1),
                       );
                     },
                   ),

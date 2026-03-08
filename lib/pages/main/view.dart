@@ -130,7 +130,7 @@ class _MainAppState extends State<MainApp> with SingleTickerProviderStateMixin {
 
     return PopScope(
       canPop: false,
-      onPopInvoked: (bool didPop) async {
+      onPopInvokedWithResult: (bool didPop, dynamic result) async {
         _mainController.onBackPressed(context);
       },
       child: isWideScreen
@@ -144,35 +144,6 @@ class _MainAppState extends State<MainApp> with SingleTickerProviderStateMixin {
       extendBody: true,
       body: Stack(
         children: [
-          if (_mainController.enableGradientBg)
-            Align(
-              alignment: Alignment.topLeft,
-              child: Opacity(
-                opacity:
-                    Theme.of(context).brightness == Brightness.dark ? 0.3 : 0.6,
-                child: Container(
-                  width: MediaQuery.of(context).size.width,
-                  height: MediaQuery.of(context).size.height,
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                        colors: [
-                          Theme.of(context)
-                              .colorScheme
-                              .primary
-                              .withOpacity(0.7),
-                          Theme.of(context).colorScheme.surface,
-                          Theme.of(context)
-                              .colorScheme
-                              .surface
-                              .withOpacity(0.3),
-                        ],
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        stops: const [0.1, 0.3, 5]),
-                  ),
-                ),
-              ),
-            ),
           PageView(
             physics: const NeverScrollableScrollPhysics(),
             controller: _mainController.pageController,
@@ -294,36 +265,6 @@ class _MainAppState extends State<MainApp> with SingleTickerProviderStateMixin {
           Expanded(
             child: Stack(
               children: [
-                if (_mainController.enableGradientBg)
-                  Align(
-                    alignment: Alignment.topLeft,
-                    child: Opacity(
-                      opacity: Theme.of(context).brightness == Brightness.dark
-                          ? 0.3
-                          : 0.6,
-                      child: Container(
-                        width: MediaQuery.of(context).size.width,
-                        height: MediaQuery.of(context).size.height,
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                              colors: [
-                                Theme.of(context)
-                                    .colorScheme
-                                    .primary
-                                    .withOpacity(0.7),
-                                Theme.of(context).colorScheme.surface,
-                                Theme.of(context)
-                                    .colorScheme
-                                    .surface
-                                    .withOpacity(0.3),
-                              ],
-                              begin: Alignment.topCenter,
-                              end: Alignment.bottomCenter,
-                              stops: const [0.1, 0.3, 5]),
-                        ),
-                      ),
-                    ),
-                  ),
                 PageView(
                   physics: const NeverScrollableScrollPhysics(),
                   controller: _mainController.pageController,

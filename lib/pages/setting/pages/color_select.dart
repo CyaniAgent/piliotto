@@ -45,25 +45,27 @@ class _ColorSelectPageState extends State<ColorSelectPage> {
       body: ListView(
         children: [
           Obx(
-            () => RadioListTile(
-              value: 0,
-              title: const Text('动态取色'),
-              groupValue: ctr.type.value,
-              onChanged: (dynamic val) async {
-                ctr.type.value = 0;
-                ctr.setting.put(SettingBoxKey.dynamicColor, true);
-              },
-            ),
-          ),
-          Obx(
-            () => RadioListTile(
-              value: 1,
-              title: const Text('指定颜色'),
-              groupValue: ctr.type.value,
-              onChanged: (dynamic val) async {
-                ctr.type.value = 1;
-                ctr.setting.put(SettingBoxKey.dynamicColor, false);
-              },
+            () => Column(
+              children: [
+                RadioListTile(
+                  value: 0,
+                  title: const Text('动态取色'),
+                  groupValue: ctr.type.value,
+                  onChanged: (dynamic val) async {
+                    ctr.type.value = 0;
+                    ctr.setting.put(SettingBoxKey.dynamicColor, true);
+                  },
+                ),
+                RadioListTile(
+                  value: 1,
+                  title: const Text('指定颜色'),
+                  groupValue: ctr.type.value,
+                  onChanged: (dynamic val) async {
+                    ctr.type.value = 1;
+                    ctr.setting.put(SettingBoxKey.dynamicColor, false);
+                  },
+                ),
+              ],
             ),
           ),
           Obx(
@@ -94,13 +96,13 @@ class _ColorSelectPageState extends State<ColorSelectPage> {
                                   width: 46,
                                   height: 46,
                                   decoration: BoxDecoration(
-                                    color: e['color'].withOpacity(0.8),
+                                    color: e['color'].withValues(alpha: 0.8 * 255),
                                     borderRadius: BorderRadius.circular(50),
                                     border: Border.all(
                                       width: 2,
                                       color: ctr.currentColor.value == index
                                           ? Colors.black
-                                          : e['color'].withOpacity(0.8),
+                                          : e['color'].withValues(alpha: 0.8 * 255),
                                     ),
                                   ),
                                   child: AnimatedOpacity(

@@ -23,7 +23,6 @@ class _BangumiPageState extends State<BangumiPage>
   late Future? _futureBuilderFuture;
   late Future? _futureBuilderFutureFollow;
   late ScrollController scrollController;
-  late MediaQueryData _mediaQueryData;
 
   @override
   bool get wantKeepAlive => true;
@@ -51,8 +50,6 @@ class _BangumiPageState extends State<BangumiPage>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // 初始化媒体查询数据
-    _mediaQueryData = MediaQuery.of(context);
     // 屏幕尺寸变化时更新列数（使用防抖处理）
     EasyThrottle.throttle(
         'updateCrossAxisCount', const Duration(milliseconds: 100), () {

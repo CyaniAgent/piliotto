@@ -39,7 +39,7 @@ class MediaController extends GetxController {
       'onTap': () => Get.toNamed('/later'),
     },
   ];
-  var userInfo;
+  dynamic userInfo;
   int? mid;
   final ScrollController scrollController = ScrollController();
 

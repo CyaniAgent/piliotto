@@ -127,7 +127,7 @@ class _FavDetailPageState extends State<FavDetailPage> {
                 decoration: BoxDecoration(
                   border: Border(
                     bottom: BorderSide(
-                      color: Theme.of(context).dividerColor.withOpacity(0.2),
+                      color: Theme.of(context).dividerColor.withValues(alpha: 0.2),
                     ),
                   ),
                 ),

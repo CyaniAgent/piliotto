@@ -123,7 +123,7 @@ class _GroupPanelState extends State<GroupPanel> {
         ),
         Divider(
           height: 1,
-          color: Theme.of(context).disabledColor.withOpacity(0.08),
+          color: Theme.of(context).disabledColor.withValues(alpha: 0.08),
         ),
         Padding(
           padding: EdgeInsets.only(

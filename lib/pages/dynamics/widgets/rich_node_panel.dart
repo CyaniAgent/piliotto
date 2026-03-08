@@ -355,7 +355,7 @@ InlineSpan richNode(item, context) {
       );
     }
   } catch (err) {
-    print('❌rich_node_panel err: $err');
+    // 错误处理: $err
     return spacer;
   }
 }

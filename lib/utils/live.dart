@@ -73,7 +73,7 @@ class LiveUtils {
         return messages;
       }
     } catch (e) {
-      print(e);
+      // 错误处理: $e
     }
     return null;
   }
@@ -156,7 +156,7 @@ class LiveUtils {
         return liveMsg;
       }
     } catch (e) {
-      print(e);
+      // 错误处理: $e
     }
     return null;
   }

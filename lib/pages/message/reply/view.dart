@@ -75,7 +75,7 @@ class _MessageReplyPageState extends State<MessageReplyPage> {
                         indent: 66,
                         endIndent: 14,
                         height: 1,
-                        color: Colors.grey.withOpacity(0.1),
+                        color: Colors.grey.withValues(alpha: 0.1),
                       );
                     },
                   ),
@@ -116,15 +116,7 @@ class ReplyItem extends StatelessWidget {
     Color outline = Theme.of(context).colorScheme.outline;
     final String heroTag = Utils.makeHeroTag(item.user!.mid);
     final String bvid = item.item!.uri!.split('/').last;
-    // 页码
-    final String page =
-        item.item!.nativeUri!.split('page=').last.split('&').first;
-    // 根评论id
-    final String commentRootId =
-        item.item!.nativeUri!.split('comment_root_id=').last.split('&').first;
-    // 二级评论id
-    final String commentSecondaryId =
-        item.item!.nativeUri!.split('comment_secondary_id=').last;
+
 
     return InkWell(
       onTap: () async {

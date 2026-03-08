@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:developer';
 
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:html/parser.dart';

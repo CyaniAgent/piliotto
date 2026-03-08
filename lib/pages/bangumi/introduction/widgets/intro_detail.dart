@@ -39,7 +39,7 @@ class IntroDetail extends StatelessWidget {
                     color: Theme.of(context)
                         .colorScheme
                         .onSecondaryContainer
-                        .withOpacity(0.5),
+                        .withValues(alpha: 0.5),
                     borderRadius: const BorderRadius.all(Radius.circular(3))),
               ),
             ),

@@ -24,7 +24,6 @@ class _RcmdPageState extends State<RcmdPage>
     with AutomaticKeepAliveClientMixin {
   final RcmdController _rcmdController = Get.put(RcmdController());
   late Future _futureBuilderFuture;
-  late MediaQueryData _mediaQueryData;
 
   @override
   bool get wantKeepAlive => true;
@@ -52,8 +51,6 @@ class _RcmdPageState extends State<RcmdPage>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // 初始化媒体查询数据
-    _mediaQueryData = MediaQuery.of(context);
     // 初始计算列数
     _rcmdController.updateCrossAxisCount();
   }

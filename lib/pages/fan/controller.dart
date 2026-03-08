@@ -13,7 +13,7 @@ class FansController extends GetxController {
   RxList<FansItemModel> fansList = <FansItemModel>[].obs;
   late int mid;
   late String name;
-  var userInfo;
+  dynamic userInfo;
   RxString loadingText = '加载中...'.obs;
   RxBool isOwner = false.obs;
 

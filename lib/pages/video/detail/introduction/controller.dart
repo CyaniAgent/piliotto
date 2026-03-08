@@ -48,10 +48,9 @@ class VideoIntroController extends GetxController {
   List delMediaIdsNew = [];
   // 关注状态 默认未关注
   RxMap followStatus = {}.obs;
-  int _tempThemeValue = -1;
 
   RxInt lastPlayCid = 0.obs;
-  var userInfo;
+  dynamic userInfo;
 
   // 同时观看
   bool isShowOnlineTotal = false;

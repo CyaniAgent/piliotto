@@ -41,9 +41,10 @@ class HttpError extends StatelessWidget {
                   fn!();
                 },
                 style: ButtonStyle(
-                  backgroundColor: MaterialStateProperty.resolveWith((states) {
+                  backgroundColor: WidgetStateProperty.resolveWith((states) {
                     return Theme.of(context).colorScheme.primary.withAlpha(20);
                   }),
+
                 ),
                 child: Text(
                   btnText ?? '点击重试',

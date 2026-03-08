@@ -232,13 +232,13 @@ class _BangumiInfoState extends State<BangumiInfo> {
                               height: 34,
                               child: IconButton(
                                 style: ButtonStyle(
-                                  padding: MaterialStateProperty.all(
-                                      EdgeInsets.zero),
+                                  padding:
+                                      WidgetStateProperty.all(EdgeInsets.zero),
                                   backgroundColor:
-                                      MaterialStateProperty.resolveWith(
-                                          (Set<MaterialState> states) {
+                                      WidgetStateProperty.resolveWith(
+                                          (Set<WidgetState> states) {
                                     return t.colorScheme.primaryContainer
-                                        .withOpacity(0.7);
+                                        .withValues(alpha: 0.7);
                                   }),
                                 ),
                                 onPressed: () =>
@@ -319,7 +319,7 @@ class _BangumiInfoState extends State<BangumiInfo> {
           if (widget.bangumiDetail!.episodes!.isNotEmpty) ...[
             BangumiPanel(
               pages: widget.bangumiDetail!.episodes!,
-              cid: cid! ?? widget.bangumiDetail!.episodes!.first.cid!,
+              cid: cid ?? widget.bangumiDetail!.episodes!.first.cid!,
               sheetHeight: sheetHeight,
               changeFuc: (bvid, cid, aid, cover) => bangumiIntroController
                   .changeSeasonOrbangu(bvid, cid, aid, cover),

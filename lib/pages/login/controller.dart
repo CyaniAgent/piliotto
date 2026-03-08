@@ -167,7 +167,7 @@ class LoginPageController extends GetxController {
   void getAppMsgCode() async {
     getCaptcha((data) async {
       CaptchaDataModel captchaData = data;
-      var res = await LoginHttp.sendAppSmsCode(
+      await LoginHttp.sendAppSmsCode(
         cid: 86,
         tel: tel,
         token: captchaData.token!,
@@ -175,7 +175,6 @@ class LoginPageController extends GetxController {
         validate: captchaData.validate!,
         seccode: captchaData.seccode!,
       );
-      print(res);
     });
   }
 

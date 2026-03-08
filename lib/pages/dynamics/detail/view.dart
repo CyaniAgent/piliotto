@@ -231,7 +231,7 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
                     border: Border(
                       top: BorderSide(
                         width: 0.6,
-                        color: Theme.of(context).dividerColor.withOpacity(0.05),
+                        color: Theme.of(context).dividerColor.withValues(alpha: 0.05),
                       ),
                     ),
                   ),

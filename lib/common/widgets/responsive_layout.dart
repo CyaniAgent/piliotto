@@ -67,10 +67,10 @@ class ResponsiveGridView extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  _ResponsiveGridViewState createState() => _ResponsiveGridViewState();
+  ResponsiveGridViewState createState() => ResponsiveGridViewState();
 }
 
-class _ResponsiveGridViewState extends State<ResponsiveGridView> {
+class ResponsiveGridViewState extends State<ResponsiveGridView> {
   late RxInt crossAxisCount;
   late StreamSubscription? _subscription;
 
@@ -120,9 +120,6 @@ class _ResponsiveGridViewState extends State<ResponsiveGridView> {
 
   @override
   Widget build(BuildContext context) {
-    double screenWidth = MediaQuery.of(context).size.width;
-    bool isWideScreen = ResponsiveUtil.isMd;
-
     return ResponsiveLayout(
       maxWidth: widget.maxWidth,
       centered: widget.centered,
@@ -159,7 +156,7 @@ class ResponsiveGridItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return SizedBox(
       width: ResponsiveUtil.screenWidth / crossAxisCount,
       child: child,
     );
@@ -188,7 +185,7 @@ class ResponsiveText extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     double fontSize = ResponsiveUtil.getFontSize(baseSize);
-    TextStyle responsiveStyle = (style ?? TextStyle()).copyWith(
+    TextStyle responsiveStyle = (style ?? const TextStyle()).copyWith(
       fontSize: fontSize,
     );
 

@@ -17,7 +17,7 @@ class MemberSearchController extends GetxController {
   int archivePn = 1;
   int archiveCount = 0;
   RxList<VListItemModel> archiveList = <VListItemModel>[].obs;
-  int dynamic_pn = 1;
+  int dynamicPn = 1;
   RxList<VListItemModel> dynamicList = <VListItemModel>[].obs;
 
   int ps = 30;

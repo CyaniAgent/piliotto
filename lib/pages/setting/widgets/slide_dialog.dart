@@ -20,10 +20,10 @@ class SlideDialog<T extends num> extends StatefulWidget {
   });
 
   @override
-  _SlideDialogState<T> createState() => _SlideDialogState<T>();
+  SlideDialogState<T> createState() => SlideDialogState<T>();
 }
 
-class _SlideDialogState<T extends num> extends State<SlideDialog<T>> {
+class SlideDialogState<T extends num> extends State<SlideDialog<T>> {
   late double _tempValue;
 
   @override

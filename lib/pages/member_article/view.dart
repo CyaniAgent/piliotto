@@ -85,7 +85,7 @@ class _MemberArticlePageState extends State<MemberArticlePage> {
                 separatorBuilder: (BuildContext context, int index) {
                   return Divider(
                     height: 10,
-                    color: Theme.of(context).dividerColor.withOpacity(0.15),
+                    color: Theme.of(context).dividerColor.withValues(alpha: 0.15),
                   );
                 },
                 itemBuilder: (BuildContext context, int index) {

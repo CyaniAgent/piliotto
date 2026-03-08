@@ -49,7 +49,7 @@ Future<bool> clearLogs() async {
   try {
     await file.writeAsString('');
   } catch (e) {
-    print('Error clearing file: $e');
+    // 清除文件错误: $e
     return false;
   }
   return true;

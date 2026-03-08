@@ -22,7 +22,7 @@ class LiveCard extends StatelessWidget {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(0),
         side: BorderSide(
-          color: Theme.of(context).dividerColor.withOpacity(0.08),
+          color: Theme.of(context).dividerColor.withValues(alpha: 0.08),
         ),
       ),
       margin: EdgeInsets.zero,

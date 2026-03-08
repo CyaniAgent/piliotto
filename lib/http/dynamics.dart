@@ -30,7 +30,7 @@ class DynamicsHttp {
           'data': DynamicsDataModel.fromJson(res.data['data']),
         };
       } catch (err) {
-        print(err);
+        // 错误处理: $err
         return {
           'status': false,
           'data': [],

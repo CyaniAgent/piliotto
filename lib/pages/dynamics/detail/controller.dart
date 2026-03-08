@@ -100,7 +100,6 @@ class DynamicDetailController extends GetxController {
       case ReplySortType.like:
         _sortType = ReplySortType.time;
         break;
-      default:
     }
     sortTypeTitle.value = _sortType.titles;
     sortTypeLabel.value = _sortType.labels;

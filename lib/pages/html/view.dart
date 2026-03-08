@@ -246,7 +246,7 @@ class _HtmlRenderPageState extends State<HtmlRenderPage>
                                     width: 8,
                                     color: Theme.of(context)
                                         .dividerColor
-                                        .withOpacity(0.05),
+                                        .withValues(alpha: 0.05),
                                   ),
                                 ),
                               ),
@@ -272,7 +272,7 @@ class _HtmlRenderPageState extends State<HtmlRenderPage>
                                 width: 0.6,
                                 color: Theme.of(context)
                                     .dividerColor
-                                    .withOpacity(0.05),
+                                    .withValues(alpha: 0.05),
                               ),
                             ),
                           ),

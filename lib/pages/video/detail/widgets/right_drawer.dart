@@ -14,6 +14,6 @@ class _RightDrawerState extends State<RightDrawer> {
         shadowColor: Colors.transparent,
         elevation: 0,
         backgroundColor:
-            Theme.of(context).colorScheme.surface.withOpacity(0.8));
+            Theme.of(context).colorScheme.surface.withValues(alpha: 0.8));
   }
 }

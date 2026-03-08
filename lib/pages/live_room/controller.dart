@@ -193,7 +193,7 @@ class LiveRoomController extends GetxController {
             LiveUtils.decodeMessage(message);
         if (liveMsg != null && liveMsg.isNotEmpty) {
           if (liveMsg.first.type == LiveMessageType.online) {
-            print('当前直播间人气：${liveMsg.first.data}');
+            // 当前直播间人气：${liveMsg.first.data}
           } else if (liveMsg.first.type == LiveMessageType.join ||
               liveMsg.first.type == LiveMessageType.follow) {
             // 每隔一秒依次liveMsg中的每一项赋给activeUserName
@@ -243,7 +243,7 @@ class LiveRoomController extends GetxController {
         }
       },
       onErrorCb: (e) {
-        print('error: $e');
+        // 错误处理: $e
       },
     );
     await plSocket?.connect();

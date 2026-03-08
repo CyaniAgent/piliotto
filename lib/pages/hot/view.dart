@@ -6,7 +6,6 @@ import 'package:get/get.dart';
 import 'package:piliotto/common/constants.dart';
 import 'package:piliotto/common/skeleton/video_card_h.dart';
 import 'package:piliotto/common/widgets/http_error.dart';
-import 'package:piliotto/common/widgets/responsive_layout.dart';
 import 'package:piliotto/common/widgets/video_card_h.dart';
 import 'package:piliotto/pages/hot/controller.dart';
 import 'package:piliotto/utils/main_stream.dart';
@@ -24,7 +23,6 @@ class _HotPageState extends State<HotPage> with AutomaticKeepAliveClientMixin {
   List videoList = [];
   Future? _futureBuilderFuture;
   late ScrollController scrollController;
-  late MediaQueryData _mediaQueryData;
 
   @override
   bool get wantKeepAlive => true;
@@ -51,8 +49,6 @@ class _HotPageState extends State<HotPage> with AutomaticKeepAliveClientMixin {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // 初始化媒体查询数据
-    _mediaQueryData = MediaQuery.of(context);
     // 初始计算列数
     _hotController.updateCrossAxisCount();
   }

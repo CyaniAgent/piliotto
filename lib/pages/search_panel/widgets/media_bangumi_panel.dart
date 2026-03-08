@@ -1,12 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
-import 'package:get/get.dart';
+
 import 'package:piliotto/common/constants.dart';
 import 'package:piliotto/common/widgets/badge.dart';
 import 'package:piliotto/common/widgets/network_img_layer.dart';
-import 'package:piliotto/http/search.dart';
-import 'package:piliotto/models/bangumi/info.dart';
-import 'package:piliotto/models/common/search_type.dart';
+
 import 'package:piliotto/utils/route_push.dart';
 import 'package:piliotto/utils/utils.dart';
 

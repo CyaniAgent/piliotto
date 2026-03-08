@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
@@ -21,8 +22,8 @@ class ProfilePanel extends StatelessWidget {
     return Builder(
       builder: ((context) {
         return Padding(
-          padding:
-              EdgeInsets.only(top: MediaQuery.of(context).padding.top - 20),
+          padding: EdgeInsets.only(
+              top: max(0.0, MediaQuery.of(context).padding.top - 20)),
           child: Row(
             children: [
               Hero(

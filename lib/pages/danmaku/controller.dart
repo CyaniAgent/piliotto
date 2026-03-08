@@ -21,7 +21,7 @@ class PlDanmakuController {
     try {
       queryDanmaku(calcSegment(progress));
     } catch (e) {
-      print(e);
+      // 错误处理: $e
     }
   }
 

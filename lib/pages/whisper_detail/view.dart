@@ -200,7 +200,7 @@ class _WhisperDetailPageState extends State<WhisperDetailPage>
                                   itemBuilder: (_, int i) {
                                     return ChatItem(
                                       item: messageList[i],
-                                      e_infos: _whisperDetailController.eInfos,
+                                      eInfos: _whisperDetailController.eInfos,
                                       ctr: _whisperDetailController,
                                     );
                                   },
@@ -238,7 +238,7 @@ class _WhisperDetailPageState extends State<WhisperDetailPage>
                 border: Border(
                   top: BorderSide(
                     width: 1,
-                    color: Colors.grey.withOpacity(0.15),
+                    color: Colors.grey.withValues(alpha: 0.15),
                   ),
                 ),
               ),
@@ -268,7 +268,7 @@ class _WhisperDetailPageState extends State<WhisperDetailPage>
                         color: Theme.of(context)
                             .colorScheme
                             .outline
-                            .withOpacity(0.05),
+                            .withValues(alpha: 0.05),
                         borderRadius: BorderRadius.circular(40.0),
                       ),
                       child: TextField(

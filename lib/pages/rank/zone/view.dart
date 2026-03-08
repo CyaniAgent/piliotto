@@ -9,7 +9,6 @@ import 'package:piliotto/common/widgets/http_error.dart';
 import 'package:piliotto/common/widgets/video_card_h.dart';
 import 'package:piliotto/pages/rank/zone/index.dart';
 import 'package:piliotto/utils/main_stream.dart';
-import 'package:piliotto/utils/responsive_util.dart';
 
 class ZonePage extends StatefulWidget {
   const ZonePage({Key? key, required this.rid}) : super(key: key);

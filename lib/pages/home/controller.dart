@@ -18,7 +18,7 @@ class HomeController extends GetxController with GetTickerProviderStateMixin {
   Box settingStorage = GStrorage.setting;
   RxBool userLogin = false.obs;
   RxString userFace = ''.obs;
-  var userInfo;
+  dynamic userInfo;
   Box setting = GStrorage.setting;
   late final StreamController<bool> searchBarStream =
       StreamController<bool>.broadcast();

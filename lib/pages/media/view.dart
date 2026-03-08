@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:piliotto/common/widgets/network_img_layer.dart';
 import 'package:piliotto/models/user/fav_folder.dart';
@@ -102,7 +101,7 @@ class _MediaPageState extends State<MediaPage>
       children: [
         Divider(
           height: 35,
-          color: Theme.of(context).dividerColor.withOpacity(0.1),
+          color: Theme.of(context).dividerColor.withValues(alpha: 0.1),
         ),
         ListTile(
           onTap: () => Get.toNamed('/fav'),
@@ -178,15 +177,15 @@ class _MediaPageState extends State<MediaPage>
                                   child: Center(
                                     child: IconButton(
                                       style: ButtonStyle(
-                                        padding: MaterialStateProperty.all(
+                                        padding: WidgetStateProperty.all(
                                             EdgeInsets.zero),
                                         backgroundColor:
-                                            MaterialStateProperty.resolveWith(
+                                            WidgetStateProperty.resolveWith(
                                                 (states) {
                                           return Theme.of(context)
                                               .colorScheme
                                               .primaryContainer
-                                              .withOpacity(0.5);
+                                              .withValues(alpha: 0.5 * 255);
                                         }),
                                       ),
                                       onPressed: () => Get.toNamed('/fav'),

@@ -4,15 +4,12 @@ import 'dart:io';
 import 'package:extended_nested_scroll_view/extended_nested_scroll_view.dart';
 import 'package:floating/floating.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:flutter_svg/svg.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
 import 'package:lottie/lottie.dart';
 import 'package:piliotto/common/widgets/network_img_layer.dart';
-import 'package:piliotto/http/user.dart';
 import 'package:piliotto/models/common/search_type.dart';
 import 'package:piliotto/pages/bangumi/introduction/index.dart';
 import 'package:piliotto/pages/danmaku/view.dart';
@@ -20,7 +17,7 @@ import 'package:piliotto/pages/main/index.dart';
 import 'package:piliotto/pages/video/detail/reply/index.dart';
 import 'package:piliotto/pages/video/detail/controller.dart';
 import 'package:piliotto/pages/video/detail/introduction/index.dart';
-import 'package:piliotto/pages/video/detail/related/index.dart';
+
 import 'package:piliotto/plugin/pl_player/index.dart';
 import 'package:piliotto/plugin/pl_player/models/play_repeat.dart';
 import 'package:piliotto/services/service_locator.dart';
@@ -30,8 +27,8 @@ import 'package:universal_platform/universal_platform.dart';
 
 import '../../../plugin/pl_player/models/bottom_control_type.dart';
 import '../../../services/shutdown_timer_service.dart';
+
 import 'widgets/app_bar.dart';
-import 'widgets/header_control.dart';
 
 class VideoDetailPage extends StatefulWidget {
   const VideoDetailPage({Key? key}) : super(key: key);
@@ -226,7 +223,7 @@ class _VideoDetailPageState extends State<VideoDetailPage>
         statusHeight = await StatusBarControl.getHeight;
       } catch (e) {
         // 捕获异常，避免初始化失败
-        print('StatusBarControl error: $e');
+        // StatusBarControl 错误: $e
         statusHeight = 0;
       }
     } else {
@@ -392,6 +389,24 @@ class _VideoDetailPageState extends State<VideoDetailPage>
     );
   }
 
+  /// 自定义AppBar
+  Widget buildCustomAppBar() {
+    return AppBar(
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+      leading: IconButton(
+        onPressed: () => Get.back(),
+        icon: const Icon(Icons.arrow_back, color: Colors.white),
+      ),
+      actions: [
+        IconButton(
+          onPressed: () {},
+          icon: const Icon(Icons.more_vert, color: Colors.white),
+        ),
+      ],
+    );
+  }
+
   /// tabbar
   Widget tabbarBuild() {
     return Container(
@@ -401,7 +416,7 @@ class _VideoDetailPageState extends State<VideoDetailPage>
         border: Border(
           bottom: BorderSide(
             width: 1,
-            color: Theme.of(context).dividerColor.withOpacity(0.1),
+            color: Theme.of(context).dividerColor.withValues(alpha: 0.1),
           ),
         ),
       ),
@@ -444,7 +459,7 @@ class _VideoDetailPageState extends State<VideoDetailPage>
                       height: 32,
                       child: TextButton(
                         style: ButtonStyle(
-                          padding: MaterialStateProperty.all(EdgeInsets.zero),
+                          padding: WidgetStateProperty.all(EdgeInsets.zero),
                         ),
                         onPressed: () => vdCtr.showShootDanmakuSheet(),
                         child:
@@ -503,17 +518,15 @@ class _VideoDetailPageState extends State<VideoDetailPage>
   @override
   Widget build(BuildContext context) {
     final sizeContext = MediaQuery.sizeOf(context);
-    final _context = MediaQuery.of(context);
+    final mediaQuery = MediaQuery.of(context);
     late double defaultVideoHeight = sizeContext.width * 9 / 16;
     late RxDouble videoHeight = defaultVideoHeight.obs;
     final double pinnedHeaderHeight =
         statusBarHeight + kToolbarHeight + videoHeight.value;
     // ignore: no_leading_underscores_for_local_identifiers
 
-    // 竖屏
-    final bool isPortrait = _context.orientation == Orientation.portrait;
     // 横屏
-    final bool isLandscape = _context.orientation == Orientation.landscape;
+    final bool isLandscape = mediaQuery.orientation == Orientation.landscape;
     final Rx<bool> isFullScreen = plPlayerController?.isFullScreen ?? false.obs;
     // 全屏时高度撑满
     if (isLandscape || isFullScreen.value == true) {
@@ -523,6 +536,9 @@ class _VideoDetailPageState extends State<VideoDetailPage>
       videoHeight.value = defaultVideoHeight;
       exitFullScreen();
     }
+
+    // 宽屏判断
+    final bool isWideScreen = Get.size.width > 768;
 
     Widget buildLoadingWidget() {
       return Center(child: Lottie.asset('assets/loading.json', width: 200));
@@ -596,309 +612,544 @@ class _VideoDetailPageState extends State<VideoDetailPage>
       );
     }
 
-    Widget childWhenDisabled = SafeArea(
-      top: MediaQuery.of(context).orientation == Orientation.portrait &&
-          plPlayerController?.isFullScreen.value == true,
-      bottom: MediaQuery.of(context).orientation == Orientation.portrait &&
-          plPlayerController?.isFullScreen.value == true,
-      left: false,
-      right: false,
-      child: Stack(
-        children: [
-          Scaffold(
-            resizeToAvoidBottomInset: false,
-            key: vdCtr.scaffoldKey,
-            appBar: PreferredSize(
-              preferredSize: const Size.fromHeight(0),
-              child: StreamBuilder(
-                stream: appbarStream.stream.distinct(),
-                initialData: 0,
-                builder: ((context, snapshot) {
-                  return AppBar(
-                    backgroundColor: Colors.black,
-                    elevation: 0,
-                    scrolledUnderElevation: 0,
-                    systemOverlayStyle: Get.isDarkMode
-                        ? SystemUiOverlayStyle.light
-                        : snapshot.data!.toDouble() > kToolbarHeight
-                            ? SystemUiOverlayStyle.dark
-                            : SystemUiOverlayStyle.light,
-                  );
-                }),
-              ),
+    /// 右侧内容面板
+    Widget buildRightContentPanel() {
+      return CustomScrollView(
+        slivers: <Widget>[
+          SliverToBoxAdapter(
+            child: tabbarBuild(),
+          ),
+          SliverFillRemaining(
+            child: TabBarView(
+              controller: vdCtr.tabCtr,
+              children: <Widget>[
+                Builder(
+                  builder: (BuildContext context) {
+                    return CustomScrollView(
+                      key: const PageStorageKey<String>('简介'),
+                      slivers: <Widget>[
+                        if (vdCtr.videoType == SearchType.video) ...[
+                          VideoIntroPanel(bvid: vdCtr.bvid),
+                        ] else if (vdCtr.videoType ==
+                            SearchType.media_bangumi) ...[
+                          Obx(() => BangumiIntroPanel(cid: vdCtr.cid.value)),
+                        ],
+                        SliverToBoxAdapter(
+                          child: Divider(
+                            indent: 16,
+                            endIndent: 16,
+                            color: Theme.of(context)
+                                .dividerColor
+                                .withValues(alpha: 0.1),
+                          ),
+                        ),
+                      ],
+                    );
+                  },
+                ),
+                Obx(
+                  () => VideoReplyPanel(
+                    bvid: vdCtr.bvid,
+                    oid: vdCtr.oid.value,
+                    onControllerCreated: vdCtr.onControllerCreated,
+                  ),
+                )
+              ],
             ),
-            body: ExtendedNestedScrollView(
-              controller: _extendNestCtr,
-              headerSliverBuilder:
-                  (BuildContext context2, bool innerBoxIsScrolled) {
-                return <Widget>[
-                  Obx(
-                    () {
-                      final Orientation orientation =
-                          MediaQuery.of(context).orientation;
-                      final bool isFullScreen =
-                          plPlayerController?.isFullScreen.value == true;
-                      final double expandedHeight =
-                          orientation == Orientation.landscape || isFullScreen
-                              ? (MediaQuery.sizeOf(context).height -
-                                  (orientation == Orientation.landscape
-                                      ? 0
-                                      : MediaQuery.of(context).padding.top))
-                              : videoHeight.value;
-                      if (orientation == Orientation.landscape ||
-                          isFullScreen) {
-                        enterFullScreen();
-                      } else {
-                        exitFullScreen();
-                      }
-                      return SliverAppBar(
-                        automaticallyImplyLeading: false,
-                        pinned: true,
-                        elevation: 0,
-                        scrolledUnderElevation: 0,
-                        forceElevated: innerBoxIsScrolled,
-                        expandedHeight: expandedHeight,
-                        backgroundColor: Colors.black,
-                        flexibleSpace: FlexibleSpaceBar(
-                          background: PopScope(
-                            canPop:
-                                plPlayerController?.isFullScreen.value != true,
-                            onPopInvoked: (bool didPop) {
-                              if (plPlayerController?.isFullScreen.value ==
-                                  true) {
-                                plPlayerController!
-                                    .triggerFullScreen(status: false);
-                              }
-                              if (MediaQuery.of(context).orientation ==
-                                  Orientation.landscape) {
-                                verticalScreen();
-                              }
-                            },
-                            child: LayoutBuilder(
-                              builder: (BuildContext context,
-                                  BoxConstraints constraints) {
-                                return Hero(
-                                  tag: heroTag,
-                                  child: Stack(
-                                    children: <Widget>[
-                                      Obx(
-                                        () => isShowing.value
-                                            ? buildVideoPlayerPanel()
-                                            : const SizedBox(),
-                                      ),
+          ),
+        ],
+      );
+    }
 
-                                      /// 关闭自动播放时 手动播放
-                                      Obx(
-                                        () => Visibility(
-                                          visible: !vdCtr.autoPlay.value &&
-                                              vdCtr.isShowCover.value,
-                                          child: Positioned(
-                                            top: 0,
-                                            left: 0,
-                                            right: 0,
-                                            child: handlePlayPanel(),
+    /// 窄屏布局
+    Widget buildNarrowScreenLayout() {
+      return SafeArea(
+        top: MediaQuery.of(context).orientation == Orientation.portrait &&
+            plPlayerController?.isFullScreen.value == true,
+        bottom: MediaQuery.of(context).orientation == Orientation.portrait &&
+            plPlayerController?.isFullScreen.value == true,
+        left: false,
+        right: false,
+        child: Stack(
+          children: [
+            Scaffold(
+              resizeToAvoidBottomInset: false,
+              key: vdCtr.scaffoldKey,
+              backgroundColor: Theme.of(context).colorScheme.surface,
+              appBar: PreferredSize(
+                preferredSize: const Size.fromHeight(0),
+                child: StreamBuilder(
+                  stream: appbarStream.stream.distinct(),
+                  initialData: 0,
+                  builder: ((context, snapshot) {
+                    return AppBar(
+                      backgroundColor: Colors.black,
+                      elevation: 0,
+                      scrolledUnderElevation: 0,
+                      systemOverlayStyle: Get.isDarkMode
+                          ? SystemUiOverlayStyle.light
+                          : snapshot.data!.toDouble() > kToolbarHeight
+                              ? SystemUiOverlayStyle.dark
+                              : SystemUiOverlayStyle.light,
+                    );
+                  }),
+                ),
+              ),
+              body: ExtendedNestedScrollView(
+                controller: _extendNestCtr,
+                headerSliverBuilder:
+                    (BuildContext context2, bool innerBoxIsScrolled) {
+                  return <Widget>[
+                    Obx(
+                      () {
+                        final Orientation orientation =
+                            MediaQuery.of(context).orientation;
+                        final bool isFullScreen =
+                            plPlayerController?.isFullScreen.value == true;
+                        final double expandedHeight =
+                            orientation == Orientation.landscape || isFullScreen
+                                ? (MediaQuery.sizeOf(context).height -
+                                    (orientation == Orientation.landscape
+                                        ? 0
+                                        : MediaQuery.of(context).padding.top))
+                                : videoHeight.value;
+                        if (orientation == Orientation.landscape ||
+                            isFullScreen) {
+                          enterFullScreen();
+                        } else {
+                          exitFullScreen();
+                        }
+                        return SliverAppBar(
+                          automaticallyImplyLeading: false,
+                          pinned: true,
+                          elevation: 0,
+                          scrolledUnderElevation: 0,
+                          forceElevated: innerBoxIsScrolled,
+                          expandedHeight: expandedHeight,
+                          backgroundColor: Colors.black,
+                          flexibleSpace: FlexibleSpaceBar(
+                            background: PopScope(
+                              canPop: plPlayerController?.isFullScreen.value !=
+                                  true,
+                              onPopInvokedWithResult:
+                                  (bool didPop, dynamic result) {
+                                if (plPlayerController?.isFullScreen.value ==
+                                    true) {
+                                  plPlayerController!
+                                      .triggerFullScreen(status: false);
+                                }
+                                if (MediaQuery.of(context).orientation ==
+                                    Orientation.landscape) {
+                                  verticalScreen();
+                                }
+                              },
+                              child: LayoutBuilder(
+                                builder: (BuildContext context,
+                                    BoxConstraints constraints) {
+                                  return Hero(
+                                    tag: heroTag,
+                                    child: Stack(
+                                      children: <Widget>[
+                                        Obx(
+                                          () => isShowing.value
+                                              ? buildVideoPlayerPanel()
+                                              : const SizedBox(),
+                                        ),
+
+                                        /// 关闭自动播放时 手动播放
+                                        Obx(
+                                          () => Visibility(
+                                            visible: !vdCtr.autoPlay.value &&
+                                                vdCtr.isShowCover.value,
+                                            child: Positioned(
+                                              top: 0,
+                                              left: 0,
+                                              right: 0,
+                                              child: handlePlayPanel(),
+                                            ),
                                           ),
                                         ),
-                                      ),
-                                    ],
-                                  ),
-                                );
-                              },
+                                      ],
+                                    ),
+                                  );
+                                },
+                              ),
                             ),
                           ),
-                        ),
-                      );
-                    },
-                  ),
-                ];
-              },
-
-              /// 不收回
-              pinnedHeaderSliverHeightBuilder: () {
-                return MediaQuery.of(context).orientation ==
-                            Orientation.landscape ||
-                        plPlayerController?.isFullScreen.value == true
-                    ? MediaQuery.sizeOf(context).height
-                    : playerStatus.value != PlayerStatus.playing
-                        ? kToolbarHeight
-                        : pinnedHeaderHeight;
-              },
-              onlyOneScrollInBody: true,
-              body: Column(
-                children: [
-                  tabbarBuild(),
-                  Expanded(
-                    child: TabBarView(
-                      controller: vdCtr.tabCtr,
-                      children: <Widget>[
-                        Builder(
-                          builder: (BuildContext context) {
-                            return CustomScrollView(
-                              key: const PageStorageKey<String>('简介'),
-                              slivers: <Widget>[
-                                if (vdCtr.videoType == SearchType.video) ...[
-                                  VideoIntroPanel(bvid: vdCtr.bvid),
-                                ] else if (vdCtr.videoType ==
-                                    SearchType.media_bangumi) ...[
-                                  Obx(() =>
-                                      BangumiIntroPanel(cid: vdCtr.cid.value)),
-                                ],
-                                SliverToBoxAdapter(
-                                  child: Divider(
-                                    indent: 12,
-                                    endIndent: 12,
-                                    color: Theme.of(context)
-                                        .dividerColor
-                                        .withOpacity(0.06),
-                                  ),
-                                ),
-                                if (vdCtr.videoType == SearchType.video &&
-                                    vdCtr.enableRelatedVideo)
-                                  const RelatedVideoPanel(),
-                              ],
-                            );
-                          },
-                        ),
-                        Obx(
-                          () => VideoReplyPanel(
-                            bvid: vdCtr.bvid,
-                            oid: vdCtr.oid.value,
-                            onControllerCreated: vdCtr.onControllerCreated,
-                          ),
-                        )
-                      ],
+                        );
+                      },
                     ),
-                  ),
-                ],
+                  ];
+                },
+
+                /// 不收回
+                pinnedHeaderSliverHeightBuilder: () {
+                  return MediaQuery.of(context).orientation ==
+                              Orientation.landscape ||
+                          plPlayerController?.isFullScreen.value == true
+                      ? MediaQuery.sizeOf(context).height
+                      : playerStatus.value != PlayerStatus.playing
+                          ? kToolbarHeight
+                          : pinnedHeaderHeight;
+                },
+                onlyOneScrollInBody: true,
+                body: Column(
+                  children: [
+                    tabbarBuild(),
+                    Expanded(
+                      child: TabBarView(
+                        controller: vdCtr.tabCtr,
+                        children: <Widget>[
+                          Builder(
+                            builder: (BuildContext context) {
+                              return CustomScrollView(
+                                key: const PageStorageKey<String>('简介'),
+                                slivers: <Widget>[
+                                  if (vdCtr.videoType == SearchType.video) ...[
+                                    VideoIntroPanel(bvid: vdCtr.bvid),
+                                  ] else if (vdCtr.videoType ==
+                                      SearchType.media_bangumi) ...[
+                                    Obx(() => BangumiIntroPanel(
+                                        cid: vdCtr.cid.value)),
+                                  ],
+                                  SliverToBoxAdapter(
+                                    child: Divider(
+                                      indent: 12,
+                                      endIndent: 12,
+                                      color: Theme.of(context)
+                                          .dividerColor
+                                          .withValues(alpha: 0.06),
+                                    ),
+                                  ),
+                                ],
+                              );
+                            },
+                          ),
+                          Obx(
+                            () => VideoReplyPanel(
+                              bvid: vdCtr.bvid,
+                              oid: vdCtr.oid.value,
+                              onControllerCreated: vdCtr.onControllerCreated,
+                            ),
+                          )
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
 
-          /// 重新进入会刷新
-          // 播放完成/暂停播放
-          StreamBuilder(
-            stream: appbarStream.stream.distinct(),
-            initialData: 0,
-            builder: ((context, snapshot) {
-              return ScrollAppBar(
-                snapshot.data!.toDouble(),
-                () => continuePlay(),
-                playerStatus.value,
-                null,
-              );
-            }),
-          ),
+            /// 重新进入会刷新
+            // 播放完成/暂停播放
+            StreamBuilder(
+              stream: appbarStream.stream.distinct(),
+              initialData: 0,
+              builder: ((context, snapshot) {
+                return ScrollAppBar(
+                  snapshot.data!.toDouble(),
+                  () => continuePlay(),
+                  playerStatus.value,
+                  null,
+                );
+              }),
+            ),
 
-          /// 稍后再看列表
-          Obx(
-            () => Visibility(
-              visible: vdCtr.sourceType.value == 'watchLater' ||
-                  vdCtr.sourceType.value == 'fav',
-              child: AnimatedPositioned(
-                duration: const Duration(milliseconds: 400),
-                curve: Curves.easeInOut,
-                left: 12,
-                bottom: vdCtr.isWatchLaterVisible.value
-                    ? MediaQuery.of(context).padding.bottom + 12
-                    : -100,
-                child: Material(
-                  color: Colors.transparent,
-                  child: InkWell(
-                    onTap: () {
-                      vdCtr.toggeleWatchLaterVisible(
-                          !vdCtr.isWatchLaterVisible.value);
-                      vdCtr.showMediaListPanel();
-                    },
-                    borderRadius: const BorderRadius.all(Radius.circular(14)),
-                    child: Container(
-                      width: Get.width - 24,
-                      height: 54,
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      decoration: BoxDecoration(
-                        color: Theme.of(context)
-                            .colorScheme
-                            .secondaryContainer
-                            .withOpacity(0.95),
-                        borderRadius:
-                            const BorderRadius.all(Radius.circular(14)),
-                      ),
-                      child: Row(children: [
-                        const Icon(Icons.playlist_play, size: 24),
-                        const SizedBox(width: 10),
-                        Text(
-                          vdCtr.watchLaterTitle.value,
-                          style: TextStyle(
-                            color: Theme.of(context)
-                                .colorScheme
-                                .onSecondaryContainer,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: 0.2,
-                          ),
+            /// 稍后再看列表
+            Obx(
+              () => Visibility(
+                visible: vdCtr.sourceType.value == 'watchLater' ||
+                    vdCtr.sourceType.value == 'fav',
+                child: AnimatedPositioned(
+                  duration: const Duration(milliseconds: 400),
+                  curve: Curves.easeInOut,
+                  left: 32,
+                  bottom: vdCtr.isWatchLaterVisible.value
+                      ? MediaQuery.of(context).padding.bottom + 32
+                      : -100,
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: () {
+                        vdCtr.toggeleWatchLaterVisible(
+                            !vdCtr.isWatchLaterVisible.value);
+                        vdCtr.showMediaListPanel();
+                      },
+                      borderRadius: const BorderRadius.all(Radius.circular(14)),
+                      child: Container(
+                        width: Get.size.width - 64,
+                        height: 54,
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context)
+                              .colorScheme
+                              .secondaryContainer
+                              .withValues(alpha: 0.95),
+                          borderRadius:
+                              const BorderRadius.all(Radius.circular(14)),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.1),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
                         ),
-                        const Spacer(),
-                        const Icon(Icons.keyboard_arrow_up_rounded, size: 26),
-                      ]),
+                        child: Row(children: [
+                          const Icon(Icons.playlist_play, size: 24),
+                          const SizedBox(width: 10),
+                          Text(
+                            vdCtr.watchLaterTitle.value,
+                            style: TextStyle(
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSecondaryContainer,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 0.2,
+                            ),
+                          ),
+                          const Spacer(),
+                          const Icon(Icons.keyboard_arrow_up_rounded, size: 26),
+                        ]),
+                      ),
                     ),
                   ),
                 ),
               ),
             ),
-          )
-        ],
-      ),
-    );
-
-    if (Platform.isAndroid) {
-      return PiPSwitcher(
-        childWhenDisabled: childWhenDisabled,
-        childWhenEnabled: buildVideoPlayerPanel(),
-        floating: floating,
-      );
-    } else {
-      return childWhenDisabled;
-    }
-  }
-
-  Widget buildCustomAppBar() {
-    return AppBar(
-      backgroundColor: Colors.transparent, // 使背景透明
-      foregroundColor: Colors.white,
-      elevation: 0,
-      scrolledUnderElevation: 0,
-      primary: false,
-      centerTitle: false,
-      automaticallyImplyLeading: false,
-      titleSpacing: 0,
-      title: Container(
-        height: kToolbarHeight,
-        padding: const EdgeInsets.symmetric(horizontal: 14),
-        decoration: const BoxDecoration(
-            gradient: LinearGradient(
-          begin: Alignment.bottomCenter,
-          end: Alignment.topCenter,
-          colors: <Color>[
-            Colors.transparent,
-            Colors.black54,
           ],
-          tileMode: TileMode.mirror,
-        )),
-        child: Row(
+        ),
+      );
+    }
+
+    /// 宽屏布局
+    Widget buildWideScreenLayout() {
+      return SafeArea(
+        top: MediaQuery.of(context).orientation == Orientation.portrait &&
+            plPlayerController?.isFullScreen.value == true,
+        bottom: MediaQuery.of(context).orientation == Orientation.portrait &&
+            plPlayerController?.isFullScreen.value == true,
+        left: false,
+        right: false,
+        child: Stack(
           children: [
-            ComBtn(
-              icon: const Icon(FontAwesomeIcons.arrowLeft, size: 15),
-              fuc: () => Get.back(),
+            Scaffold(
+              resizeToAvoidBottomInset: false,
+              key: vdCtr.scaffoldKey,
+              backgroundColor: Theme.of(context).colorScheme.surface,
+              appBar: PreferredSize(
+                preferredSize: const Size.fromHeight(0),
+                child: StreamBuilder(
+                  stream: appbarStream.stream.distinct(),
+                  initialData: 0,
+                  builder: ((context, snapshot) {
+                    return AppBar(
+                      backgroundColor: Colors.black,
+                      elevation: 0,
+                      scrolledUnderElevation: 0,
+                      systemOverlayStyle: Get.isDarkMode
+                          ? SystemUiOverlayStyle.light
+                          : snapshot.data!.toDouble() > kToolbarHeight
+                              ? SystemUiOverlayStyle.dark
+                              : SystemUiOverlayStyle.light,
+                    );
+                  }),
+                ),
+              ),
+              body: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // 左侧播放器
+                  Expanded(
+                    flex: 2,
+                    child: CustomScrollView(
+                      slivers: [
+                        Obx(
+                          () {
+                            final Orientation orientation =
+                                MediaQuery.of(context).orientation;
+                            final bool isFullScreen =
+                                plPlayerController?.isFullScreen.value == true;
+                            final double expandedHeight = orientation ==
+                                        Orientation.landscape ||
+                                    isFullScreen
+                                ? (MediaQuery.sizeOf(context).height -
+                                    (orientation == Orientation.landscape
+                                        ? 0
+                                        : MediaQuery.of(context).padding.top))
+                                : videoHeight.value;
+                            if (orientation == Orientation.landscape ||
+                                isFullScreen) {
+                              enterFullScreen();
+                            } else {
+                              exitFullScreen();
+                            }
+                            return SliverAppBar(
+                              automaticallyImplyLeading: false,
+                              pinned: true,
+                              elevation: 0,
+                              scrolledUnderElevation: 0,
+                              forceElevated: false,
+                              expandedHeight: expandedHeight,
+                              backgroundColor: Colors.black,
+                              flexibleSpace: FlexibleSpaceBar(
+                                background: PopScope(
+                                  canPop:
+                                      plPlayerController?.isFullScreen.value !=
+                                          true,
+                                  onPopInvokedWithResult:
+                                      (bool didPop, dynamic result) {
+                                    if (plPlayerController
+                                            ?.isFullScreen.value ==
+                                        true) {
+                                      plPlayerController!
+                                          .triggerFullScreen(status: false);
+                                    }
+                                    if (MediaQuery.of(context).orientation ==
+                                        Orientation.landscape) {
+                                      verticalScreen();
+                                    }
+                                  },
+                                  child: LayoutBuilder(
+                                    builder: (BuildContext context,
+                                        BoxConstraints constraints) {
+                                      return Hero(
+                                        tag: heroTag,
+                                        child: Stack(
+                                          children: <Widget>[
+                                            Obx(
+                                              () => isShowing.value
+                                                  ? buildVideoPlayerPanel()
+                                                  : const SizedBox(),
+                                            ),
+
+                                            /// 关闭自动播放时 手动播放
+                                            Obx(
+                                              () => Visibility(
+                                                visible:
+                                                    !vdCtr.autoPlay.value &&
+                                                        vdCtr.isShowCover.value,
+                                                child: Positioned(
+                                                  top: 0,
+                                                  left: 0,
+                                                  right: 0,
+                                                  child: handlePlayPanel(),
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                  // 右侧内容区
+                  Expanded(
+                    flex: 1,
+                    child: Container(
+                      padding: EdgeInsets.zero,
+                      child: Column(
+                        children: [
+                          Expanded(
+                            child: buildRightContentPanel(),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
-            const Spacer(),
-            ComBtn(
-              icon: const Icon(Icons.history_outlined, size: 22),
-              fuc: () async {
-                var res = await UserHttp.toViewLater(bvid: vdCtr.bvid);
-                SmartDialog.showToast(res['msg']);
-              },
+
+            /// 重新进入会刷新
+            // 播放完成/暂停播放
+            StreamBuilder(
+              stream: appbarStream.stream.distinct(),
+              initialData: 0,
+              builder: ((context, snapshot) {
+                return ScrollAppBar(
+                  snapshot.data!.toDouble(),
+                  () => continuePlay(),
+                  playerStatus.value,
+                  null,
+                );
+              }),
+            ),
+
+            /// 稍后再看列表
+            Obx(
+              () => Visibility(
+                visible: vdCtr.sourceType.value == 'watchLater' ||
+                    vdCtr.sourceType.value == 'fav',
+                child: AnimatedPositioned(
+                  duration: const Duration(milliseconds: 400),
+                  curve: Curves.easeInOut,
+                  left: 32,
+                  bottom: vdCtr.isWatchLaterVisible.value
+                      ? MediaQuery.of(context).padding.bottom + 32
+                      : -100,
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: () {
+                        vdCtr.toggeleWatchLaterVisible(
+                            !vdCtr.isWatchLaterVisible.value);
+                        vdCtr.showMediaListPanel();
+                      },
+                      borderRadius: const BorderRadius.all(Radius.circular(14)),
+                      child: Container(
+                        width: (Get.size.width * 2 / 3) - 64,
+                        height: 54,
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context)
+                              .colorScheme
+                              .secondaryContainer
+                              .withValues(alpha: 0.95),
+                          borderRadius:
+                              const BorderRadius.all(Radius.circular(14)),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.1),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: Row(children: [
+                          const Icon(Icons.playlist_play, size: 24),
+                          const SizedBox(width: 10),
+                          Text(
+                            vdCtr.watchLaterTitle.value,
+                            style: TextStyle(
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSecondaryContainer,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 0.2,
+                            ),
+                          ),
+                          const Spacer(),
+                          const Icon(Icons.keyboard_arrow_up_rounded, size: 26),
+                        ]),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
             ),
           ],
         ),
-      ),
-    );
+      );
+    }
+
+    return isWideScreen ? buildWideScreenLayout() : buildNarrowScreenLayout();
   }
 }

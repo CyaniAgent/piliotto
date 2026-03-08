@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+
 import 'package:get/get.dart';
 import 'package:hive/hive.dart';
 import 'package:piliotto/common/widgets/http_error.dart';
@@ -100,7 +100,7 @@ class _FavPanelState extends State<FavPanel> {
         ),
         Divider(
           height: 1,
-          color: Theme.of(context).disabledColor.withOpacity(0.08),
+          color: Theme.of(context).disabledColor.withValues(alpha: 0.08),
         ),
         Padding(
           padding: EdgeInsets.only(

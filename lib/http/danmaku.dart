@@ -37,7 +37,7 @@ class DanmakaHttp {
     int? pool, // 弹幕池选择（0：普通池 1：字幕池 2：特殊池（代码/BAS弹幕）默认普通池，0）
     //int? rnd,// 当前时间戳*1000000（若无此项，则发送弹幕冷却时间限制为90s；若有此项，则发送弹幕冷却时间限制为5s）
     int? colorful, //60001：专属渐变彩色（需要会员）
-    int? checkbox_type, //是否带 UP 身份标识（0：普通；4：带有标识）
+    int? checkboxType, //是否带 UP 身份标识（0：普通；4：带有标识）
     // String? csrf,//CSRF Token（位于 Cookie）	Cookie 方式必要
     // String? access_key,//	APP 登录 Token		APP 方式必要
   }) async {
@@ -59,7 +59,7 @@ class DanmakaHttp {
       'pool': pool,
       'rnd': DateTime.now().microsecondsSinceEpoch,
       'colorful': colorful,
-      'checkbox_type': checkbox_type,
+      'checkbox_type': checkboxType,
       'csrf': await Request.getCsrf(),
       // 'access_key': access_key,
     }..removeWhere((key, value) => value == null);

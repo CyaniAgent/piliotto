@@ -44,8 +44,8 @@ class _SetDiaplayModeState extends State<SetDiaplayMode> {
   Future<void> init() async {
     try {
       modes = await FlutterDisplayMode.supported;
-    } on PlatformException catch (e) {
-      print(e);
+    } on PlatformException {
+      // 错误处理
     }
     var res = await getDisplayModeType(modes);
 

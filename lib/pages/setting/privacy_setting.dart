@@ -15,7 +15,7 @@ class PrivacySetting extends StatefulWidget {
 class _PrivacySettingState extends State<PrivacySetting> {
   bool userLogin = false;
   Box userInfoCache = GStrorage.userInfo;
-  var userInfo;
+  dynamic userInfo;
 
   @override
   void initState() {

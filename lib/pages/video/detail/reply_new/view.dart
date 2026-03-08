@@ -161,9 +161,6 @@ class _VideoReplyNewDialogState extends State<VideoReplyNewDialog>
 
   @override
   Widget build(BuildContext context) {
-    double _keyboardHeight = EdgeInsets.fromViewPadding(
-            View.of(context).viewInsets, View.of(context).devicePixelRatio)
-        .bottom;
     return Container(
       clipBehavior: Clip.hardEdge,
       decoration: BoxDecoration(
@@ -211,7 +208,7 @@ class _VideoReplyNewDialogState extends State<VideoReplyNewDialog>
           ),
           Divider(
             height: 1,
-            color: Theme.of(context).dividerColor.withOpacity(0.1),
+            color: Theme.of(context).dividerColor.withValues(alpha: 0.1),
           ),
           Container(
             height: 52,
@@ -268,7 +265,7 @@ class _VideoReplyNewDialogState extends State<VideoReplyNewDialog>
                               size: 22),
                           label: const Text('转发到动态'),
                           style: ButtonStyle(
-                            foregroundColor: MaterialStateProperty.all(
+                            foregroundColor: WidgetStateProperty.all(
                               isForward.value
                                   ? Theme.of(context).colorScheme.primary
                                   : Theme.of(context).colorScheme.outline,
@@ -295,11 +292,7 @@ class _VideoReplyNewDialogState extends State<VideoReplyNewDialog>
             duration: const Duration(milliseconds: 300),
             child: SizedBox(
               width: double.infinity,
-              height: toolbarType == 'input'
-                  ? (_keyboardHeight > keyboardHeight
-                      ? _keyboardHeight
-                      : keyboardHeight)
-                  : emoteHeight,
+              height: toolbarType == 'input' ? keyboardHeight : emoteHeight,
               child: EmotePanel(
                 onChoose: (package, emote) => onChooseEmote(package, emote),
               ),

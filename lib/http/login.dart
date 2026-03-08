@@ -146,11 +146,11 @@ class LoginHttp {
       },
     };
     // FormData formData = FormData.fromMap({...data});
-    var res = await Request().post(
+    await Request().post(
       Api.appSmsCode,
       data: data,
     );
-    print(res);
+    // 错误处理
   }
 
   static String buvid() {
@@ -196,11 +196,11 @@ class LoginHttp {
       'local_id': LoginUtils.generateBuvid(),
       'disable_rcmd': "0",
     };
-    var res = await Request().post(
+    await Request().post(
       Api.loginInByPwdApi,
       data: data,
     );
-    print(res);
+    // 错误处理
   }
 
   // web端密码登录

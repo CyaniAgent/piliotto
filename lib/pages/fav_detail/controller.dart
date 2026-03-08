@@ -130,7 +130,7 @@ class FavDetailController extends GetxController {
       },
     );
     title.value = res['title'];
-    print(title);
+    // 标题: $title
   }
 
   Future toViewPlayAll() async {

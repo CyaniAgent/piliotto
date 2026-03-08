@@ -20,7 +20,7 @@ class SearchText extends StatelessWidget {
     return Material(
       color: isSelect
           ? Theme.of(context).colorScheme.primaryContainer
-          : Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.5),
+          : Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
       borderRadius: BorderRadius.circular(6),
       child: Padding(
         padding: EdgeInsets.zero,

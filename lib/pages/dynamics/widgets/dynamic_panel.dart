@@ -22,7 +22,7 @@ class DynamicPanel extends StatelessWidget {
         border: Border(
           bottom: BorderSide(
             width: 8,
-            color: Theme.of(context).dividerColor.withOpacity(0.05),
+            color: Theme.of(context).dividerColor.withValues(alpha: 0.05),
           ),
         ),
       ),

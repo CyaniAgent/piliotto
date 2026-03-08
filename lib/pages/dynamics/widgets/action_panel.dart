@@ -32,7 +32,7 @@ class _ActionPanelState extends State<ActionPanel>
   RxDouble height = 0.0.obs;
   RxBool isExpand = false.obs;
   late double statusHeight;
-  TextEditingController _inputController = TextEditingController();
+  final TextEditingController _inputController = TextEditingController();
   FocusNode myFocusNode = FocusNode();
   String _inputText = '';
 
@@ -60,7 +60,7 @@ class _ActionPanelState extends State<ActionPanel>
   // 动态点赞
   Future onLikeDynamic() async {
     feedBack();
-    var item = widget.item!;
+    var item = widget.item;
     String dynamicId = item.idStr!;
     // 1 已点赞 2 不喜欢 0 未操作
     Like like = item.modules!.moduleStat!.like!;
@@ -173,13 +173,16 @@ class _ActionPanelState extends State<ActionPanel>
       height: 95,
       margin: const EdgeInsets.fromLTRB(12, 0, 12, 14),
       decoration: BoxDecoration(
-        color:
-            Theme.of(context).colorScheme.secondaryContainer.withOpacity(0.4),
+        color: Theme.of(context)
+            .colorScheme
+            .secondaryContainer
+            .withValues(alpha: 0.4),
         borderRadius: BorderRadius.circular(6),
         border: Border(
           left: BorderSide(
               width: 4,
-              color: Theme.of(context).colorScheme.primary.withOpacity(0.8)),
+              color:
+                  Theme.of(context).colorScheme.primary.withValues(alpha: 0.8)),
         ),
       ),
       child: Padding(
@@ -380,7 +383,7 @@ class _ActionPanelState extends State<ActionPanel>
     var color = Theme.of(context).colorScheme.outline;
     var primary = Theme.of(context).colorScheme.primary;
     height.value = defaultHeight;
-    print('height.value: ${height.value}');
+    // 高度值: ${height.value}
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceAround,
       children: [

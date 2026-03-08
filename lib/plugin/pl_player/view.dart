@@ -18,6 +18,7 @@ import 'package:piliotto/plugin/pl_player/utils.dart';
 import 'package:piliotto/utils/feed_back.dart';
 import 'package:piliotto/utils/storage.dart';
 import 'package:screen_brightness/screen_brightness.dart';
+import 'package:universal_platform/universal_platform.dart';
 
 import '../../utils/global_data_cache.dart';
 import 'models/bottom_control_type.dart';
@@ -162,14 +163,17 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
     });
 
     Future.microtask(() async {
-      try {
-        _brightnessValue.value = await ScreenBrightness().current;
-        ScreenBrightness().onCurrentBrightnessChanged.listen((double value) {
-          if (mounted) {
-            _brightnessValue.value = value;
-          }
-        });
-      } catch (_) {}
+      // 只在移动平台上使用ScreenBrightness
+      if (UniversalPlatform.isAndroid || UniversalPlatform.isIOS) {
+        try {
+          _brightnessValue.value = await ScreenBrightness().current;
+          ScreenBrightness().onCurrentBrightnessChanged.listen((double value) {
+            if (mounted) {
+              _brightnessValue.value = value;
+            }
+          });
+        } catch (_) {}
+      }
     });
   }
 
@@ -284,7 +288,7 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
             widget.showEposideCb?.call();
           },
           style: ButtonStyle(
-            padding: MaterialStateProperty.all(EdgeInsets.zero),
+            padding: WidgetStateProperty.all(EdgeInsets.zero),
           ),
           child: const Text(
             '选集',
@@ -299,7 +303,7 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
         child: TextButton(
           onPressed: () => _.toggleVideoFit(),
           style: ButtonStyle(
-            padding: MaterialStateProperty.all(EdgeInsets.zero),
+            padding: WidgetStateProperty.all(EdgeInsets.zero),
           ),
           child: Obx(
             () => Text(
@@ -316,7 +320,7 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
         height: 34,
         child: TextButton(
           style: ButtonStyle(
-            padding: MaterialStateProperty.all(EdgeInsets.zero),
+            padding: WidgetStateProperty.all(EdgeInsets.zero),
           ),
           onPressed: () {},
           child: Obx(
@@ -550,7 +554,7 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(4),
                           color: widget.controller.subtitleContent.value != ''
-                              ? Colors.black.withOpacity(0.6)
+                              ? Colors.black.withValues(alpha: 0.6)
                               : Colors.transparent,
                         ),
                         padding: widget.controller.subTitleCode.value != -1
@@ -774,9 +778,9 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
                 buffered: Duration(seconds: buffer),
                 total: Duration(seconds: max),
                 progressBarColor: colorTheme,
-                baseBarColor: Colors.white.withOpacity(0.2),
+                baseBarColor: Colors.white.withValues(alpha: 0.2),
                 bufferedBarColor:
-                    Theme.of(context).colorScheme.primary.withOpacity(0.4),
+                    Theme.of(context).colorScheme.primary.withValues(alpha: 0.4),
                 timeLabelLocation: TimeLabelLocation.none,
                 thumbColor: colorTheme,
                 barHeight: 3,

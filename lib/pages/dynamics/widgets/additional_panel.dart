@@ -18,7 +18,7 @@ Widget addWidget(item, context, type, {floor = 1}) {
     'ADDITIONAL_TYPE_COMMON': item.modules.moduleDynamic.additional.common,
   };
   Color bgColor = floor == 1
-      ? Theme.of(context).dividerColor.withOpacity(0.08)
+      ? Theme.of(context).dividerColor.withValues(alpha: 0.08)
       : Theme.of(context).colorScheme.surface;
   switch (type) {
     case 'ADDITIONAL_TYPE_UGC':
@@ -40,7 +40,7 @@ Widget addWidget(item, context, type, {floor = 1}) {
               SmartDialog.showToast(err.toString());
             }
           } else {
-            print("No match found.");
+            // No match found.
           }
         },
         child: Container(

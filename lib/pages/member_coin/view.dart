@@ -10,6 +10,6 @@ class MemberCoinPage extends StatefulWidget {
 class _MemberCoinPageState extends State<MemberCoinPage> {
   @override
   Widget build(BuildContext context) {
-    return Scaffold();
+    return const Scaffold();
   }
 }

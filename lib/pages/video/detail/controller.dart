@@ -21,6 +21,7 @@ import 'package:piliotto/utils/storage.dart';
 import 'package:piliotto/utils/utils.dart';
 import 'package:piliotto/utils/video_utils.dart';
 import 'package:screen_brightness/screen_brightness.dart';
+import 'package:universal_platform/universal_platform.dart';
 
 import '../../../models/video/subTitile/content.dart';
 import '../../../http/danmaku.dart';
@@ -91,7 +92,7 @@ class VideoDetailController extends GetxController
   double? brightness;
   // 默认记录历史记录
   bool enableHeart = true;
-  var userInfo;
+  dynamic userInfo;
   late bool isFirstTime = true;
   Floating? floating;
   late PreferredSizeWidget headerControl;
@@ -262,10 +263,12 @@ class VideoDetailController extends GetxController
     bool? autoplay,
   }) async {
     /// 设置/恢复 屏幕亮度
-    if (brightness != null) {
-      ScreenBrightness().setScreenBrightness(brightness!);
-    } else {
-      ScreenBrightness().resetScreenBrightness();
+    if (UniversalPlatform.isAndroid || UniversalPlatform.isIOS) {
+      if (brightness != null) {
+        ScreenBrightness().setScreenBrightness(brightness!);
+      } else {
+        ScreenBrightness().resetScreenBrightness();
+      }
     }
     await plPlayerController.setDataSource(
       DataSource(
@@ -446,9 +449,10 @@ class VideoDetailController extends GetxController
 
   // mob端全屏状态关闭二级回复
   hiddenReplyReplyPanel() {
-    replyReplyBottomSheetCtr != null
-        ? replyReplyBottomSheetCtr!.close()
-        : print('replyReplyBottomSheetCtr is null');
+    if (replyReplyBottomSheetCtr != null) {
+      replyReplyBottomSheetCtr!.close();
+    }
+    // replyReplyBottomSheetCtr is null
   }
 
   // 获取字幕配置

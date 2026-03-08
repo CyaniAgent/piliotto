@@ -53,7 +53,7 @@ class DynamicsController extends GetxController {
   RxInt initialValue = 0.obs;
   Box userInfoCache = GStrorage.userInfo;
   RxBool userLogin = false.obs;
-  var userInfo;
+  dynamic userInfo;
   RxBool isLoadingDynamic = false.obs;
   Box setting = GStrorage.setting;
   RxInt crossAxisCount = 1.obs;

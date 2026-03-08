@@ -111,7 +111,7 @@ class _HeaderControlState extends State<HeaderControl> {
                         color: Theme.of(context)
                             .colorScheme
                             .onSecondaryContainer
-                            .withOpacity(0.5),
+                            .withValues(alpha: 0.5 * 255),
                         borderRadius:
                             const BorderRadius.all(Radius.circular(3))),
                   ),
@@ -132,7 +132,7 @@ class _HeaderControlState extends State<HeaderControl> {
                     //   trailing: Transform.scale(
                     //     scale: 0.75,
                     //     child: Switch(
-                    //       thumbIcon: MaterialStateProperty.resolveWith<Icon?>(
+                    //       thumbIcon: WidgetStateProperty.resolveWith<Icon?>(
                     //           (Set<MaterialState> states) {
                     //         if (states.isNotEmpty &&
                     //             states.first == MaterialState.selected) {
@@ -373,7 +373,8 @@ class _HeaderControlState extends State<HeaderControl> {
                         title: const Text("额外等待视频播放完毕", style: titleStyle),
                         trailing: Switch(
                           // thumb color (round icon)
-                          activeColor: Theme.of(context).colorScheme.primary,
+                          activeThumbColor:
+                              Theme.of(context).colorScheme.primary,
                           activeTrackColor:
                               Theme.of(context).colorScheme.primaryContainer,
                           inactiveThumbColor:
@@ -1262,7 +1263,7 @@ class _HeaderControlState extends State<HeaderControl> {
               height: 34,
               child: TextButton(
                 style: ButtonStyle(
-                  padding: MaterialStateProperty.all(EdgeInsets.zero),
+                  padding: WidgetStateProperty.all(EdgeInsets.zero),
                 ),
                 onPressed: () => showShootDanmakuSheet(),
                 child: const Text(
@@ -1277,7 +1278,7 @@ class _HeaderControlState extends State<HeaderControl> {
               child: Obx(
                 () => IconButton(
                   style: ButtonStyle(
-                    padding: MaterialStateProperty.all(EdgeInsets.zero),
+                    padding: WidgetStateProperty.all(EdgeInsets.zero),
                   ),
                   onPressed: () {
                     _.isOpenDanmu.value = !_.isOpenDanmu.value;
@@ -1300,7 +1301,7 @@ class _HeaderControlState extends State<HeaderControl> {
               height: 34,
               child: IconButton(
                 style: ButtonStyle(
-                  padding: MaterialStateProperty.all(EdgeInsets.zero),
+                  padding: WidgetStateProperty.all(EdgeInsets.zero),
                 ),
                 onPressed: () async {
                   bool canUsePiP = false;
@@ -1345,7 +1346,7 @@ class _HeaderControlState extends State<HeaderControl> {
               height: 34,
               child: TextButton(
                 style: ButtonStyle(
-                  padding: MaterialStateProperty.all(EdgeInsets.zero),
+                  padding: WidgetStateProperty.all(EdgeInsets.zero),
                 ),
                 onPressed: () => showSetSpeedSheet(),
                 child: Text(

@@ -118,7 +118,7 @@ class _UpPanelState extends State<UpPanel> {
                               color: Theme.of(context)
                                   .colorScheme
                                   .primary
-                                  .withOpacity(0.5),
+                                  .withValues(alpha: 0.5),
                             ),
                           ],
                           for (int i = 0; i < upList.length; i++) ...[
@@ -136,7 +136,7 @@ class _UpPanelState extends State<UpPanel> {
                 color: Theme.of(context)
                     .colorScheme
                     .onInverseSurface
-                    .withOpacity(0.5),
+                    .withValues(alpha: 0.5),
               ),
             ],
           )),

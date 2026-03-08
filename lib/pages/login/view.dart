@@ -249,12 +249,12 @@ class _LoginPageState extends State<LoginPage> {
                               IconButton(
                                 style: ButtonStyle(
                                   backgroundColor:
-                                      MaterialStateProperty.resolveWith(
+                                      WidgetStateProperty.resolveWith(
                                           (states) {
                                     return Theme.of(context)
                                         .colorScheme
                                         .primary
-                                        .withOpacity(0.1);
+                                        .withValues(alpha: 0.1 * 255);
                                   }),
                                 ),
                                 onPressed: () =>
@@ -306,7 +306,7 @@ class _LoginPageState extends State<LoginPage> {
                                         : "密码不能为空";
                                   },
                                   onSaved: (val) {
-                                    print(val);
+                                    // 处理密码保存
                                   },
                                 )),
                           ),
@@ -361,12 +361,12 @@ class _LoginPageState extends State<LoginPage> {
                               IconButton(
                                 style: ButtonStyle(
                                   backgroundColor:
-                                      MaterialStateProperty.resolveWith(
+                                      WidgetStateProperty.resolveWith(
                                           (states) {
                                     return Theme.of(context)
                                         .colorScheme
                                         .primary
-                                        .withOpacity(0.1);
+                                        .withValues(alpha: 0.1 * 255);
                                   }),
                                 ),
                                 onPressed: () =>

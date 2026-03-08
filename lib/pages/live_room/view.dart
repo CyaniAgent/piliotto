@@ -197,7 +197,7 @@ class _LiveRoomPageState extends State<LiveRoomPage>
               ),
               PopScope(
                 canPop: plPlayerController.isFullScreen.value != true,
-                onPopInvoked: (bool didPop) {
+                onPopInvokedWithResult: (bool didPop, dynamic result) {
                   if (plPlayerController.isFullScreen.value == true) {
                     plPlayerController.triggerFullScreen(status: false);
                   }
@@ -347,11 +347,11 @@ class _LiveRoomPageState extends State<LiveRoomPage>
                     top: 4,
                     bottom: MediaQuery.of(context).padding.bottom + 20),
                 decoration: BoxDecoration(
-                  color: Colors.grey.withOpacity(0.1),
+                  color: Colors.grey.withValues(alpha: 0.1),
                   borderRadius: const BorderRadius.all(Radius.circular(20)),
                   border: Border(
                     top: BorderSide(
-                      color: Colors.white.withOpacity(0.1),
+                      color: Colors.white.withValues(alpha: 0.1),
                     ),
                   ),
                 ),
@@ -363,10 +363,10 @@ class _LiveRoomPageState extends State<LiveRoomPage>
                       child: Obx(
                         () => IconButton(
                           style: ButtonStyle(
-                            padding: MaterialStateProperty.all(EdgeInsets.zero),
-                            backgroundColor: MaterialStateProperty.resolveWith(
-                                (Set<MaterialState> states) {
-                              return Colors.grey.withOpacity(0.1);
+                            padding: WidgetStateProperty.all(EdgeInsets.zero),
+                            backgroundColor: WidgetStateProperty.resolveWith(
+                                (Set<WidgetState> states) {
+                              return Colors.grey.withValues(alpha: 0.1);
                             }),
                           ),
                           onPressed: () {
@@ -392,7 +392,7 @@ class _LiveRoomPageState extends State<LiveRoomPage>
                         decoration: InputDecoration(
                           hintText: '发送弹幕',
                           hintStyle: TextStyle(
-                            color: Colors.white.withOpacity(0.6),
+                            color: Colors.white.withValues(alpha: 0.6),
                           ),
                           border: InputBorder.none,
                         ),
@@ -403,7 +403,7 @@ class _LiveRoomPageState extends State<LiveRoomPage>
                       height: 34,
                       child: IconButton(
                         style: ButtonStyle(
-                          padding: MaterialStateProperty.all(EdgeInsets.zero),
+                          padding: WidgetStateProperty.all(EdgeInsets.zero),
                         ),
                         onPressed: () => _liveRoomController.sendMsg(),
                         icon: const Icon(
@@ -451,7 +451,7 @@ Widget buildMessageListUI(
               end: Alignment.bottomCenter,
               colors: [
                 Colors.transparent,
-                Colors.black.withOpacity(0.5),
+                Colors.black.withValues(alpha: 0.5),
                 Colors.black,
               ],
               stops: const [0.01, 0.05, 0.2],
@@ -474,8 +474,8 @@ Widget buildMessageListUI(
                   child: Container(
                     decoration: BoxDecoration(
                       color: liveRoomController.isPortrait.value
-                          ? Colors.black.withOpacity(0.3)
-                          : Colors.grey.withOpacity(0.1),
+                          ? Colors.black.withValues(alpha: 0.3)
+                          : Colors.grey.withValues(alpha: 0.1),
                       borderRadius: const BorderRadius.all(Radius.circular(20)),
                     ),
                     margin: EdgeInsets.only(
@@ -495,12 +495,12 @@ Widget buildMessageListUI(
                           TextSpan(
                             text: '${liveMsgItem.userName}: ',
                             style: TextStyle(
-                              color: Colors.white.withOpacity(0.6),
+                              color: Colors.white.withValues(alpha: 0.6),
                             ),
                             recognizer: TapGestureRecognizer()
                               ..onTap = () {
                                 // 处理点击事件
-                                print('Text clicked');
+                                // Text clicked
                               },
                           ),
                           TextSpan(

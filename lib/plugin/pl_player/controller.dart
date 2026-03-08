@@ -80,7 +80,7 @@ class PlPlayerController {
   final Rx<bool> _subTitleOpen = false.obs;
   final Rx<int> _subTitleCode = (-1).obs;
   // 默认投稿视频格式
-  static Rx<String> _videoType = 'archive'.obs;
+  static final Rx<String> _videoType = 'archive'.obs;
 
   final Rx<String> _direction = 'horizontal'.obs;
 

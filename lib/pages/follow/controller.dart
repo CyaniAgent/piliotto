@@ -18,7 +18,7 @@ class FollowController extends GetxController with GetTickerProviderStateMixin {
   RxList<FollowItemModel> followList = <FollowItemModel>[].obs;
   late int mid;
   late String name;
-  var userInfo;
+  dynamic userInfo;
   RxString loadingText = '加载中...'.obs;
   RxBool isOwner = false.obs;
   late List<MemberTagItemModel> followTags;

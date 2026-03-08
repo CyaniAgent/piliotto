@@ -37,7 +37,7 @@ class PiliSchame {
         });
       } catch (e) {
         // 捕获异常，避免初始化失败
-        print('AppScheme initialization error: $e');
+        // AppScheme 初始化错误: $e
       }
     }
   }
@@ -236,7 +236,7 @@ class PiliSchame {
       final String area = path.split('/').last;
       switch (area) {
         case 'bangumi':
-          print('番剧');
+          // 番剧
           if (area.startsWith('ep')) {
             RoutePush.bangumiPush(null, Utils.matchNum(area).first);
           } else if (area.startsWith('ss')) {
@@ -244,7 +244,7 @@ class PiliSchame {
           }
           break;
         case 'video':
-          print('投稿');
+          // 投稿
           final Map<String, dynamic> map = IdUtils.matchAvorBv(input: path);
           if (map.containsKey('AV')) {
             _videoPush(map['AV']! as int, null);
@@ -255,7 +255,7 @@ class PiliSchame {
           }
           break;
         case 'read':
-          print('专栏');
+          // 专栏
           String id = Utils.matchNum(query!['id']!).first.toString();
           Get.toNamed('/read', parameters: {
             'url': value.dataString!,
@@ -265,7 +265,7 @@ class PiliSchame {
           });
           break;
         case 'space':
-          print('个人空间');
+          // 个人空间
           Get.toNamed('/member?mid=$area', arguments: {'face': ''});
           break;
         default:
