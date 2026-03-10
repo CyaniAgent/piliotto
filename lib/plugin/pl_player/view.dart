@@ -18,7 +18,6 @@ import 'package:piliotto/plugin/pl_player/utils.dart';
 import 'package:piliotto/utils/feed_back.dart';
 import 'package:piliotto/utils/storage.dart';
 import 'package:screen_brightness/screen_brightness.dart';
-import 'package:universal_platform/universal_platform.dart';
 
 import '../../utils/global_data_cache.dart';
 import 'models/bottom_control_type.dart';
@@ -66,7 +65,6 @@ class PLVideoPlayer extends StatefulWidget {
 class _PLVideoPlayerState extends State<PLVideoPlayer>
     with TickerProviderStateMixin {
   late AnimationController animationController;
-  late VideoController videoController;
 
   final RxBool _mountSeekBackwardButton = false.obs;
   final RxBool _mountSeekForwardButton = false.obs;
@@ -140,7 +138,6 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
           ? const Duration(milliseconds: 150)
           : const Duration(milliseconds: 10),
     );
-    videoController = widget.controller.videoController!;
     widget.controller.headerControl = widget.headerControl;
     widget.controller.bottomControl = widget.bottomControl;
     widget.controller.danmuWidget = widget.danmuWidget;
@@ -163,17 +160,14 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
     });
 
     Future.microtask(() async {
-      // 只在移动平台上使用ScreenBrightness
-      if (UniversalPlatform.isAndroid || UniversalPlatform.isIOS) {
-        try {
-          _brightnessValue.value = await ScreenBrightness().current;
-          ScreenBrightness().onCurrentBrightnessChanged.listen((double value) {
-            if (mounted) {
-              _brightnessValue.value = value;
-            }
-          });
-        } catch (_) {}
-      }
+      try {
+        _brightnessValue.value = await ScreenBrightness().current;
+        ScreenBrightness().onCurrentBrightnessChanged.listen((double value) {
+          if (mounted) {
+            _brightnessValue.value = value;
+          }
+        });
+      } catch (_) {}
     });
   }
 
@@ -395,19 +389,27 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
       fit: StackFit.passthrough,
       children: <Widget>[
         Obx(
-          () => Video(
-            key: ValueKey(_.videoFit.value),
-            controller: videoController,
-            controls: NoVideoControls,
-            alignment: widget.alignment!,
-            pauseUponEnteringBackgroundMode: !enableBackgroundPlay,
-            resumeUponEnteringForegroundMode: true,
-            subtitleViewConfiguration: const SubtitleViewConfiguration(
-              style: subTitleStyle,
-              padding: EdgeInsets.all(24.0),
-            ),
-            fit: _.videoFit.value,
-          ),
+          () {
+            // 直接从controller获取最新的videoController，避免使用旧的实例
+            final currentVideoController = widget.controller.videoController;
+            if (currentVideoController == null) {
+              return const SizedBox.shrink();
+            }
+            return Video(
+              key: ValueKey(
+                  '${_.videoFit.value}_${currentVideoController.hashCode}'),
+              controller: currentVideoController,
+              controls: NoVideoControls,
+              alignment: widget.alignment!,
+              pauseUponEnteringBackgroundMode: !enableBackgroundPlay,
+              resumeUponEnteringForegroundMode: true,
+              subtitleViewConfiguration: const SubtitleViewConfiguration(
+                style: subTitleStyle,
+                padding: EdgeInsets.all(24.0),
+              ),
+              fit: _.videoFit.value,
+            );
+          },
         ),
 
         /// 长按倍速 toast
@@ -779,8 +781,10 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
                 total: Duration(seconds: max),
                 progressBarColor: colorTheme,
                 baseBarColor: Colors.white.withValues(alpha: 0.2),
-                bufferedBarColor:
-                    Theme.of(context).colorScheme.primary.withValues(alpha: 0.4),
+                bufferedBarColor: Theme.of(context)
+                    .colorScheme
+                    .primary
+                    .withValues(alpha: 0.4),
                 timeLabelLocation: TimeLabelLocation.none,
                 thumbColor: colorTheme,
                 barHeight: 3,

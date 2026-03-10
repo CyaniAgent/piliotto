@@ -13,8 +13,8 @@ import 'controller.dart';
 
 class VideoReplyReplyPanel extends StatefulWidget {
   const VideoReplyReplyPanel({
-    this.oid,
-    this.rpid,
+    this.vid,
+    this.parentVcid,
     this.closePanel,
     this.firstFloor,
     this.source,
@@ -24,8 +24,8 @@ class VideoReplyReplyPanel extends StatefulWidget {
     this.loadMore = true,
     super.key,
   });
-  final int? oid;
-  final int? rpid;
+  final int? vid;
+  final int? parentVcid;
   final Function? closePanel;
   final ReplyItemModel? firstFloor;
   final String? source;
@@ -49,8 +49,8 @@ class _VideoReplyReplyPanelState extends State<VideoReplyReplyPanel> {
   void initState() {
     _videoReplyReplyController = Get.put(
         VideoReplyReplyController(
-            widget.oid, widget.rpid.toString(), widget.replyType!),
-        tag: widget.rpid.toString());
+            widget.vid ?? 0, widget.parentVcid ?? 0, widget.replyType ?? ReplyType.video),
+        tag: widget.parentVcid.toString());
     super.initState();
 
     // 上拉加载更多

@@ -2,59 +2,210 @@ import 'package:get/get.dart';
 import 'package:hive/hive.dart';
 
 import 'package:piliotto/utils/storage.dart';
+import 'package:piliotto/api/services/old_api_service.dart';
+import 'package:piliotto/services/loggeer.dart';
+import 'package:piliotto/models/video/reply/item.dart';
+import 'package:piliotto/models/video/reply/member.dart';
+import 'package:piliotto/models/video/reply/content.dart';
 
 class VideoReplyController extends GetxController {
   VideoReplyController(this.vid);
-  // 视频vid
+
   int vid;
-  RxList replyList = [].obs;
-  // 当前页
+
+  List<ReplyItemModel> replyList = <ReplyItemModel>[];
   int currentPage = 0;
   bool isLoadingMore = false;
-  RxString noMore = ''.obs;
-  int ps = 20;
-  RxInt count = 0.obs;
+  bool hasLoaded = false;
+  String noMore = '';
+  int ps = 12;
+  int count = 0;
 
   Box setting = GStrorage.setting;
 
+  void updateVid(int newVid) {
+    if (vid != newVid) {
+      vid = newVid;
+      replyList.clear();
+      currentPage = 0;
+      hasLoaded = false;
+      noMore = '';
+      count = 0;
+    }
+  }
 
+  ReplyItemModel _convertToReplyItemModel(Map<String, dynamic> comment) {
+    final member = ReplyMember(
+      mid: (comment['uid'] ?? '0').toString(),
+      uname: comment['username'] ?? '',
+      sign: '',
+      avatar: comment['avatar_url'] ?? '',
+      level: 1,
+      pendant: Pendant(pid: 0, name: '', image: ''),
+      officialVerify: {},
+      vip: {'vipStatus': 0, 'vipType': 0},
+      fansDetail: {},
+    );
 
-  Future queryReplyList({type = 'init'}) async {
+    final content = ReplyContent(
+      message: comment['content'] ?? '',
+      atNameToMid: {},
+      members: [],
+      emote: {},
+      jumpUrl: {},
+      pictures: [],
+      vote: {},
+      richText: {},
+      isText: true,
+      topicsMeta: {},
+    );
+
+    final upAction = UpAction(
+      like: false,
+      reply: false,
+    );
+
+    final childCommentNum = comment['child_comment_num'] ?? 0;
+    final replyControl = ReplyControl(
+      upReply: false,
+      isUpTop: false,
+      upLike: false,
+      isShow: childCommentNum > 0,
+      entryText: childCommentNum > 0 ? '共$childCommentNum条回复' : '',
+      titleText: '',
+      time: comment['time'] ?? '',
+      location: '',
+    );
+
+    return ReplyItemModel(
+      rpid: int.tryParse(comment['vcid'] ?? '0') ?? 0,
+      oid: vid,
+      type: 1,
+      mid: int.tryParse(comment['uid'] ?? '0') ?? 0,
+      root: 0,
+      parent: int.tryParse(comment['parent_vcid'] ?? '0') ?? 0,
+      dialog: 0,
+      count: childCommentNum,
+      ctime: comment['time'] != null
+          ? DateTime.parse(comment['time'].replaceAll(' ', 'T'))
+                  .millisecondsSinceEpoch ~/
+              1000
+          : 0,
+      like: 0,
+      member: member,
+      content: content,
+      replies: [],
+      upAction: upAction,
+      invisible: false,
+      replyControl: replyControl,
+      isUp: false,
+      isTop: false,
+      cardLabel: [],
+    );
+  }
+
+  Future queryReplyList({String type = 'init'}) async {
     if (isLoadingMore) {
       return;
     }
+
     isLoadingMore = true;
+
     if (type == 'init') {
       currentPage = 0;
-      noMore.value = '';
+      noMore = '';
     }
-    if (noMore.value == '没有更多了') {
+
+    if (noMore == '没有更多了') {
       isLoadingMore = false;
       return;
     }
+
     try {
-      // Ottohub API 暂不支持获取评论列表
-      final List replies = [];
-      noMore.value = '还没有评论';
-      if (type == 'init') {
-        count.value = 0;
-        replyList.value = replies;
+      final logger = getLogger();
+      logger.d('开始获取评论列表，vid: $vid, offset: ${currentPage * ps}, num: $ps');
+
+      final response = await OldApiService.getVideoComments(
+        vid: vid,
+        offset: currentPage * ps,
+        num: ps,
+      );
+      logger.d('获取评论列表响应: $response');
+
+      if (response['status'] == 'success') {
+        final List comments = response['comment_list'] ?? [];
+        logger.d('获取到评论数量: ${comments.length}');
+
+        final List<ReplyItemModel> replyItems = comments
+            .map((comment) => _convertToReplyItemModel(comment))
+            .toList();
+
+        if (type == 'init') {
+          count = replyItems.length;
+          replyList = replyItems;
+        } else {
+          replyList.addAll(replyItems);
+        }
+
+        if (replyItems.length < ps) {
+          noMore = '没有更多了';
+        } else {
+          currentPage++;
+          noMore = '';
+        }
+
+        hasLoaded = true;
+        update();
       } else {
-        replyList.addAll(replies);
+        logger.e('获取评论失败: ${response['message']}');
+        noMore = '获取评论失败';
+        update();
       }
     } catch (e) {
-      noMore.value = '获取评论失败';
+      final logger = getLogger();
+      logger.e('获取评论异常: ${e.toString()}');
+      noMore = '获取评论失败';
+      update();
     }
+
     isLoadingMore = false;
   }
 
-  // 上拉加载
   Future onLoad() async {
-    queryReplyList(type: 'onLoad');
+    await queryReplyList(type: 'onLoad');
   }
 
-  // 排序搜索评论
-  queryBySort() {
-    // Ottohub API 暂不支持评论排序
+  Future<List<ReplyItemModel>> queryChildComments(int parentVcid) async {
+    try {
+      final logger = getLogger();
+      logger.d(
+          '开始获取二级评论，vid: $vid, parentVcid: $parentVcid, offset: 0, num: $ps');
+
+      final response = await OldApiService.getVideoComments(
+        vid: vid,
+        parentVcid: parentVcid,
+        offset: 0,
+        num: ps,
+      );
+      logger.d('获取二级评论列表响应: $response');
+
+      if (response['status'] == 'success') {
+        final List comments = response['comment_list'] ?? [];
+        logger.d('获取到二级评论数量: ${comments.length}');
+
+        final List<ReplyItemModel> replyItems = comments
+            .map((comment) => _convertToReplyItemModel(comment))
+            .toList();
+
+        return replyItems;
+      } else {
+        logger.e('获取二级评论失败: ${response['message']}');
+        return [];
+      }
+    } catch (e) {
+      final logger = getLogger();
+      logger.e('获取二级评论异常: ${e.toString()}');
+      return [];
+    }
   }
 }

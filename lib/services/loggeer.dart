@@ -6,6 +6,8 @@ import 'package:logger/logger.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
 
+export 'package:logger/logger.dart';
+
 final _loggerFactory = PiliLogger();
 
 PiliLogger getLogger<T>() {

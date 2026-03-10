@@ -11,6 +11,11 @@ class MemberInfoModel {
     this.official,
     this.vip,
     this.liveRoom,
+    this.attention,
+    this.fans,
+    this.cover,
+    this.archiveCount,
+    this.articleCount,
   });
 
   int? mid;
@@ -24,6 +29,11 @@ class MemberInfoModel {
   Map? official;
   Vip? vip;
   LiveRoom? liveRoom;
+  int? attention;
+  int? fans;
+  String? cover;
+  int? archiveCount;
+  int? articleCount;
 
   MemberInfoModel.fromJson(Map<String, dynamic> json) {
     mid = json['mid'];

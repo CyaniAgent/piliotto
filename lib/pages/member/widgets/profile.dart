@@ -5,7 +5,6 @@ import 'package:get/get.dart';
 import 'package:piliotto/common/widgets/network_img_layer.dart';
 import 'package:piliotto/models/live/item.dart';
 import 'package:piliotto/models/member/info.dart';
-import 'package:piliotto/utils/utils.dart';
 
 class ProfilePanel extends StatelessWidget {
   final dynamic ctr;
@@ -19,11 +18,13 @@ class ProfilePanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     MemberInfoModel memberInfo = ctr.memberInfo.value;
+    final ColorScheme colorScheme = Theme.of(context).colorScheme;
+    
     return Builder(
       builder: ((context) {
         return Padding(
           padding: EdgeInsets.only(
-              top: max(0.0, MediaQuery.of(context).padding.top - 20)),
+              top: max(0.0, MediaQuery.of(context).padding.top - 10)),
           child: Row(
             children: [
               Hero(
@@ -31,8 +32,8 @@ class ProfilePanel extends StatelessWidget {
                 child: Stack(
                   children: [
                     NetworkImgLayer(
-                      width: 90,
-                      height: 90,
+                      width: 80,
+                      height: 80,
                       type: 'avatar',
                       src: !loadingStatus ? memberInfo.face : ctr.face.value,
                     ),
@@ -41,7 +42,7 @@ class ProfilePanel extends StatelessWidget {
                         memberInfo.liveRoom!.liveStatus == 1)
                       Positioned(
                         bottom: 0,
-                        left: 14,
+                        left: 10,
                         child: GestureDetector(
                           onTap: () {
                             LiveItemModel liveItem = LiveItemModel.fromJson({
@@ -59,7 +60,7 @@ class ProfilePanel extends StatelessWidget {
                           child: Container(
                             padding: const EdgeInsets.fromLTRB(6, 2, 6, 2),
                             decoration: BoxDecoration(
-                              color: Theme.of(context).colorScheme.primary,
+                              color: colorScheme.primary,
                               borderRadius:
                                   const BorderRadius.all(Radius.circular(10)),
                             ),
@@ -84,97 +85,90 @@ class ProfilePanel extends StatelessWidget {
                   ],
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 16),
               Expanded(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Padding(
-                      padding:
-                          const EdgeInsets.only(top: 10, left: 10, right: 10),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.max,
-                        mainAxisAlignment: MainAxisAlignment.spaceAround,
-                        children: [
-                          InkWell(
-                            onTap: () {
-                              Get.toNamed(
-                                  '/follow?mid=${memberInfo.mid}&name=${memberInfo.name}');
-                            },
-                            child: Column(
-                              children: [
-                                Text(
-                                  !loadingStatus
-                                      ? ctr.userStat!['following'].toString()
-                                      : '-',
-                                  style: const TextStyle(
-                                      fontWeight: FontWeight.bold),
-                                ),
-                                Text(
-                                  '关注',
-                                  style: TextStyle(
-                                      fontSize: Theme.of(context)
-                                          .textTheme
-                                          .labelMedium!
-                                          .fontSize),
-                                )
-                              ],
-                            ),
-                          ),
-                          InkWell(
-                            onTap: () {
-                              Get.toNamed(
-                                  '/fan?mid=${memberInfo.mid}&name=${memberInfo.name}');
-                            },
-                            child: Column(
-                              children: [
-                                Text(
-                                    !loadingStatus
-                                        ? ctr.userStat!['follower'] != null
-                                            ? Utils.numFormat(
-                                                ctr.userStat!['follower'],
-                                              )
-                                            : '-'
-                                        : '-',
-                                    style: const TextStyle(
-                                        fontWeight: FontWeight.bold)),
-                                Text(
-                                  '粉丝',
-                                  style: TextStyle(
-                                      fontSize: Theme.of(context)
-                                          .textTheme
-                                          .labelMedium!
-                                          .fontSize),
-                                )
-                              ],
-                            ),
-                          ),
-                          Column(
+                    Row(
+                      mainAxisSize: MainAxisSize.max,
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: [
+                        InkWell(
+                          onTap: () {
+                            Get.toNamed(
+                                '/follow?mid=${memberInfo.mid}&name=${memberInfo.name}');
+                          },
+                          child: Column(
                             children: [
                               Text(
-                                  !loadingStatus
-                                      ? ctr.userStat!['likes'] != null
-                                          ? Utils.numFormat(
-                                              ctr.userStat!['likes'],
-                                            )
-                                          : '-'
-                                      : '-',
-                                  style: const TextStyle(
-                                      fontWeight: FontWeight.bold)),
+                                !loadingStatus
+                                    ? memberInfo.attention?.toString() ?? '-'
+                                    : '-',
+                                style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    color: colorScheme.onSurface),
+                              ),
                               Text(
-                                '获赞',
+                                '关注',
                                 style: TextStyle(
                                     fontSize: Theme.of(context)
                                         .textTheme
                                         .labelMedium!
-                                        .fontSize),
+                                        .fontSize,
+                                    color: colorScheme.outline),
                               )
                             ],
                           ),
-                        ],
-                      ),
+                        ),
+                        InkWell(
+                          onTap: () {
+                            Get.toNamed(
+                                '/fan?mid=${memberInfo.mid}&name=${memberInfo.name}');
+                          },
+                          child: Column(
+                            children: [
+                              Text(
+                                  !loadingStatus
+                                      ? memberInfo.fans?.toString() ?? '-'
+                                      : '-',
+                                  style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      color: colorScheme.onSurface)),
+                              Text(
+                                '粉丝',
+                                style: TextStyle(
+                                    fontSize: Theme.of(context)
+                                        .textTheme
+                                        .labelMedium!
+                                        .fontSize,
+                                    color: colorScheme.outline),
+                              )
+                            ],
+                          ),
+                        ),
+                        Column(
+                          children: [
+                            Text(
+                                '-',
+                                style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    color: colorScheme.onSurface)),
+                            Text(
+                              '获赞',
+                              style: TextStyle(
+                                  fontSize: Theme.of(context)
+                                      .textTheme
+                                      .labelMedium!
+                                      .fontSize,
+                                  color: colorScheme.outline),
+                            )
+                          ],
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 12),
                     if (ctr.ownerMid != ctr.mid && ctr.ownerMid != -1) ...[
                       Row(
                         children: [
@@ -188,19 +182,14 @@ class ProfilePanel extends StatelessWidget {
                                   foregroundColor: ctr.attribute.value == -1
                                       ? Colors.transparent
                                       : ctr.attribute.value != 0
-                                          ? Theme.of(context)
-                                              .colorScheme
-                                              .outline
-                                          : Theme.of(context)
-                                              .colorScheme
-                                              .onPrimary,
+                                          ? colorScheme.outline
+                                          : colorScheme.onPrimary,
                                   backgroundColor: ctr.attribute.value != 0
-                                      ? Theme.of(context)
-                                          .colorScheme
-                                          .onInverseSurface
-                                      : Theme.of(context)
-                                          .colorScheme
-                                          .primary, // 设置按钮背景色
+                                      ? colorScheme.surfaceContainerHighest
+                                      : colorScheme.primary,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
                                 ),
                                 child: Obx(() => Text(ctr.attributeText.value)),
                               ),
@@ -221,9 +210,10 @@ class ProfilePanel extends StatelessWidget {
                                 );
                               },
                               style: TextButton.styleFrom(
-                                backgroundColor: Theme.of(context)
-                                    .colorScheme
-                                    .onInverseSurface,
+                                backgroundColor: colorScheme.surfaceContainerHighest,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
                               ),
                               child: const Text('发消息'),
                             ),
@@ -237,11 +227,12 @@ class ProfilePanel extends StatelessWidget {
                           SmartDialog.showToast('功能开发中 💪');
                         },
                         style: TextButton.styleFrom(
-                          padding: const EdgeInsets.only(left: 80, right: 80),
-                          foregroundColor:
-                              Theme.of(context).colorScheme.onPrimary,
-                          backgroundColor:
-                              Theme.of(context).colorScheme.primary,
+                          padding: const EdgeInsets.symmetric(vertical: 10),
+                          foregroundColor: colorScheme.onPrimary,
+                          backgroundColor: colorScheme.primary,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
                         ),
                         child: const Text('编辑资料'),
                       )
@@ -250,11 +241,12 @@ class ProfilePanel extends StatelessWidget {
                       TextButton(
                         onPressed: () {},
                         style: TextButton.styleFrom(
-                          padding: const EdgeInsets.only(left: 80, right: 80),
-                          foregroundColor:
-                              Theme.of(context).colorScheme.outline,
-                          backgroundColor:
-                              Theme.of(context).colorScheme.onInverseSurface,
+                          padding: const EdgeInsets.symmetric(vertical: 10),
+                          foregroundColor: colorScheme.outline,
+                          backgroundColor: colorScheme.surfaceContainerHighest,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
                         ),
                         child: const Text('未登录'),
                       )

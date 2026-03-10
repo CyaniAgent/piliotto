@@ -113,8 +113,8 @@ class _HtmlRenderPageState extends State<HtmlRenderPage>
           ),
         ),
         body: VideoReplyReplyPanel(
-          oid: oid,
-          rpid: rpid,
+          vid: oid,
+          parentVcid: rpid,
           source: 'dynamic',
           replyType: ReplyType.values[type],
           firstFloor: replyItem,

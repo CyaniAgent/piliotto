@@ -267,23 +267,43 @@
 **成功响应**:
 ```json
 {
-  "status": "success",
-  "data": {
-    "vid": 1,
-    "uid": 123,
-    "title": "视频标题",
-    "time": "2023-01-01 00:00:00",
-    "like_count": 100,
-    "favorite_count": 50,
-    "view_count": 1000,
-    "is_deleted": 0,
-    "audit_status": 1,
-    "cover_url": "https://example.com/cover.jpg",
-    "username": "用户名",
-    "avatar_url": "https://example.com/avatar.jpg",
-    "if_like": 0,
-    "if_favorite": 0
-  }
+    "status": "success",
+    "data": {
+        "vid": "1",
+        "uid": "1",
+        "title": "视频标题",
+        "intro": "视频简介",
+        "type": "3",
+        "category": "3",
+        "tag": "#标签1#标签2",
+        "time": "2023-01-01 00:00:00",
+        "like_count": "100",
+        "favorite_count": "50",
+        "view_count": "1000",
+        "cover_url": "https://example.com/cover.jpg",
+        "video_url": "https://example.com/video.mp4",
+        "audio_url": "https://example.com/audio.mp3",
+        "username": "用户昵称",
+        "userintro": "用户个性签名",
+        "avatar_url": "https://example.com/avatar.jpg",
+        "if_like": 0,
+        "if_favorite": 0,
+        "video_width": "1440",
+        "video_height": "1080",
+        "video_sar": "0:1",
+        "video_dar": "0:1",
+        "duration": "223",
+        "comment_count": "5",
+        "video_m3u8_url": "",
+        "channel_id": 0,
+        "channel_detail": {
+            "channel_id": "",
+            "channel_name": "",
+            "channel_title": "",
+            "channel_description": "",
+            "channel_cover_url": ""
+        }
+    }
 }
 ```
 

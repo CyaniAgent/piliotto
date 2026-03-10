@@ -22,6 +22,15 @@ class Video {
   final int? collectionSortOrder;
   final int? channelId;
   final ChannelDetail? channelDetail;
+  final String? videoUrl;
+  final String? audioUrl;
+  final String? userintro;
+  final int? videoWidth;
+  final int? videoHeight;
+  final String? videoSar;
+  final String? videoDar;
+  final int? commentCount;
+  final String? videoM3u8Url;
 
   Video({
     required this.vid,
@@ -47,6 +56,15 @@ class Video {
     this.collectionSortOrder,
     this.channelId,
     this.channelDetail,
+    this.videoUrl,
+    this.audioUrl,
+    this.userintro,
+    this.videoWidth,
+    this.videoHeight,
+    this.videoSar,
+    this.videoDar,
+    this.commentCount,
+    this.videoM3u8Url,
   });
 
   factory Video.fromJson(Map<String, dynamic> json) {
@@ -76,6 +94,15 @@ class Video {
       channelDetail: json['channel_detail'] != null
           ? ChannelDetail.fromJson(json['channel_detail'])
           : null,
+      videoUrl: json['video_url'],
+      audioUrl: json['audio_url'],
+      userintro: json['userintro'],
+      videoWidth: toInt(json['video_width']),
+      videoHeight: toInt(json['video_height']),
+      videoSar: json['video_sar'],
+      videoDar: json['video_dar'],
+      commentCount: toInt(json['comment_count']),
+      videoM3u8Url: json['video_m3u8_url'],
     );
   }
 
@@ -113,8 +140,8 @@ class ChannelDetail {
       channelId: Video.toInt(json['channel_id']),
       channelName: json['channel_name'] ?? '',
       channelTitle: json['channel_title'] ?? '',
-      description: json['description'] ?? '',
-      coverUrl: json['cover_url'] ?? '',
+      description: json['channel_description'] ?? '',
+      coverUrl: json['channel_cover_url'] ?? '',
     );
   }
 }

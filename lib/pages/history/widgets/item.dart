@@ -8,9 +8,7 @@ import 'package:piliotto/http/search.dart';
 import 'package:piliotto/http/user.dart';
 import 'package:piliotto/http/video.dart';
 import 'package:piliotto/models/common/business_type.dart';
-import 'package:piliotto/models/common/search_type.dart';
 import 'package:piliotto/models/live/item.dart';
-import 'package:piliotto/pages/history_search/index.dart';
 import 'package:piliotto/utils/feed_back.dart';
 import 'package:piliotto/utils/id_utils.dart';
 
@@ -91,7 +89,7 @@ class HistoryItem extends StatelessWidget {
                   arguments: {
                     'pic': pic,
                     'heroTag': heroTag,
-                    'videoType': SearchType.media_bangumi,
+                    'videoType': 'media_bangumi',
                   },
                 );
               } else {
@@ -116,9 +114,6 @@ class HistoryItem extends StatelessWidget {
         }
       },
       onLongPress: () {
-        if (ctr is HistorySearchController) {
-          return;
-        }
         if (!ctr!.enableMultiple.value) {
           feedBack();
           ctr!.enableMultiple.value = true;

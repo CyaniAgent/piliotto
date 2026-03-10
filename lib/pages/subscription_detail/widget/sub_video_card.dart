@@ -5,7 +5,6 @@ import 'package:piliotto/common/constants.dart';
 import 'package:piliotto/common/widgets/stat/danmu.dart';
 import 'package:piliotto/common/widgets/stat/view.dart';
 import 'package:piliotto/http/search.dart';
-import 'package:piliotto/models/common/search_type.dart';
 import 'package:piliotto/utils/image_save.dart';
 import 'package:piliotto/utils/utils.dart';
 import 'package:piliotto/common/widgets/network_img_layer.dart';
@@ -39,7 +38,7 @@ class SubVideoCardH extends StatelessWidget {
         Get.toNamed('/video', parameters: parameters, arguments: {
           'videoItem': videoItem,
           'heroTag': heroTag,
-          'videoType': SearchType.video,
+          'videoType': 'video',
         });
       },
       onLongPress: () => imageSaveDialog(

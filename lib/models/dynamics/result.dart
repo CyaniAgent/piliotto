@@ -45,6 +45,23 @@ class DynamicItemModel {
     type = json['type'];
     visible = json['visible'];
   }
+
+  // 从Ottohub API返回的数据创建DynamicItemModel
+  DynamicItemModel.fromOttohubJson(Map<String, dynamic> json) {
+    idStr = json['bid'].toString();
+    type = 'DYNAMIC_TYPE_WORD'; // 默认为文字动态
+    
+    // 构建basic字段
+    basic = {
+      'uid': json['uid'],
+      'uname': json['username'],
+      'face': json['avatar_url'],
+      'pub_time': json['time'],
+    };
+    
+    // 构建modules字段
+    modules = ItemModulesModel.fromOttohubJson(json);
+  }
 }
 
 class ItemOrigModel {
@@ -100,6 +117,13 @@ class ItemModulesModel {
         : null;
     moduleTag = json['module_tag'];
   }
+
+  // 从Ottohub API返回的数据创建ItemModulesModel
+  ItemModulesModel.fromOttohubJson(Map<String, dynamic> json) {
+    moduleAuthor = ModuleAuthorModel.fromOttohubJson(json);
+    moduleDynamic = ModuleDynamicModel.fromOttohubJson(json);
+    moduleStat = ModuleStatModel.fromOttohubJson(json);
+  }
 }
 
 // 单个动态详情 - 作者信息
@@ -148,6 +172,14 @@ class ModuleAuthorModel {
     type = json['type'];
     vip = json['vip'];
   }
+
+  // 从Ottohub API返回的数据创建ModuleAuthorModel
+  ModuleAuthorModel.fromOttohubJson(Map<String, dynamic> json) {
+    face = json['avatar_url'];
+    mid = json['uid'];
+    name = json['username'];
+    pubTime = json['time'];
+  }
 }
 
 // 单个动态详情 - 动态信息
@@ -176,6 +208,11 @@ class ModuleDynamicModel {
     topic = json['topic'] != null
         ? DynamicTopicModel.fromJson(json['topic'])
         : null;
+  }
+
+  // 从Ottohub API返回的数据创建ModuleDynamicModel
+  ModuleDynamicModel.fromOttohubJson(Map<String, dynamic> json) {
+    desc = DynamicDescModel.fromOttohubJson(json);
   }
 }
 
@@ -398,6 +435,12 @@ class DynamicDescModel {
             .toList()
         : [];
     text = json['text'];
+  }
+
+  // 从Ottohub API返回的数据创建DynamicDescModel
+  DynamicDescModel.fromOttohubJson(Map<String, dynamic> json) {
+    text = json['content'];
+    richTextNodes = [];
   }
 }
 
@@ -782,6 +825,13 @@ class ModuleStatModel {
     forward = ForWard.fromJson(json['forward']);
     like = Like.fromJson(json['like']);
   }
+
+  // 从Ottohub API返回的数据创建ModuleStatModel
+  ModuleStatModel.fromOttohubJson(Map<String, dynamic> json) {
+    comment = Comment.fromOttohubJson(json);
+    forward = ForWard.fromOttohubJson(json);
+    like = Like.fromOttohubJson(json);
+  }
 }
 
 // 动态状态 评论
@@ -798,6 +848,12 @@ class Comment {
     count = json['count'] == 0 ? null : json['count'].toString();
     forbidden = json['forbidden'];
   }
+
+  // 从Ottohub API返回的数据创建Comment
+  Comment.fromOttohubJson(Map<String, dynamic> json) {
+    count = json['comment_num'].toString();
+    forbidden = false;
+  }
 }
 
 class ForWard {
@@ -808,6 +864,12 @@ class ForWard {
   ForWard.fromJson(Map<String, dynamic> json) {
     count = json['count'] == 0 ? null : json['count'].toString();
     forbidden = json['forbidden'];
+  }
+
+  // 从Ottohub API返回的数据创建ForWard
+  ForWard.fromOttohubJson(Map<String, dynamic> json) {
+    count = '0';
+    forbidden = false;
   }
 }
 
@@ -827,6 +889,13 @@ class Like {
     count = json['count'] == 0 ? null : json['count'].toString();
     forbidden = json['forbidden'];
     status = json['status'];
+  }
+
+  // 从Ottohub API返回的数据创建Like
+  Like.fromOttohubJson(Map<String, dynamic> json) {
+    count = json['like_num'].toString();
+    forbidden = false;
+    status = false;
   }
 }
 

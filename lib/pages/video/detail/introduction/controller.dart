@@ -61,9 +61,7 @@ class VideoIntroController extends GetxController {
   void onInit() {
     super.onInit();
     userInfo = userInfoCache.get('userInfoCache');
-    try {
-      heroTag = Get.arguments['heroTag'];
-    } catch (_) {}
+    heroTag = Get.arguments?['heroTag'] ?? '';
     userLogin = userInfo != null;
     isShowOnlineTotal =
         setting.get(SettingBoxKey.enableOnlineTotal, defaultValue: false);
@@ -281,7 +279,7 @@ class VideoIntroController extends GetxController {
       /// 未渲染回复组件时可能异常
       final VideoReplyController videoReplyCtr =
           Get.find<VideoReplyController>(tag: heroTag);
-      videoReplyCtr.vid = vid;
+      videoReplyCtr.updateVid(vid);
       videoReplyCtr.queryReplyList(type: 'init');
     } catch (_) {}
     this.vid = vid;

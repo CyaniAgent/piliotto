@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:hive/hive.dart';
 import 'package:piliotto/pages/fav_edit/index.dart';
-import 'package:piliotto/pages/follow_search/view.dart';
 import 'package:piliotto/pages/member_article/index.dart';
 import 'package:piliotto/pages/message/at/index.dart';
 import 'package:piliotto/pages/message/like/index.dart';
@@ -21,10 +20,8 @@ import '../pages/dynamics/index.dart';
 import '../pages/fan/index.dart';
 import '../pages/fav/index.dart';
 import '../pages/fav_detail/index.dart';
-import '../pages/fav_search/index.dart';
 import '../pages/follow/index.dart';
 import '../pages/history/index.dart';
-import '../pages/history_search/index.dart';
 import '../pages/home/index.dart';
 import '../pages/hot/index.dart';
 import '../pages/html/index.dart';
@@ -38,10 +35,9 @@ import '../pages/member_archive/index.dart';
 import '../pages/member_coin/index.dart';
 import '../pages/member_dynamics/index.dart';
 import '../pages/member_like/index.dart';
-import '../pages/member_search/index.dart';
 import '../pages/member_seasons/index.dart';
-import '../pages/search/index.dart';
-import '../pages/search_result/index.dart';
+
+
 import '../pages/setting/extra_setting.dart';
 import '../pages/setting/index.dart';
 import '../pages/setting/pages/action_menu_set.dart';
@@ -89,10 +85,8 @@ class Routes {
     CustomGetPage(name: '/later', page: () => const LaterPage()),
     // 历史记录
     CustomGetPage(name: '/history', page: () => const HistoryPage()),
-    // 搜索页面
-    CustomGetPage(name: '/search', page: () => const SearchPage()),
-    // 搜索结果
-    CustomGetPage(name: '/searchResult', page: () => const SearchResultPage()),
+
+
     // 动态
     CustomGetPage(name: '/dynamics', page: () => const DynamicsPage()),
     // 动态详情
@@ -105,7 +99,6 @@ class Routes {
 
     // 用户中心
     CustomGetPage(name: '/member', page: () => const MemberPage()),
-    CustomGetPage(name: '/memberSearch', page: () => const MemberSearchPage()),
     // 二级回复
     CustomGetPage(
         name: '/replyReply', page: () => const VideoReplyReplyPanel()),
@@ -134,13 +127,8 @@ class Routes {
     CustomGetPage(name: '/about', page: () => const AboutPage()),
     //
     CustomGetPage(name: '/htmlRender', page: () => const HtmlRenderPage()),
-    // 历史记录搜索
-    CustomGetPage(
-        name: '/historySearch', page: () => const HistorySearchPage()),
 
     CustomGetPage(name: '/playSpeedSet', page: () => const PlaySpeedPage()),
-    // 收藏搜索
-    CustomGetPage(name: '/favSearch', page: () => const FavSearchPage()),
     // 消息页面
     CustomGetPage(name: '/whisper', page: () => const WhisperPage()),
     // 私信详情
@@ -165,8 +153,6 @@ class Routes {
         name: '/memberSeasons', page: () => const MemberSeasonsPage()),
     // 日志
     CustomGetPage(name: '/logs', page: () => const LogsPage()),
-    // 搜索关注
-    CustomGetPage(name: '/followSearch', page: () => const FollowSearchPage()),
     // 订阅
     CustomGetPage(name: '/subscription', page: () => const SubPage()),
     // 订阅详情

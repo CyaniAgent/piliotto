@@ -27,11 +27,11 @@ class ReplyMember {
     uname = json['uname'];
     sign = json['sign'];
     avatar = json['avatar'];
-    level = json['level_info']['current_level'];
-    pendant = Pendant.fromJson(json['pendant']);
-    officialVerify = json['officia_verify'];
-    vip = json['vip'];
-    fansDetail = json['fans_detail'];
+    level = json['level_info'] != null ? json['level_info']['current_level'] : 1;
+    pendant = json['pendant'] != null ? Pendant.fromJson(json['pendant']) : Pendant(pid: 0, name: '', image: '');
+    officialVerify = json['officia_verify'] ?? {};
+    vip = json['vip'] ?? {'vipStatus': 0, 'vipType': 0};
+    fansDetail = json['fans_detail'] ?? {};
     userSailing = json['user_sailing'] != null
         ? UserSailing.fromJson(json['user_sailing'])
         : UserSailing();

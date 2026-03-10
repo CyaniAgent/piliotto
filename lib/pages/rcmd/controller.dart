@@ -6,6 +6,7 @@ import 'package:piliotto/services/ottohub_service.dart';
 import 'package:piliotto/api/models/video.dart';
 import 'package:piliotto/utils/responsive_util.dart';
 import 'package:piliotto/utils/storage.dart';
+import 'package:piliotto/services/loggeer.dart';
 
 class RcmdController extends GetxController {
   final ScrollController scrollController = ScrollController();
@@ -76,7 +77,7 @@ class RcmdController extends GetxController {
       return {'status': true, 'data': videos};
     } catch (error) {
       isLoadingMore = false;
-      print('Error fetching videos: $error');
+      getLogger().log(Level.error, 'Error fetching videos: $error');
       return {'status': false, 'data': [], 'msg': error.toString()};
     }
   }

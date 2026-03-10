@@ -93,7 +93,7 @@ class AiDetail extends StatelessWidget {
                                       try {
                                         final controller =
                                             Get.find<VideoDetailController>(
-                                          tag: Get.arguments['heroTag'],
+                                          tag: Get.arguments?['heroTag'] ?? 'default',
                                         );
                                         controller.plPlayerController.seekTo(
                                           Duration(

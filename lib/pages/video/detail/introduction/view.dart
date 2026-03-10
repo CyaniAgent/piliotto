@@ -45,7 +45,7 @@ class _VideoIntroPanelState extends State<VideoIntroPanel>
     super.initState();
 
     /// fix 全屏时参数丢失
-    heroTag = Get.arguments['heroTag'];
+    heroTag = Get.arguments?['heroTag'] ?? 'default_${widget.vid}';
     videoIntroController =
         Get.put(VideoIntroController(vid: widget.vid), tag: heroTag);
     _futureBuilderFuture = videoIntroController.queryVideoIntro();
@@ -109,7 +109,7 @@ class VideoInfo extends StatefulWidget {
 class _VideoInfoState extends State<VideoInfo> with TickerProviderStateMixin {
   late String heroTag;
   late final VideoIntroController videoIntroController;
-  late final VideoDetailController videoDetailCtr;
+  VideoDetailController? videoDetailCtr;
   final Box<dynamic> localCache = GStrorage.localCache;
   final Box<dynamic> setting = GStrorage.setting;
   late double sheetHeight;
@@ -136,7 +136,17 @@ class _VideoInfoState extends State<VideoInfo> with TickerProviderStateMixin {
     heroTag = widget.heroTag!;
     videoIntroController =
         Get.put(VideoIntroController(vid: widget.vid), tag: heroTag);
-    videoDetailCtr = Get.find<VideoDetailController>(tag: heroTag);
+    // 延迟获取 VideoDetailController，确保它已经被创建
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      try {
+        videoDetailCtr = Get.find<VideoDetailController>(tag: heroTag);
+        if (mounted) {
+          setState(() {});
+        }
+      } catch (e) {
+        print('VideoDetailController not found: $e');
+      }
+    });
     sheetHeight = localCache.get('sheetHeight');
 
     _expandableCtr = ExpandableController(initialExpanded: false);

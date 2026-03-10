@@ -28,12 +28,13 @@ class _SeasonPanelState extends State<SeasonPanel> {
   late List<EpisodeItem> episodes;
   late int cid;
   late RxInt currentIndex = (-1).obs;
-  final String heroTag = Get.arguments['heroTag'];
+  late String heroTag;
   late PersistentBottomSheetController? _bottomSheetController;
 
   @override
   void initState() {
     super.initState();
+    heroTag = Get.arguments?['heroTag'] ?? '';
     cid = widget.cid!;
 
     /// 根据 cid 找到对应集，找到对应 episodes

@@ -2,13 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
 import 'package:hive/hive.dart';
-import 'package:piliotto/http/member.dart';
-import 'package:piliotto/http/user.dart';
+import 'package:piliotto/api/services/old_api_service.dart';
 import 'package:piliotto/http/video.dart';
 import 'package:piliotto/models/member/archive.dart';
-import 'package:piliotto/models/member/coin.dart';
 import 'package:piliotto/models/member/info.dart';
-import 'package:piliotto/models/member/like.dart';
 import 'package:piliotto/utils/storage.dart';
 import 'package:share_plus/share_plus.dart';
 
@@ -25,8 +22,7 @@ class MemberController extends GetxController {
   dynamic userInfo;
   RxInt attribute = (-1).obs;
   RxString attributeText = '关注'.obs;
-  RxList<MemberCoinsDataModel> recentCoinsList = <MemberCoinsDataModel>[].obs;
-  RxList<MemberLikeDataModel> recentLikeList = <MemberLikeDataModel>[].obs;
+
   RxBool isOwner = false.obs;
 
   @override
@@ -43,32 +39,37 @@ class MemberController extends GetxController {
 
   // 获取用户信息
   Future<Map<String, dynamic>> getInfo() async {
-    await getMemberStat();
-    await getMemberView();
-    var res = await MemberHttp.memberInfo(mid: mid);
-    if (res['status']) {
-      memberInfo.value = res['data'];
-      face.value = res['data'].face;
+    var res = await OldApiService.getUserDetail(uid: mid);
+    if (res['status'] == 'success') {
+      final data = res['data'];
+      memberInfo.value = MemberInfoModel(
+        mid: data['uid'],
+        name: data['username'],
+        sign: data['intro'],
+        face: data['avatar_url'],
+        cover: data['cover_url'],
+        sex: data['sex'],
+        fans: data['fans_count'],
+        attention: data['followings_count'],
+        archiveCount: data['video_num'],
+        articleCount: data['blog_num'],
+      );
+      face.value = data['avatar_url'];
     }
     return res;
   }
 
   // 获取用户状态
   Future<Map<String, dynamic>> getMemberStat() async {
-    var res = await MemberHttp.memberStat(mid: mid);
-    if (res['status']) {
-      userStat = res['data'];
-    }
-    return res;
+    // Ottohub API 暂不支持此接口
+    userStat = {};
+    return {'status': true, 'data': {}};
   }
 
   // 获取用户播放数 获赞数
   Future<Map<String, dynamic>> getMemberView() async {
-    var res = await MemberHttp.memberView(mid: mid);
-    if (res['status']) {
-      userStat.addAll(res['data']);
-    }
-    return res;
+    // Ottohub API 暂不支持此接口
+    return {'status': true, 'data': {}};
   }
 
   // 关注/取关up
@@ -87,7 +88,7 @@ class MemberController extends GetxController {
       builder: (BuildContext context) {
         return AlertDialog(
           title: const Text('提示'),
-          content: Text(memberInfo.value.isFollowed! ? '取消关注UP主?' : '关注UP主?'),
+          content: Text(attributeText.value == '关注' ? '关注UP主?' : '取消关注UP主?'),
           actions: [
             TextButton(
               onPressed: () => SmartDialog.dismiss(),
@@ -98,15 +99,13 @@ class MemberController extends GetxController {
             ),
             TextButton(
               onPressed: () async {
-                await VideoHttp.relationMod(
-                  mid: mid,
-                  act: memberInfo.value.isFollowed! ? 2 : 1,
-                  reSrc: 11,
-                );
-                memberInfo.value.isFollowed = !memberInfo.value.isFollowed!;
-                relationSearch();
-                SmartDialog.dismiss();
-                memberInfo.update((val) {});
+                try {
+                  await OldApiService.followUser(followingUid: mid);
+                  await relationSearch();
+                  SmartDialog.dismiss();
+                } catch (e) {
+                  SmartDialog.showToast('操作失败，请重试');
+                }
               },
               child: const Text('确认'),
             )
@@ -120,28 +119,35 @@ class MemberController extends GetxController {
   Future relationSearch() async {
     if (userInfo == null) return;
     if (mid == ownerMid) return;
-    var res = await UserHttp.hasFollow(mid);
-    if (res['status']) {
-      attribute.value = res['data']['attribute'];
-      switch (attribute.value) {
-        case 1:
-          attributeText.value = '悄悄关注';
-          break;
-        case 2:
-          attributeText.value = '已关注';
-          break;
-        case 6:
-          attributeText.value = '已互关';
-          break;
-        case 128:
-          attributeText.value = '已拉黑';
-          break;
-        default:
-          attributeText.value = '关注';
+    try {
+      var res = await OldApiService.getFollowStatus(followingUid: mid);
+      if (res['status'] == 'success') {
+        final followStatus = res['data']['follow_status'];
+        switch (followStatus) {
+          case 1:
+            attribute.value = 0; // 互相未关注
+            attributeText.value = '关注';
+            break;
+          case 2:
+            attribute.value = 2; // 我关注对方
+            attributeText.value = '已关注';
+            break;
+          case 3:
+            attribute.value = 1; // 对方关注我
+            attributeText.value = '回关';
+            break;
+          case 4:
+            attribute.value = 6; // 互相关注
+            attributeText.value = '已互关';
+            break;
+          default:
+            attribute.value = -1;
+            attributeText.value = '关注';
+        }
       }
-      if (res['data']['special'] == 1) {
-        attributeText.value += 'SP';
-      }
+    } catch (e) {
+      attribute.value = -1;
+      attributeText.value = '关注';
     }
   }
 
@@ -194,50 +200,11 @@ class MemberController extends GetxController {
     Share.share('${memberInfo.value.name} - https://space.bilibili.com/$mid');
   }
 
-  // 请求合集
-  Future getMemberSeasons() async {
-    if (userInfo == null) return;
-    var res = await MemberHttp.getMemberSeasons(mid, 1, 10);
-    if (!res['status']) {
-      SmartDialog.showToast("用户合集请求异常：${res['msg']}");
-    } else {
-      // 只取前四个专栏
-      res['data'].seasonsList.map((e) {
-        e.archives =
-            e.archives!.length > 4 ? e.archives!.sublist(0, 4) : e.archives!;
-      }).toList();
-    }
-    return res;
-  }
-
-  // 请求投币视频
-  Future getRecentCoinVideo() async {
-    if (userInfo == null) return;
-    var res = await MemberHttp.getRecentCoinVideo(mid: mid);
-    recentCoinsList.value = res['data'];
-    return res;
-  }
-
-  // 请求点赞视频
-  Future getRecentLikeVideo() async {
-    if (userInfo == null) return;
-    var res = await MemberHttp.getRecentLikeVideo(mid: mid);
-    recentLikeList.value = res['data'];
-    return res;
-  }
-
   // 跳转查看动态
   void pushDynamicsPage() => Get.toNamed('/memberDynamics?mid=$mid');
 
   // 跳转查看投稿
   void pushArchivesPage() => Get.toNamed('/memberArchive?mid=$mid');
-
-  // 跳转查看专栏
-  void pushSeasonsPage() {}
-  // 跳转查看最近投币
-  void pushRecentCoinsPage() async {
-    if (recentCoinsList.isNotEmpty) {}
-  }
 
   void pushfavPage() => Get.toNamed('/fav?mid=$mid');
   // 跳转图文专栏

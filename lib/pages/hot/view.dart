@@ -22,7 +22,6 @@ class _HotPageState extends State<HotPage> with AutomaticKeepAliveClientMixin {
   final HotController _hotController = Get.put(HotController());
   List videoList = [];
   Future? _futureBuilderFuture;
-  late ScrollController scrollController;
 
   @override
   bool get wantKeepAlive => true;
@@ -31,19 +30,18 @@ class _HotPageState extends State<HotPage> with AutomaticKeepAliveClientMixin {
   void initState() {
     super.initState();
     _futureBuilderFuture = _hotController.queryHotFeed('init');
-    scrollController = _hotController.scrollController;
-    scrollController.addListener(
-      () {
-        if (scrollController.position.pixels >=
-            scrollController.position.maxScrollExtent - 200) {
-          if (!_hotController.isLoadingMore) {
-            _hotController.isLoadingMore = true;
-            _hotController.onLoad();
-          }
-        }
-        handleScrollEvent(scrollController);
-      },
-    );
+    _hotController.scrollController.addListener(_scrollListener);
+  }
+
+  void _scrollListener() {
+    if (_hotController.scrollController.position.pixels >=
+        _hotController.scrollController.position.maxScrollExtent - 200) {
+      if (!_hotController.isLoadingMore) {
+        _hotController.isLoadingMore = true;
+        _hotController.onLoad();
+      }
+    }
+    handleScrollEvent(_hotController.scrollController);
   }
 
   @override
@@ -65,7 +63,7 @@ class _HotPageState extends State<HotPage> with AutomaticKeepAliveClientMixin {
 
   @override
   void dispose() {
-    scrollController.removeListener(() {});
+    _hotController.scrollController.removeListener(_scrollListener);
     super.dispose();
   }
 

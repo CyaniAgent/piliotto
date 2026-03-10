@@ -4,8 +4,6 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 
-import '../plugin/pl_player/controller.dart';
-
 class ShutdownTimerService {
   static final ShutdownTimerService _instance =
       ShutdownTimerService._internal();
@@ -88,25 +86,14 @@ class ShutdownTimerService {
       _showShutdownDialog();
       return;
     }
-    PlPlayerController plPlayerController =
-        PlPlayerController(videoType: 'none');
     if (!exitApp && !waitForPlayingCompleted) {
-      if (!plPlayerController.playerStatus.playing) {
-        //仅提示用户
-        _showTimeUpButPauseDialog();
-      } else {
-        _showShutdownDialog();
-      }
+      // 仅提示用户
+      _showTimeUpButPauseDialog();
       return;
     }
-    //waitForPlayingCompleted
-    if (!plPlayerController.playerStatus.playing) {
-      _showShutdownDialog();
-      return;
-    }
+    // waitForPlayingCompleted
     SmartDialog.showToast("定时关闭时间已到，等待当前视频播放完成");
-    //监听播放完成
-    //该方法依赖耦合实现，不够优雅
+    // 监听播放完成
     isWaiting = true;
   }
 
@@ -119,19 +106,11 @@ class ShutdownTimerService {
 
   void _executeShutdown() {
     if (exitApp) {
-      //退出app
+      // 退出app
       exit(0);
     } else {
-      //暂停播放
-      PlPlayerController plPlayerController =
-          PlPlayerController(videoType: 'none');
-      if (plPlayerController.playerStatus.playing) {
-        plPlayerController.pause();
-        waitForPlayingCompleted = true;
-        SmartDialog.showToast("已暂停播放");
-      } else {
-        SmartDialog.showToast("当前未播放");
-      }
+      // 暂停播放
+      SmartDialog.showToast("定时关闭时间已到");
     }
   }
 

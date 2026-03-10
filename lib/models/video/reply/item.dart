@@ -82,20 +82,20 @@ class ReplyItemModel {
     parentStr = json['parent_str'];
     like = json['like'];
     action = json['action'];
-    member = ReplyMember.fromJson(json['member']);
-    content = ReplyContent.fromJson(json['content']);
+    member = json['member'] != null ? ReplyMember.fromJson(json['member']) : ReplyMember(mid: '', uname: '', sign: '', avatar: '', level: 1);
+    content = json['content'] != null ? ReplyContent.fromJson(json['content']) : ReplyContent(message: '');
     replies = json['replies'] != null
         ? json['replies']
             .map((item) => ReplyItemModel.fromJson(item, upperMid))
             .toList()
         : [];
     assist = json['assist'];
-    upAction = UpAction.fromJson(json['up_action']);
+    upAction = json['up_action'] != null ? UpAction.fromJson(json['up_action']) : UpAction(like: false, reply: false);
     invisible = json['invisible'];
     replyControl = json['reply_control'] == null
         ? null
         : ReplyControl.fromJson(json['reply_control']);
-    isUp = upperMid.toString() == json['member']['mid'];
+    isUp = json['member'] != null ? upperMid.toString() == json['member']['mid'] : false;
     isTop = isTopStatus;
     cardLabel = json['card_label'] != null
         ? json['card_label'].map((e) => e['text_content']).toList()

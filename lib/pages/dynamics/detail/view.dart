@@ -120,8 +120,8 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
           ),
         ),
         body: VideoReplyReplyPanel(
-          oid: oid,
-          rpid: rpid,
+          vid: oid,
+          parentVcid: rpid,
           source: 'dynamic',
           replyType: ReplyType.values[replyType],
           firstFloor: replyItem,

@@ -30,13 +30,14 @@ class _PagesPanelState extends State<PagesPanel> {
   late List<Part> episodes;
   late int cid;
   late RxInt currentIndex = (-1).obs;
-  final String heroTag = Get.arguments['heroTag'];
+  late String heroTag;
   final ScrollController listViewScrollCtr = ScrollController();
   late PersistentBottomSheetController? _bottomSheetController;
 
   @override
   void initState() {
     super.initState();
+    heroTag = Get.arguments?['heroTag'] ?? '';
     cid = widget.cid;
     episodes = widget.pages;
     currentIndex.value = episodes.indexWhere((Part e) => e.cid == cid);

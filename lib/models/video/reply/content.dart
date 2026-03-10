@@ -40,7 +40,7 @@ class ReplyContent {
     vote = json['vote'] ?? {};
     richText = json['rich_text'] ?? {};
     // 不包含@ 笔记 图片的时候，文字可折叠
-    isText = atNameToMid!.isEmpty && vote!.isEmpty && pictures!.isEmpty;
+    isText = (atNameToMid ?? {}).isEmpty && (vote ?? {}).isEmpty && (pictures ?? []).isEmpty;
     topicsMeta = json['topics_meta'] ?? {};
   }
 }

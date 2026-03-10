@@ -8,7 +8,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:get/get.dart';
 import 'package:hive/hive.dart';
 import 'package:piliotto/services/ottohub_service.dart';
-import 'package:piliotto/models/common/search_type.dart';
+
 import 'package:piliotto/pages/dlna/index.dart';
 import 'package:piliotto/pages/video/detail/index.dart';
 import 'package:piliotto/pages/video/detail/introduction/controller.dart';
@@ -32,7 +32,7 @@ class HeaderControl extends StatefulWidget implements PreferredSizeWidget {
   final VideoDetailController? videoDetailCtr;
   final Floating? floating;
   final int? vid;
-  final SearchType? videoType;
+  final String? videoType;
   final bool? showSubtitleBtn;
 
   @override
@@ -237,10 +237,10 @@ class _HeaderControlState extends State<HeaderControl> {
                             vid: widget.vid!,
                             text: msg,
                             time: widget.controller!.position.value.inSeconds,
-                            mode: '1',
+                            mode: 'scroll',
                             color: 'ffffff',
-                            fontSize: '25',
-                            render: '1',
+                            fontSize: '25px',
+                            render: '',
                           );
                           SmartDialog.showToast('发送成功');
                           Get.back();
@@ -940,7 +940,7 @@ class _HeaderControlState extends State<HeaderControl> {
           SizedBox(width: buttonSpace),
           if (isFullScreen.value &&
               isLandscape &&
-              widget.videoType == SearchType.video) ...[
+              widget.videoType == 'video') ...[
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -975,7 +975,7 @@ class _HeaderControlState extends State<HeaderControl> {
               ),
               fuc: () async {
                 // 销毁播放器实例
-                await widget.controller!.dispose(type: 'all');
+                await widget.controller!.dispose();
                 if (mounted) {
                   Navigator.popUntil(
                       context, (Route<dynamic> route) => route.isFirst);
@@ -1064,7 +1064,7 @@ class _HeaderControlState extends State<HeaderControl> {
                   }
                   if (canUsePiP && widget.floating != null) {
                     // Ottohub API 暂不提供视频宽高信息，使用默认宽高比 16:9
-                    final Rational aspectRatio = const Rational(16, 9);
+                    const Rational aspectRatio = Rational(16, 9);
                     await widget.floating!.enable(aspectRatio: aspectRatio);
                   } else {}
                 },

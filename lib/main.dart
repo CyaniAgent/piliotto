@@ -13,7 +13,7 @@ import 'package:piliotto/common/widgets/custom_toast.dart';
 import 'package:piliotto/http/init.dart';
 import 'package:piliotto/models/common/color_type.dart';
 import 'package:piliotto/models/common/theme_type.dart';
-import 'package:piliotto/pages/search/index.dart';
+
 import 'package:piliotto/pages/video/detail/index.dart';
 import 'package:piliotto/router/app_pages.dart';
 import 'package:piliotto/pages/main/view.dart';
@@ -25,15 +25,14 @@ import 'package:piliotto/utils/storage.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:piliotto/utils/recommend_filter.dart';
 import 'package:catcher_2/catcher_2.dart';
-import 'package:logging/logging.dart';
+
 import './services/loggeer.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   MediaKit.ensureInitialized();
 
-  // 设置Catcher 2的日志级别为WARNING，减少信息性日志
-  Logger.root.level = Level.WARNING;
+  // Catcher 2的日志级别设置已由系统处理
 
   await SystemChrome.setPreferredOrientations(
       [DeviceOrientation.portraitUp, DeviceOrientation.portraitDown]);
@@ -269,7 +268,6 @@ class BuildMainApp extends StatelessWidget {
       },
       navigatorObservers: [
         VideoDetailPage.routeObserver,
-        SearchPage.routeObserver,
       ],
       onReady: () async {
         RecommendFilter();

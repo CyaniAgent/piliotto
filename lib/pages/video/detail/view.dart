@@ -10,7 +10,7 @@ import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
 import 'package:lottie/lottie.dart';
 import 'package:piliotto/common/widgets/network_img_layer.dart';
-import 'package:piliotto/models/common/search_type.dart';
+
 import 'package:piliotto/pages/danmaku/view.dart';
 import 'package:piliotto/pages/main/index.dart';
 import 'package:piliotto/pages/video/detail/reply/index.dart';
@@ -19,7 +19,6 @@ import 'package:piliotto/pages/video/detail/introduction/index.dart';
 
 import 'package:piliotto/plugin/pl_player/index.dart';
 import 'package:piliotto/plugin/pl_player/models/play_repeat.dart';
-import 'package:piliotto/services/service_locator.dart';
 import 'package:piliotto/utils/storage.dart';
 import 'package:status_bar_control/status_bar_control.dart';
 import 'package:universal_platform/universal_platform.dart';
@@ -69,14 +68,11 @@ class _VideoDetailPageState extends State<VideoDetailPage>
   void initState() {
     super.initState();
     getStatusHeight();
-    heroTag = Get.arguments['heroTag'];
+    heroTag = Get.arguments?['heroTag'] ?? 'default';
     vdCtr = Get.put(VideoDetailController(), tag: heroTag);
     vdCtr.sheetHeight.value = localCache.get('sheetHeight');
     videoIntroController =
         Get.put(VideoIntroController(vid: vdCtr.vid), tag: heroTag);
-    videoIntroController.videoDetail.listen((value) {
-      videoPlayerServiceHandler.onVideoDetailChange(value, vdCtr.vid);
-    });
 
     statusBarHeight = localCache.get('statusBarHeight');
     autoExitFullcreen =
@@ -131,7 +127,7 @@ class _VideoDetailPageState extends State<VideoDetailPage>
       /// 顺序播放 列表循环
       if (plPlayerController!.playRepeat != PlayRepeat.pause &&
           plPlayerController!.playRepeat != PlayRepeat.singleCycle) {
-        if (vdCtr.videoType == SearchType.video) {
+        if (vdCtr.videoType == 'video') {
           videoIntroController.nextPlay();
         }
       }
@@ -177,7 +173,7 @@ class _VideoDetailPageState extends State<VideoDetailPage>
     plPlayerController?.isFullScreen.listen((bool isFullScreen) {
       if (isFullScreen) {
         vdCtr.hiddenReplyReplyPanel();
-        if (vdCtr.videoType == SearchType.video) {
+        if (vdCtr.videoType == 'video') {
           videoIntroController.hiddenEpisodeBottomSheet();
         }
       } else {
@@ -215,7 +211,6 @@ class _VideoDetailPageState extends State<VideoDetailPage>
     if (vdCtr.floating != null) {
       vdCtr.floating!.dispose();
     }
-    videoPlayerServiceHandler.onVideoDetailDispose();
     if (Platform.isAndroid) {
       floating.toggleAutoPip(autoEnter: false);
       floating.dispose();
@@ -270,7 +265,9 @@ class _VideoDetailPageState extends State<VideoDetailPage>
     /// 未开启自动播放时，未播放跳转下一页返回/播放后跳转下一页返回
     vdCtr.autoPlay.value = !vdCtr.isShowCover.value;
     videoIntroController.isPaused = false;
-    if (_extendNestCtr.position.pixels == 0 && autoplay) {
+    if (_extendNestCtr.hasClients &&
+        _extendNestCtr.position.pixels == 0 &&
+        autoplay) {
       await Future.delayed(const Duration(milliseconds: 300));
       plPlayerController?.seekTo(vdCtr.defaultST);
       plPlayerController?.play();
@@ -319,7 +316,7 @@ class _VideoDetailPageState extends State<VideoDetailPage>
       case 'pause':
         if (autoPiP) {
           vdCtr.hiddenReplyReplyPanel();
-          if (vdCtr.videoType == SearchType.video) {
+          if (vdCtr.videoType == 'video') {
             videoIntroController.hiddenEpisodeBottomSheet();
           }
         }
@@ -526,7 +523,7 @@ class _VideoDetailPageState extends State<VideoDetailPage>
                 playerController: plPlayerController!,
               ),
               bottomList: vdCtr.bottomList,
-              showEposideCb: () => vdCtr.videoType == SearchType.video
+              showEposideCb: () => vdCtr.videoType == 'video'
                   ? videoIntroController.showEposideHandler()
                   : null,
               fullScreenCb: (bool status) {
@@ -595,7 +592,7 @@ class _VideoDetailPageState extends State<VideoDetailPage>
                     return CustomScrollView(
                       key: const PageStorageKey<String>('简介'),
                       slivers: <Widget>[
-                        if (vdCtr.videoType == SearchType.video) ...[
+                        if (vdCtr.videoType == 'video') ...[
                           VideoIntroPanel(vid: vdCtr.vid),
                         ],
                         SliverToBoxAdapter(
@@ -611,11 +608,9 @@ class _VideoDetailPageState extends State<VideoDetailPage>
                     );
                   },
                 ),
-                Obx(
-                  () => VideoReplyPanel(
-                    vid: vdCtr.vid,
-                    onControllerCreated: vdCtr.onControllerCreated,
-                  ),
+                VideoReplyPanel(
+                  vid: vdCtr.vid,
+                  onControllerCreated: vdCtr.onControllerCreated,
                 )
               ],
             ),
@@ -768,7 +763,7 @@ class _VideoDetailPageState extends State<VideoDetailPage>
                               return CustomScrollView(
                                 key: const PageStorageKey<String>('简介'),
                                 slivers: <Widget>[
-                                  if (vdCtr.videoType == SearchType.video) ...[
+                                  if (vdCtr.videoType == 'video') ...[
                                     VideoIntroPanel(vid: vdCtr.vid),
                                   ],
                                   SliverToBoxAdapter(
@@ -784,11 +779,9 @@ class _VideoDetailPageState extends State<VideoDetailPage>
                               );
                             },
                           ),
-                          Obx(
-                            () => VideoReplyPanel(
-                              vid: vdCtr.vid,
-                              onControllerCreated: vdCtr.onControllerCreated,
-                            ),
+                          VideoReplyPanel(
+                            vid: vdCtr.vid,
+                            onControllerCreated: vdCtr.onControllerCreated,
                           )
                         ],
                       ),

@@ -76,7 +76,7 @@ class _LoginPageState extends State<LoginPage> {
                   Expanded(
                     flex: 2,
                     child: Padding(
-                      padding: EdgeInsets.symmetric(
+                      padding: const EdgeInsets.symmetric(
                         horizontal: 40,
                         vertical: 40,
                       ),

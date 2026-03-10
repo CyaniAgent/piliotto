@@ -8,7 +8,6 @@ import 'package:piliotto/models/video/play/ao_output.dart';
 import 'package:piliotto/models/video/play/quality.dart';
 import 'package:piliotto/pages/setting/widgets/select_dialog.dart';
 import 'package:piliotto/plugin/pl_player/index.dart';
-import 'package:piliotto/services/service_locator.dart';
 import 'package:piliotto/utils/global_data_cache.dart';
 import 'package:piliotto/utils/storage.dart';
 
@@ -54,9 +53,6 @@ class _PlaySettingState extends State<PlaySetting> {
   @override
   void dispose() {
     super.dispose();
-
-    // 重新验证媒体通知后台播放设置
-    videoPlayerServiceHandler.revalidateSetting();
   }
 
   @override

@@ -1,6 +1,5 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
 import 'package:hive/hive.dart';
 import 'package:piliotto/common/widgets/network_img_layer.dart';
 import 'package:piliotto/pages/mine/view.dart';
@@ -44,7 +43,7 @@ class HomeAppBar extends StatelessWidget {
                       tag: 'searchTag',
                       child: IconButton(
                         onPressed: () {
-                          Get.toNamed('/search');
+                          // 搜索功能暂时移除，准备重做
                         },
                         icon: const Icon(CupertinoIcons.search, size: 22),
                       ),

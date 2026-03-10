@@ -72,7 +72,7 @@ class _RegisterPageState extends State<RegisterPage> {
                   Expanded(
                     flex: 2,
                     child: Padding(
-                      padding: EdgeInsets.symmetric(
+                      padding: const EdgeInsets.symmetric(
                         horizontal: 40,
                         vertical: 40,
                       ),

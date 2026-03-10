@@ -6,7 +6,6 @@ import 'package:piliotto/common/widgets/stat/danmu.dart';
 import 'package:piliotto/common/widgets/stat/view.dart';
 import 'package:piliotto/http/search.dart';
 import 'package:piliotto/http/video.dart';
-import 'package:piliotto/models/common/search_type.dart';
 import 'package:piliotto/utils/id_utils.dart';
 import 'package:piliotto/utils/image_save.dart';
 import 'package:piliotto/utils/utils.dart';
@@ -62,7 +61,7 @@ class FavVideoCardH extends StatelessWidget {
           'videoItem': videoItem,
           'heroTag': heroTag,
           'videoType':
-              epId != null ? SearchType.media_bangumi : SearchType.video,
+              epId != null ? 'media_bangumi' : 'video',
         });
       },
       onLongPress: () => imageSaveDialog(

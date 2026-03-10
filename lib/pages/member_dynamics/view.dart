@@ -69,7 +69,7 @@ class _MemberDynamicsPageState extends State<MemberDynamicsPage> {
                   Map data = snapshot.data as Map;
                   RxList<DynamicItemModel> list =
                       _memberDynamicController.dynamicsList;
-                  if (data['status']) {
+                  if (data['status'] == 'success') {
                     return Obx(
                       () => list.isNotEmpty
                           ? SliverList(
@@ -84,13 +84,13 @@ class _MemberDynamicsPageState extends State<MemberDynamicsPage> {
                     );
                   } else {
                     return HttpError(
-                      errMsg: snapshot.data['msg'],
+                      errMsg: data['message'] ?? '加载失败，请稍后重试',
                       fn: () {},
                     );
                   }
                 } else {
                   return HttpError(
-                    errMsg: snapshot.data['msg'],
+                    errMsg: '加载失败，请稍后重试',
                     fn: () {},
                   );
                 }

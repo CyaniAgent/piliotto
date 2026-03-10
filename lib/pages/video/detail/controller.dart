@@ -6,11 +6,11 @@ import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
 import 'package:hive/hive.dart';
 import 'package:piliotto/services/ottohub_service.dart';
-import 'package:piliotto/models/common/reply_type.dart';
-import 'package:piliotto/models/common/search_type.dart';
+
 import 'package:piliotto/models/video/reply/item.dart';
 import 'package:piliotto/models/video/later.dart';
 import 'package:piliotto/plugin/pl_player/index.dart';
+import 'package:ns_danmaku/ns_danmaku.dart';
 import 'package:piliotto/services/loggeer.dart';
 import 'package:piliotto/utils/storage.dart';
 import 'package:screen_brightness/screen_brightness.dart';
@@ -20,19 +20,20 @@ import '../../../api/models/video.dart';
 import '../../../plugin/pl_player/models/bottom_control_type.dart';
 import 'introduction/controller.dart';
 import 'reply/controller.dart';
-import 'reply_reply/view.dart';
 import 'widgets/header_control.dart';
 import 'widgets/watch_later_list.dart';
 
 class VideoDetailController extends GetxController
     with GetSingleTickerProviderStateMixin {
   /// 路由传参
-  int vid = int.parse(Get.parameters['vid']!);
-  String heroTag = Get.arguments['heroTag'];
+  int vid = int.tryParse(
+          Get.parameters['vid'] ?? Get.arguments['vid']?.toString() ?? '0') ??
+      0;
+  String heroTag = Get.arguments['heroTag'] ?? '';
   // 视频详情
   late Video videoItem;
   // 视频类型 默认投稿视频
-  SearchType videoType = Get.arguments['videoType'] ?? SearchType.video;
+  String videoType = Get.arguments['videoType'] ?? 'video';
   // 页面来源 稍后再看 收藏夹
   RxString sourceType = 'normal'.obs;
 
@@ -59,10 +60,10 @@ class VideoDetailController extends GetxController
   int fRpid = 0;
 
   ReplyItemModel? firstFloor;
-  final scaffoldKey = GlobalKey<ScaffoldState>();
+  GlobalKey<ScaffoldState> get scaffoldKey => GlobalKey<ScaffoldState>();
   RxString bgCover = ''.obs;
   RxString cover = ''.obs;
-  PlPlayerController plPlayerController = PlPlayerController();
+  late PlPlayerController plPlayerController;
 
   late String videoUrl;
   late Duration defaultST;
@@ -95,6 +96,9 @@ class VideoDetailController extends GetxController
   @override
   void onInit() {
     super.onInit();
+    // 创建独立的播放器实例
+    plPlayerController = PlPlayerController();
+
     final Map argMap = Get.arguments;
     userInfo = userInfoCache.get('userInfoCache');
     if (argMap.containsKey('videoItem')) {
@@ -145,25 +149,26 @@ class VideoDetailController extends GetxController
   }
 
   showReplyReplyPanel(oid, fRpid, firstFloor, currentReply, loadMore) {
-    replyReplyBottomSheetCtr =
-        scaffoldKey.currentState?.showBottomSheet((BuildContext context) {
-      return VideoReplyReplyPanel(
-        oid: oid,
-        rpid: fRpid,
-        closePanel: () => {
-          fRpid = 0,
-        },
-        firstFloor: firstFloor,
-        replyType: ReplyType.video,
-        source: 'videoDetail',
-        sheetHeight: sheetHeight.value,
-        currentReply: currentReply,
-        loadMore: loadMore,
-      );
-    });
-    replyReplyBottomSheetCtr?.closed.then((value) {
-      fRpid = 0;
-    });
+    // 暂时禁用二级评论功能
+    // replyReplyBottomSheetCtr =
+    //     scaffoldKey.currentState?.showBottomSheet((BuildContext context) {
+    //   return VideoReplyReplyPanel(
+    //     vid: oid,
+    //     parentVcid: fRpid,
+    //     closePanel: () => {
+    //       fRpid = 0,
+    //     },
+    //     firstFloor: firstFloor,
+    //     replyType: ReplyType.video,
+    //     source: 'videoDetail',
+    //     sheetHeight: sheetHeight.value,
+    //     currentReply: currentReply,
+    //     loadMore: loadMore,
+    //   );
+    // });
+    // replyReplyBottomSheetCtr?.closed.then((value) {
+    //   fRpid = 0;
+    // });
   }
 
   // 获取视频详情
@@ -176,8 +181,17 @@ class VideoDetailController extends GetxController
       videoItem = await OttohubService.getVideoDetail(vid);
       logger.d('获取视频详情成功: ${videoItem.title}');
       updateCover(videoItem.coverUrl);
-      videoUrl = "https://ottohub.cn/api/video/play?vid=$vid";
+      videoUrl = videoItem.videoUrl ?? '';
       logger.d('生成视频URL: $videoUrl');
+
+      // 检查视频URL是否有效
+      if (videoUrl.isEmpty) {
+        logger.e('视频URL为空，视频无效');
+        isEffective.value = false;
+        SmartDialog.showToast('视频URL无效');
+        return;
+      }
+
       defaultST = Duration.zero;
       if (autoPlay.value) {
         logger.d('开始初始化播放器');
@@ -232,6 +246,9 @@ class VideoDetailController extends GetxController
 
     plPlayerController.subtitles.value = subtitles;
     logger.d('设置字幕');
+    // 获取弹幕
+    logger.d('调用 getDanmaku 获取弹幕');
+    await getDanmaku(subtitles);
   }
 
   // mob端全屏状态关闭二级回复
@@ -250,7 +267,51 @@ class VideoDetailController extends GetxController
 
   // 获取弹幕
   Future getDanmaku(List subtitles) async {
-    // Ottohub API 暂不支持弹幕
+    try {
+      final logger = getLogger();
+      logger.d('开始获取弹幕，vid: $vid');
+      final danmakus = await OttohubService.getDanmakus(vid);
+      logger.d('获取弹幕成功，数量: ${danmakus.length}');
+      // 处理弹幕数据，转换为播放器需要的格式
+      if (plPlayerController.danmakuController != null) {
+        // 清空现有弹幕
+        plPlayerController.danmakuController!.clear();
+        // 添加新弹幕
+        for (var danmaku in danmakus) {
+          // 转换弹幕模式
+          DanmakuItemType type = DanmakuItemType.scroll; // 默认滚动弹幕
+          if (danmaku.mode == 'top') {
+            type = DanmakuItemType.top;
+          } else if (danmaku.mode == 'bottom') {
+            type = DanmakuItemType.bottom;
+          }
+          // 转换颜色
+          Color color = Colors.white;
+          if (danmaku.color.isNotEmpty) {
+            try {
+              color = Color(int.parse(danmaku.color, radix: 16) | 0xFF000000);
+            } catch (e) {
+              // 颜色转换失败，使用默认白色
+            }
+          }
+          // 创建弹幕项
+          DanmakuItem item = DanmakuItem(
+            danmaku.text,
+            color: color,
+            time: (danmaku.time * 1000).toInt(), // 转换为毫秒并转为int
+            type: type,
+          );
+          // 添加到弹幕控制器
+          plPlayerController.danmakuController!.addItems([item]);
+        }
+        logger.d('弹幕数据已添加到播放器');
+      } else {
+        logger.w('弹幕控制器未初始化');
+      }
+    } catch (e) {
+      final logger = getLogger();
+      logger.e('获取弹幕失败：${e.toString()}');
+    }
   }
 
   setSubtitleContent() {
@@ -308,10 +369,10 @@ class VideoDetailController extends GetxController
                             vid: vid,
                             text: msg,
                             time: plPlayerController.position.value.inSeconds,
-                            mode: '1',
+                            mode: 'scroll',
                             color: 'ffffff',
-                            fontSize: '25',
-                            render: '1',
+                            fontSize: '25px',
+                            render: '',
                           );
                           SmartDialog.showToast('发送成功');
                           Get.back();
@@ -395,7 +456,7 @@ class VideoDetailController extends GetxController
       /// 未渲染回复组件时可能异常
       final VideoReplyController videoReplyCtr =
           Get.find<VideoReplyController>(tag: heroTag);
-      videoReplyCtr.vid = vidVal;
+      videoReplyCtr.updateVid(vidVal);
       videoReplyCtr.queryReplyList(type: 'init');
     } catch (_) {}
     videoIntroCtr.vid = vidVal;
@@ -417,6 +478,7 @@ class VideoDetailController extends GetxController
   @override
   void onClose() {
     super.onClose();
+    // 销毁播放器
     plPlayerController.dispose();
     tabCtr.removeListener(onTabChanged);
   }

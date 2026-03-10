@@ -26,7 +26,7 @@ class LiveRoomController extends GetxController {
   double volume = 0.0;
   // 静音状态
   RxBool volumeOff = false.obs;
-  PlPlayerController plPlayerController = PlPlayerController(videoType: 'live');
+  late PlPlayerController plPlayerController;
   Rx<RoomInfoH5Model> roomInfoH5 = RoomInfoH5Model().obs;
   late bool enableCDN;
   late int currentQn;
@@ -53,6 +53,9 @@ class LiveRoomController extends GetxController {
   @override
   void onInit() {
     super.onInit();
+    // 创建独立的播放器实例
+    plPlayerController = PlPlayerController(videoType: 'live');
+
     currentQn = setting.get(SettingBoxKey.defaultLiveQa,
         defaultValue: LiveQuality.values.last.code);
     roomId = int.parse(Get.parameters['roomid']!);
@@ -297,6 +300,8 @@ class LiveRoomController extends GetxController {
   void onClose() {
     heartBeat();
     plSocket?.onClose();
+    // 销毁播放器
+    plPlayerController.dispose();
     super.onClose();
   }
 }

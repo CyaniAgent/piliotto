@@ -14,7 +14,7 @@ import 'package:piliotto/models/common/reply_type.dart';
 import 'package:piliotto/models/video/reply/item.dart';
 import 'package:piliotto/pages/main/index.dart';
 import 'package:piliotto/pages/video/detail/index.dart';
-import 'package:piliotto/pages/video/detail/reply_new/index.dart';
+
 import 'package:piliotto/plugin/pl_gallery/index.dart';
 import 'package:piliotto/plugin/pl_popup/index.dart';
 import 'package:piliotto/utils/app_scheme.dart';
@@ -50,51 +50,19 @@ class ReplyItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bool isOwner = int.parse(replyItem!.member!.mid!) ==
-        (GlobalDataCache().userInfo?.mid ?? -1);
     return Material(
-      child: InkWell(
-        // 点击整个评论区 评论详情/回复
-        onTap: () {
-          if (replySave!) {
-            return;
-          }
-          feedBack();
-          if (replyReply != null) {
-            replyReply!(replyItem, null, replyItem!.replies!.isNotEmpty);
-          }
-        },
-        onLongPress: () {
-          if (replySave!) {
-            return;
-          }
-          feedBack();
-          showModalBottomSheet(
-            context: context,
-            useRootNavigator: true,
-            isScrollControlled: true,
-            builder: (context) {
-              return MorePanel(
-                item: replyItem,
-                mainFloor: true,
-                isOwner: isOwner,
-              );
-            },
-          );
-        },
-        child: Container(
-          padding: const EdgeInsets.fromLTRB(12, 14, 8, 5),
-          decoration: BoxDecoration(
-              border: Border(
-                  bottom: BorderSide(
-            width: 1,
-            color: Theme.of(context)
-                .colorScheme
-                .onInverseSurface
-                .withValues(alpha: 0.5),
-          ))),
-          child: content(context),
-        ),
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(12, 14, 8, 5),
+        decoration: BoxDecoration(
+            border: Border(
+                bottom: BorderSide(
+          width: 1,
+          color: Theme.of(context)
+              .colorScheme
+              .onInverseSurface
+              .withValues(alpha: 0.5),
+        ))),
+        child: content(context),
       ),
     );
   }
@@ -240,108 +208,140 @@ class ReplyItem extends StatelessWidget {
         // title
         Container(
           margin: const EdgeInsets.only(top: 10, left: 45, right: 6, bottom: 4),
-          child: Text.rich(
-            style: const TextStyle(height: 1.75),
-            maxLines:
-                replyItem!.content!.isText! && replyLevel == '1' ? 3 : 999,
-            overflow: TextOverflow.ellipsis,
-            TextSpan(
-              children: [
-                if (replyItem!.isTop!)
-                  const WidgetSpan(
-                    alignment: PlaceholderAlignment.top,
-                    child: PBadge(
-                      text: 'TOP',
-                      size: 'small',
-                      stack: 'normal',
-                      type: 'line',
-                      fs: 9,
+          child: SelectionArea(
+            child: Text.rich(
+              style: const TextStyle(height: 1.75),
+              maxLines:
+                  replyItem!.content!.isText! && replyLevel == '1' ? 3 : 999,
+              overflow: TextOverflow.ellipsis,
+              TextSpan(
+                children: [
+                  if (replyItem!.isTop!)
+                    const WidgetSpan(
+                      alignment: PlaceholderAlignment.top,
+                      child: PBadge(
+                        text: 'TOP',
+                        size: 'small',
+                        stack: 'normal',
+                        type: 'line',
+                        fs: 9,
+                      ),
                     ),
-                  ),
-                buildContent(context, replyItem!, replyReply, null),
-              ],
+                  buildContent(context, replyItem!, replyReply, null),
+                ],
+              ),
             ),
           ),
         ),
         // 操作区域
         bottonAction(context, replyItem!.replyControl, replySave),
         // 一楼的评论
-        if ((replyItem!.replyControl!.isShow! ||
-                replyItem!.replies!.isNotEmpty) &&
-            showReplyRow!) ...[
-          Padding(
-            padding: const EdgeInsets.only(top: 5, bottom: 12),
-            child: ReplyItemRow(
-              replies: replyItem!.replies,
-              replyControl: replyItem!.replyControl,
-              // f_rpid: replyItem!.rpid,
-              replyItem: replyItem,
-              replyReply: replyReply,
-            ),
-          ),
-        ],
+        // 暂时禁用二级评论功能
+        // if ((replyItem!.replyControl!.isShow! ||
+        //         replyItem!.replies!.isNotEmpty) &&
+        //     showReplyRow!) ...[
+        //   Padding(
+        //     padding: const EdgeInsets.only(top: 5, bottom: 12),
+        //     child: ReplyItemRow(
+        //       replies: replyItem!.replies,
+        //       replyControl: replyItem!.replyControl,
+        //       // f_rpid: replyItem!.rpid,
+        //       replyItem: replyItem,
+        //       replyReply: replyReply,
+        //     ),
+        //   ),
+        // ],
       ],
     );
   }
 
-  // 感谢、回复、复制
+  void _handleMenuAction(
+      BuildContext context, String action, ReplyItemModel item) async {
+    feedBack();
+    String message = item.content!.message ?? '';
+    switch (action) {
+      case 'copyAll':
+        await Clipboard.setData(ClipboardData(text: message));
+        SmartDialog.showToast('已复制');
+        break;
+      case 'copyFreedom':
+        showDialog(
+          context: context,
+          builder: (ctx) {
+            return AlertDialog(
+              title: const Text('自由复制'),
+              content: SelectableText(message),
+            );
+          },
+        );
+        break;
+      case 'save':
+        Navigator.push(
+          context,
+          PlPopupRoute(child: ReplySave(replyItem: item)),
+        );
+        break;
+      case 'delete':
+        final bool confirmed = await showDialog<bool>(
+              context: context,
+              builder: (ctx) {
+                return AlertDialog(
+                  title: const Text('删除评论'),
+                  content: const Text('删除评论后，评论下所有回复将被删除，确定删除吗？'),
+                  actions: <Widget>[
+                    TextButton(
+                      onPressed: () => Navigator.of(ctx).pop(false),
+                      child: Text('取消',
+                          style: TextStyle(
+                              color: Theme.of(ctx).colorScheme.outline)),
+                    ),
+                    TextButton(
+                      onPressed: () => Navigator.of(ctx).pop(true),
+                      child: const Text('确定'),
+                    ),
+                  ],
+                );
+              },
+            ) ??
+            false;
+        if (confirmed && context.mounted) {
+          var result = await ReplyHttp.replyDel(
+            type: item.type!,
+            oid: item.oid!,
+            rpid: item.rpid!,
+          );
+          if (result['status']) {
+            SmartDialog.showToast('评论删除成功，需手动刷新');
+          } else {
+            SmartDialog.showToast(result['msg']);
+          }
+        }
+        break;
+    }
+  }
+
   Widget bottonAction(BuildContext context, replyControl, replySave) {
     ColorScheme colorScheme = Theme.of(context).colorScheme;
     TextTheme textTheme = Theme.of(context).textTheme;
     return Row(
       children: <Widget>[
         const SizedBox(width: 32),
-        SizedBox(
-          height: 32,
-          child: TextButton(
-            onPressed: () {
-              feedBack();
-              showModalBottomSheet(
-                context: context,
-                isScrollControlled: true,
-                builder: (builder) {
-                  return VideoReplyNewDialog(
-                    oid: replyItem!.oid,
-                    root: replyItem!.rpid,
-                    parent: replyItem!.rpid,
-                    replyType: replyType,
-                    replyItem: replyItem,
-                  );
-                },
-              ).then((value) => {
-                    // 完成评论，数据添加
-                    if (value != null && value['data'] != null)
-                      {
-                        addReply?.call(value['data'])
-                        // replyControl.replies.add(value['data']),
-                      }
-                  });
-            },
-            child: Row(children: [
-              if (!replySave!) ...[
-                Icon(Icons.reply,
-                    size: 18,
-                    color: colorScheme.outline.withValues(alpha: 0.8)),
-                const SizedBox(width: 3),
-                Text(
-                  '回复',
-                  style: TextStyle(
-                    fontSize: textTheme.labelMedium!.fontSize,
-                    color: colorScheme.outline,
-                  ),
-                )
-              ],
-              if (replySave!)
-                Text(
-                  IdUtils.av2bv(replyItem!.oid!),
-                  style: TextStyle(
-                    fontSize: textTheme.labelMedium!.fontSize,
-                    color: colorScheme.outline,
-                  ),
+        ZanButton(replyItem: replyItem, replyType: replyType),
+        if (replySave!) ...[
+          SizedBox(
+            height: 32,
+            child: TextButton(
+              onPressed: () {},
+              child: Text(
+                IdUtils.av2bv(replyItem!.oid!),
+                style: TextStyle(
+                  fontSize: textTheme.labelMedium!.fontSize,
+                  color: colorScheme.outline,
                 ),
-            ]),
+              ),
+            ),
           ),
-        ),
+        ],
         const SizedBox(width: 2),
         if (replyItem!.upAction!.like!) ...[
           Text(
@@ -361,7 +361,65 @@ class ReplyItem extends StatelessWidget {
                 fontSize: textTheme.labelMedium!.fontSize),
           ),
         const Spacer(),
-        ZanButton(replyItem: replyItem, replyType: replyType),
+        PopupMenuButton<String>(
+          onSelected: (String value) {
+            _handleMenuAction(context, value, replyItem!);
+          },
+          icon: Icon(Icons.more_horiz, color: colorScheme.outline),
+          position: PopupMenuPosition.under,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          itemBuilder: (BuildContext context) {
+            final bool isOwner = int.parse(replyItem!.member!.mid!) ==
+                (GlobalDataCache().userInfo?.mid ?? -1);
+            return <PopupMenuEntry<String>>[
+              const PopupMenuItem<String>(
+                value: 'copyAll',
+                child: Row(
+                  children: [
+                    Icon(Icons.copy_all_outlined, size: 19),
+                    SizedBox(width: 12),
+                    Text('复制全部'),
+                  ],
+                ),
+              ),
+              const PopupMenuItem<String>(
+                value: 'copyFreedom',
+                child: Row(
+                  children: [
+                    Icon(Icons.copy_outlined, size: 19),
+                    SizedBox(width: 12),
+                    Text('自由复制'),
+                  ],
+                ),
+              ),
+              if (replyItem!.content!.pictures!.isEmpty)
+                const PopupMenuItem<String>(
+                  value: 'save',
+                  child: Row(
+                    children: [
+                      Icon(Icons.save_alt_rounded, size: 19),
+                      SizedBox(width: 12),
+                      Text('本地保存'),
+                    ],
+                  ),
+                ),
+              if (isOwner)
+                PopupMenuItem<String>(
+                  value: 'delete',
+                  child: Row(
+                    children: [
+                      Icon(Icons.delete_outline,
+                          size: 19, color: colorScheme.error),
+                      const SizedBox(width: 12),
+                      Text('删除评论', style: TextStyle(color: colorScheme.error)),
+                    ],
+                  ),
+                ),
+            ];
+          },
+        ),
         const SizedBox(width: 5)
       ],
     );
@@ -416,7 +474,7 @@ class ReplyItemRow extends StatelessWidget {
                     feedBack();
                     showModalBottomSheet(
                       context: context,
-                      useRootNavigator: true,
+                      useRootNavigator: false,
                       isScrollControlled: true,
                       builder: (context) {
                         return MorePanel(item: replies![i]);
@@ -667,7 +725,7 @@ InlineSpan buildContent(
                   try {
                     SmartDialog.showToast('跳转至：$matchStr');
                     Get.find<VideoDetailController>(
-                            tag: Get.arguments['heroTag'])
+                            tag: Get.arguments?['heroTag'] ?? 'default')
                         .plPlayerController
                         .seekTo(
                           Duration(seconds: Utils.duration(matchStr)),
@@ -1021,6 +1079,7 @@ class MorePanel extends StatelessWidget {
   final dynamic item;
   final bool mainFloor;
   final bool isOwner;
+
   const MorePanel({
     super.key,
     required this.item,
@@ -1028,57 +1087,56 @@ class MorePanel extends StatelessWidget {
     this.isOwner = false,
   });
 
-  Future<dynamic> menuActionHandler(String type) async {
+  Future<dynamic> menuActionHandler(BuildContext context, String type) async {
     String message = item.content.message ?? item.content;
     switch (type) {
       case 'copyAll':
         await Clipboard.setData(ClipboardData(text: message));
         SmartDialog.showToast('已复制');
-        Get.back();
+        if (context.mounted) {
+          Navigator.of(context).pop();
+        }
         break;
       case 'copyFreedom':
-        Get.back();
-        showDialog(
-          context: Get.context!,
-          builder: (context) {
-            return AlertDialog(
-              title: const Text('自由复制'),
-              content: SelectableText(message),
-            );
-          },
-        );
+        if (context.mounted) {
+          Navigator.of(context).pop();
+          showDialog(
+            context: context,
+            builder: (ctx) {
+              return AlertDialog(
+                title: const Text('自由复制'),
+                content: SelectableText(message),
+              );
+            },
+          );
+        }
         break;
       case 'save':
-        Get.back();
-        Navigator.push(
-          Get.context!,
-          PlPopupRoute(child: ReplySave(replyItem: item)),
-        );
+        if (context.mounted) {
+          Navigator.of(context).pop();
+          Navigator.push(
+            context,
+            PlPopupRoute(child: ReplySave(replyItem: item)),
+          );
+        }
         break;
-      // case 'block':
-      //   SmartDialog.showToast('加入黑名单');
-      //   break;
-      // case 'report':
-      //   SmartDialog.showToast('举报');
-      //   break;
       case 'delete':
-        // 删除评论提示
         await showDialog(
-          context: Get.context!,
-          builder: (context) {
+          context: context,
+          builder: (ctx) {
             return AlertDialog(
               title: const Text('删除评论'),
               content: const Text('删除评论后，评论下所有回复将被删除，确定删除吗？'),
               actions: <Widget>[
                 TextButton(
-                  onPressed: () => Get.back(),
+                  onPressed: () => Navigator.of(ctx).pop(),
                   child: Text('取消',
-                      style: TextStyle(
-                          color: Theme.of(context).colorScheme.outline)),
+                      style:
+                          TextStyle(color: Theme.of(ctx).colorScheme.outline)),
                 ),
                 TextButton(
                   onPressed: () async {
-                    Get.back();
+                    Navigator.of(ctx).pop();
                     var result = await ReplyHttp.replyDel(
                       type: item.type!,
                       oid: item.oid!,
@@ -1086,7 +1144,9 @@ class MorePanel extends StatelessWidget {
                     );
                     if (result['status']) {
                       SmartDialog.showToast('评论删除成功，需手动刷新');
-                      Get.back();
+                      if (context.mounted) {
+                        Navigator.of(context).pop();
+                      }
                     } else {
                       SmartDialog.showToast(result['msg']);
                     }
@@ -1107,13 +1167,14 @@ class MorePanel extends StatelessWidget {
     ColorScheme colorScheme = Theme.of(context).colorScheme;
     TextTheme textTheme = Theme.of(context).textTheme;
     Color errorColor = colorScheme.error;
+
     return Container(
       padding: EdgeInsets.only(bottom: MediaQuery.of(context).padding.bottom),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           InkWell(
-            onTap: () => Get.back(),
+            onTap: () => Navigator.of(context).pop(),
             child: Container(
               height: 35,
               padding: const EdgeInsets.only(bottom: 2),
@@ -1129,39 +1190,27 @@ class MorePanel extends StatelessWidget {
             ),
           ),
           ListTile(
-            onTap: () async => await menuActionHandler('copyAll'),
+            onTap: () async => await menuActionHandler(context, 'copyAll'),
             minLeadingWidth: 0,
             leading: const Icon(Icons.copy_all_outlined, size: 19),
             title: Text('复制全部', style: textTheme.titleSmall),
           ),
           ListTile(
-            onTap: () async => await menuActionHandler('copyFreedom'),
+            onTap: () async => await menuActionHandler(context, 'copyFreedom'),
             minLeadingWidth: 0,
             leading: const Icon(Icons.copy_outlined, size: 19),
             title: Text('自由复制', style: textTheme.titleSmall),
           ),
           if (mainFloor && item.content.pictures.isEmpty)
             ListTile(
-              onTap: () async => await menuActionHandler('save'),
+              onTap: () async => await menuActionHandler(context, 'save'),
               minLeadingWidth: 0,
               leading: const Icon(Icons.save_alt_rounded, size: 19),
               title: Text('本地保存', style: textTheme.titleSmall),
             ),
-          // ListTile(
-          //   onTap: () async => await menuActionHandler('block'),
-          //   minLeadingWidth: 0,
-          //   leading: Icon(Icons.block_outlined, color: errorColor),
-          //   title: Text('加入黑名单', style: TextStyle(color: errorColor)),
-          // ),
-          // ListTile(
-          //   onTap: () async => await menuActionHandler('report'),
-          //   minLeadingWidth: 0,
-          //   leading: Icon(Icons.report_outlined, color: errorColor),
-          //   title: Text('举报', style: TextStyle(color: errorColor)),
-          // ),
           if (isOwner)
             ListTile(
-              onTap: () async => await menuActionHandler('delete'),
+              onTap: () async => await menuActionHandler(context, 'delete'),
               minLeadingWidth: 0,
               leading: Icon(Icons.delete_outline, color: errorColor),
               title: Text('删除评论',
