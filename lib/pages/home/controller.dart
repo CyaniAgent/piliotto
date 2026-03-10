@@ -5,7 +5,7 @@ import 'package:get/get.dart';
 import 'package:hive/hive.dart';
 import 'package:piliotto/models/common/tab_type.dart';
 import 'package:piliotto/utils/storage.dart';
-import '../../http/index.dart';
+import 'package:piliotto/services/ottohub_service.dart';
 
 class HomeController extends GetxController with GetTickerProviderStateMixin {
   bool flag = false;
@@ -109,9 +109,18 @@ class HomeController extends GetxController with GetTickerProviderStateMixin {
   }
 
   void searchDefault() async {
-    var res = await Request().get(Api.searchDefault);
-    if (res.data['code'] == 0) {
-      defaultSearch.value = res.data['data']['name'];
+    try {
+      final response = await OttohubService.getPopularVideos(
+        timeLimit: 7,
+        offset: 0,
+        num: 10,
+      );
+      if (response.videoList.isNotEmpty) {
+        final random = DateTime.now().millisecondsSinceEpoch % response.videoList.length;
+        defaultSearch.value = response.videoList[random].title;
+      }
+    } catch (e) {
+      defaultSearch.value = '搜索视频';
     }
   }
 

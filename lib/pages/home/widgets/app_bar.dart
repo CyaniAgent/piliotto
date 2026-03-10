@@ -1,8 +1,10 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:hive/hive.dart';
 import 'package:piliotto/common/widgets/network_img_layer.dart';
 import 'package:piliotto/pages/mine/view.dart';
+import 'package:piliotto/pages/home/controller.dart';
 import 'package:piliotto/utils/storage.dart';
 
 Box userInfoCache = GStrorage.userInfo;
@@ -13,8 +15,8 @@ class HomeAppBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     var userInfo = userInfoCache.get('userInfoCache');
+    final HomeController homeController = Get.find<HomeController>();
     return SliverAppBar(
-      // forceElevated: true,
       scrolledUnderElevation: 0,
       toolbarHeight: MediaQuery.of(context).padding.top,
       expandedHeight: kToolbarHeight + MediaQuery.of(context).padding.top,
@@ -29,32 +31,41 @@ class HomeAppBar extends StatelessWidget {
               children: [
                 AppBar(
                   centerTitle: false,
-                  title: const Text(
-                    'PiliOtto',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 1,
-                      fontFamily: 'ArchivoNarrow',
+                  title: GestureDetector(
+                    onTap: () => Get.toNamed('/search'),
+                    child: Container(
+                      height: 36,
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                        borderRadius: BorderRadius.circular(18),
+                      ),
+                      child: Row(
+                        children: [
+                          const SizedBox(width: 12),
+                          Icon(
+                            CupertinoIcons.search,
+                            size: 18,
+                            color: Theme.of(context).colorScheme.outline,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Obx(() => Text(
+                              homeController.defaultSearch.value.isEmpty
+                                  ? '搜索视频'
+                                  : homeController.defaultSearch.value,
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Theme.of(context).colorScheme.outline,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            )),
+                          ),
+                          const SizedBox(width: 12),
+                        ],
+                      ),
                     ),
                   ),
                   actions: [
-                    Hero(
-                      tag: 'searchTag',
-                      child: IconButton(
-                        onPressed: () {
-                          // 搜索功能暂时移除，准备重做
-                        },
-                        icon: const Icon(CupertinoIcons.search, size: 22),
-                      ),
-                    ),
-                    // IconButton(
-                    //   onPressed: () {},
-                    //   icon: const Icon(CupertinoIcons.bell, size: 22),
-                    // ),
-                    const SizedBox(width: 6),
-
-                    /// TODO
                     if (userInfo != null) ...[
                       GestureDetector(
                         onTap: () => showModalBottomSheet(
@@ -88,7 +99,6 @@ class HomeAppBar extends StatelessWidget {
                         icon: const Icon(CupertinoIcons.person, size: 22),
                       ),
                     ],
-
                     const SizedBox(width: 10)
                   ],
                   elevation: 0,

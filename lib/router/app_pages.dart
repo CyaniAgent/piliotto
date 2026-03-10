@@ -59,6 +59,7 @@ import '../pages/video/detail/reply_reply/index.dart';
 import '../pages/webview/index.dart';
 import '../pages/whisper/index.dart';
 import '../pages/whisper_detail/index.dart';
+import '../pages/search/index.dart';
 import '../utils/storage.dart';
 
 Box<dynamic> setting = GStrorage.setting;
@@ -69,6 +70,8 @@ class Routes {
     CustomGetPage(name: '/', page: () => const HomePage()),
     // 热门
     CustomGetPage(name: '/hot', page: () => const HotPage()),
+    // 搜索
+    CustomGetPage(name: '/search', page: () => const SearchPage()),
     // 视频详情
     CustomGetPage(name: '/video', page: () => const VideoDetailPage()),
     //
