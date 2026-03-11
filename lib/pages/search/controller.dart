@@ -11,7 +11,7 @@ class VideoSearchController extends GetxController {
   final ScrollController scrollController = ScrollController();
   final TextEditingController searchInputController = TextEditingController();
   final FocusNode searchFocusNode = FocusNode();
-  
+
   final int _count = 20;
   int _currentPage = 1;
   RxList<Video> videoList = <Video>[].obs;
@@ -20,29 +20,28 @@ class VideoSearchController extends GetxController {
   RxBool hasMore = true.obs;
   RxString currentKeyword = ''.obs;
   RxInt crossAxisCount = 1.obs;
-  
+
   @override
   void onInit() {
     super.onInit();
     updateCrossAxisCount();
   }
-  
+
   void updateCrossAxisCount() {
     try {
-      int baseCount = ResponsiveUtil.calculateCrossAxisCount(
+      crossAxisCount.value = ResponsiveUtil.calculateCrossAxisCount(
         baseCount: 1,
         minCount: 1,
         maxCount: 3,
       );
-      crossAxisCount.value = baseCount;
     } catch (e) {
       crossAxisCount.value = 1;
     }
   }
-  
+
   Future<void> searchVideos(String keyword, {bool isLoadMore = false}) async {
     if (keyword.isEmpty) return;
-    
+
     if (!isLoadMore) {
       isLoading.value = true;
       _currentPage = 1;
@@ -50,7 +49,7 @@ class VideoSearchController extends GetxController {
     } else {
       isLoadingMore.value = true;
     }
-    
+
     try {
       int offset = (_currentPage - 1) * _count;
       final response = await OttohubService.searchVideos(
@@ -58,15 +57,15 @@ class VideoSearchController extends GetxController {
         offset: offset,
         num: _count,
       );
-      
+
       final List<Video> videos = response.videoList;
-      
+
       if (isLoadMore) {
         videoList.addAll(videos);
       } else {
         videoList.value = videos;
       }
-      
+
       hasMore.value = videos.length >= _count;
       _currentPage++;
     } catch (e) {
@@ -77,24 +76,24 @@ class VideoSearchController extends GetxController {
       isLoadingMore.value = false;
     }
   }
-  
+
   Future<void> onLoad() async {
     if (isLoadingMore.value || !hasMore.value) return;
     await searchVideos(currentKeyword.value, isLoadMore: true);
   }
-  
+
   Future<void> onRefresh() async {
     if (currentKeyword.value.isNotEmpty) {
       await searchVideos(currentKeyword.value);
     }
   }
-  
+
   void clearSearchResult() {
     videoList.clear();
     currentKeyword.value = '';
     searchInputController.clear();
   }
-  
+
   void animateToTop() async {
     if (scrollController.offset >=
         MediaQuery.of(Get.context!).size.height * 5) {

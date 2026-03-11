@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:piliotto/common/constants.dart';
-import 'package:piliotto/common/widgets/video_card_v.dart';
-import 'package:piliotto/common/skeleton/video_card_v.dart';
+import 'package:piliotto/common/skeleton/video_card_h.dart';
+import 'package:piliotto/common/widgets/video_card_h.dart';
 import 'package:piliotto/pages/search/controller.dart';
+import 'package:piliotto/utils/responsive_util.dart';
 
 class SearchPage extends StatefulWidget {
   const SearchPage({Key? key}) : super(key: key);
@@ -21,9 +22,6 @@ class _SearchPageState extends State<SearchPage> {
     super.initState();
     _videoSearchController = Get.put(VideoSearchController());
     hintText = Get.parameters['hintText'];
-    if (hintText != null && hintText!.isNotEmpty) {
-      _videoSearchController.searchInputController.text = hintText!;
-    }
   }
 
   @override
@@ -36,13 +34,21 @@ class _SearchPageState extends State<SearchPage> {
 
   @override
   Widget build(BuildContext context) {
+    double screenWidth = MediaQuery.of(context).size.width;
+    bool isWideScreen = ResponsiveUtil.isMd;
+    double maxContentWidth = 800;
+
     return Scaffold(
       appBar: AppBar(
         title: _buildSearchInput(),
         actions: [
           TextButton(
             onPressed: () {
-              final keyword = _videoSearchController.searchInputController.text.trim();
+              String keyword =
+                  _videoSearchController.searchInputController.text.trim();
+              if (keyword.isEmpty && hintText != null && hintText!.isNotEmpty) {
+                keyword = hintText!;
+              }
               if (keyword.isNotEmpty) {
                 _videoSearchController.searchVideos(keyword);
               }
@@ -51,79 +57,87 @@ class _SearchPageState extends State<SearchPage> {
           ),
         ],
       ),
-      body: Obx(() => _buildSearchResult()),
+      body: Obx(
+          () => _buildSearchResult(screenWidth, isWideScreen, maxContentWidth)),
     );
   }
 
   Widget _buildSearchInput() {
-    return Container(
-      height: 36,
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(18),
-      ),
-      child: Row(
-        children: [
-          const SizedBox(width: 12),
-          Icon(
-            Icons.search,
-            size: 18,
-            color: Theme.of(context).colorScheme.outline,
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: TextField(
-              controller: _videoSearchController.searchInputController,
-              focusNode: _videoSearchController.searchFocusNode,
-              textInputAction: TextInputAction.search,
-              onSubmitted: (value) {
-                final keyword = value.trim();
-                if (keyword.isNotEmpty) {
-                  _videoSearchController.searchVideos(keyword);
-                }
-              },
-              decoration: InputDecoration(
-                hintText: hintText ?? '搜索视频',
-                hintStyle: TextStyle(
-                  fontSize: 14,
-                  color: Theme.of(context).colorScheme.outline,
-                ),
-                border: InputBorder.none,
-                contentPadding: EdgeInsets.zero,
-                isDense: true,
-              ),
-              style: const TextStyle(fontSize: 14),
+    return Hero(
+      tag: 'searchBar',
+      child: Container(
+        height: 40,
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surfaceContainerHighest,
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Row(
+          children: [
+            const SizedBox(width: 12),
+            Icon(
+              Icons.search,
+              size: 20,
+              color: Theme.of(context).colorScheme.outline,
             ),
-          ),
-          ValueListenableBuilder<TextEditingValue>(
-            valueListenable: _videoSearchController.searchInputController,
-            builder: (context, value, child) {
-              if (value.text.isNotEmpty) {
-                return GestureDetector(
-                  onTap: () {
-                    _videoSearchController.searchInputController.clear();
-                  },
-                  child: Padding(
-                    padding: const EdgeInsets.only(right: 12),
-                    child: Icon(
+            const SizedBox(width: 8),
+            Expanded(
+              child: TextField(
+                controller: _videoSearchController.searchInputController,
+                focusNode: _videoSearchController.searchFocusNode,
+                textInputAction: TextInputAction.search,
+                autofocus: true,
+                onSubmitted: (value) {
+                  String keyword = value.trim();
+                  if (keyword.isEmpty &&
+                      hintText != null &&
+                      hintText!.isNotEmpty) {
+                    keyword = hintText!;
+                  }
+                  if (keyword.isNotEmpty) {
+                    _videoSearchController.searchVideos(keyword);
+                  }
+                },
+                decoration: InputDecoration(
+                  hintText: hintText ?? '搜索视频',
+                  hintStyle: TextStyle(
+                    fontSize: 14,
+                    color: Theme.of(context).colorScheme.outline,
+                  ),
+                  border: InputBorder.none,
+                  contentPadding: EdgeInsets.zero,
+                  isDense: true,
+                ),
+                style: const TextStyle(fontSize: 14),
+              ),
+            ),
+            ValueListenableBuilder<TextEditingValue>(
+              valueListenable: _videoSearchController.searchInputController,
+              builder: (context, value, child) {
+                if (value.text.isNotEmpty) {
+                  return IconButton(
+                    onPressed: () {
+                      _videoSearchController.searchInputController.clear();
+                    },
+                    icon: Icon(
                       Icons.clear,
-                      size: 18,
+                      size: 20,
                       color: Theme.of(context).colorScheme.outline,
                     ),
-                  ),
-                );
-              }
-              return const SizedBox(width: 12);
-            },
-          ),
-        ],
+                  );
+                }
+                return const SizedBox(width: 8);
+              },
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildSearchResult() {
+  Widget _buildSearchResult(
+      double screenWidth, bool isWideScreen, double maxContentWidth) {
     if (_videoSearchController.isLoading.value) {
-      return _buildLoadingSkeleton();
+      return _buildLoadingSkeleton(screenWidth, isWideScreen, maxContentWidth);
     }
 
     if (_videoSearchController.videoList.isEmpty) {
@@ -132,9 +146,9 @@ class _SearchPageState extends State<SearchPage> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
-              Icons.search,
+              Icons.video_library_outlined,
               size: 64,
-              color: Theme.of(context).colorScheme.outline,
+              color: Theme.of(context).colorScheme.outlineVariant,
             ),
             const SizedBox(height: 16),
             Text(
@@ -163,22 +177,33 @@ class _SearchPageState extends State<SearchPage> {
           controller: _videoSearchController.scrollController,
           slivers: [
             SliverPadding(
-              padding: const EdgeInsets.all(StyleString.safeSpace),
-              sliver: SliverGrid(
-                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: _videoSearchController.crossAxisCount.value,
-                  mainAxisSpacing: StyleString.cardSpace,
-                  crossAxisSpacing: StyleString.cardSpace,
-                  childAspectRatio: StyleString.aspectRatio,
+              padding: const EdgeInsets.fromLTRB(
+                StyleString.safeSpace,
+                StyleString.safeSpace - 5,
+                StyleString.safeSpace,
+                0,
+              ),
+              sliver: SliverPadding(
+                padding: EdgeInsets.symmetric(
+                  horizontal:
+                      isWideScreen ? (screenWidth - maxContentWidth) / 2 : 0,
                 ),
-                delegate: SliverChildBuilderDelegate(
-                  (context, index) {
-                    return VideoCardV(
-                      videoItem: _videoSearchController.videoList[index],
-                      crossAxisCount: _videoSearchController.crossAxisCount.value,
-                    );
-                  },
-                  childCount: _videoSearchController.videoList.length,
+                sliver: SliverGrid(
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: _videoSearchController.crossAxisCount.value,
+                    mainAxisSpacing: 16,
+                    crossAxisSpacing: 16,
+                    childAspectRatio: 3 / 1,
+                  ),
+                  delegate: SliverChildBuilderDelegate(
+                    (context, index) {
+                      return VideoCardH(
+                        videoItem: _videoSearchController.videoList[index],
+                        source: 'search',
+                      );
+                    },
+                    childCount: _videoSearchController.videoList.length,
+                  ),
                 ),
               ),
             ),
@@ -212,19 +237,39 @@ class _SearchPageState extends State<SearchPage> {
     );
   }
 
-  Widget _buildLoadingSkeleton() {
-    return GridView.builder(
-      padding: const EdgeInsets.all(StyleString.safeSpace),
-      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: _videoSearchController.crossAxisCount.value,
-        mainAxisSpacing: StyleString.cardSpace,
-        crossAxisSpacing: StyleString.cardSpace,
-        childAspectRatio: StyleString.aspectRatio,
-      ),
-      itemCount: 10,
-      itemBuilder: (context, index) {
-        return const VideoCardVSkeleton();
-      },
+  Widget _buildLoadingSkeleton(
+      double screenWidth, bool isWideScreen, double maxContentWidth) {
+    return CustomScrollView(
+      slivers: [
+        SliverPadding(
+          padding: const EdgeInsets.fromLTRB(
+            StyleString.safeSpace,
+            StyleString.safeSpace - 5,
+            StyleString.safeSpace,
+            0,
+          ),
+          sliver: SliverPadding(
+            padding: EdgeInsets.symmetric(
+              horizontal:
+                  isWideScreen ? (screenWidth - maxContentWidth) / 2 : 0,
+            ),
+            sliver: SliverGrid(
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: _videoSearchController.crossAxisCount.value,
+                mainAxisSpacing: 16,
+                crossAxisSpacing: 16,
+                childAspectRatio: 3 / 1,
+              ),
+              delegate: SliverChildBuilderDelegate(
+                (context, index) {
+                  return const VideoCardHSkeleton();
+                },
+                childCount: 10,
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

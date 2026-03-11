@@ -164,9 +164,9 @@ class VideoListResponse {
       videoList: (json['video_list'] as List<dynamic>)
           .map((e) => Video.fromJson(e as Map<String, dynamic>))
           .toList(),
-      totalCount: json['total_count'],
-      favoriteVideoCount: json['favorite_video_count'],
-      manageVideoCount: json['manage_video_count'],
+      totalCount: Video.toInt(json['total_count']),
+      favoriteVideoCount: Video.toInt(json['favorite_video_count']),
+      manageVideoCount: Video.toInt(json['manage_video_count']),
     );
   }
 }

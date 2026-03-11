@@ -616,12 +616,17 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
             },
 
             /// 水平位置 快进 live模式下禁用
+            onHorizontalDragStart: (DragStartDetails details) {
+              if (_.videoType == 'live' || _.controlsLock.value) {
+                return;
+              }
+              _.onChangedSliderStart();
+            },
             onHorizontalDragUpdate: (DragUpdateDetails details) {
               // live模式下禁用 锁定时🔒禁用
               if (_.videoType == 'live' || _.controlsLock.value) {
                 return;
               }
-              // final double tapPosition = details.localPosition.dx;
               final int curSliderPosition =
                   _.sliderPosition.value.inMilliseconds;
               final double scale = 90000 / MediaQuery.sizeOf(context).width;
@@ -631,7 +636,6 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
               final Duration result =
                   pos.clamp(Duration.zero, _.duration.value);
               _.onUpdatedSliderProgress(result);
-              _.onChangedSliderStart();
             },
             onHorizontalDragEnd: (DragEndDetails details) {
               if (_.videoType == 'live' || _.controlsLock.value) {

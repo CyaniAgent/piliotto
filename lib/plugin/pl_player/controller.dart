@@ -85,6 +85,7 @@ class PlPlayerController {
   PlaylistMode _looping = PlaylistMode.none;
   bool _autoPlay = false;
   bool _listenersInitialized = false;
+  bool _isDisposed = false;
 
   // 记录历史记录
   String _bvid = '';
@@ -291,7 +292,8 @@ class PlPlayerController {
   void _createPlayerInstance() {
     _videoPlayerController = Player(
       configuration: PlayerConfiguration(
-        bufferSize: videoType == 'live' ? 32 * 1024 * 1024 : 5 * 1024 * 1024,
+        bufferSize: videoType == 'live' ? 32 * 1024 * 1024 : 2 * 1024 * 1024,
+        osc: true,
       ),
     );
     _videoController = VideoController(
@@ -393,10 +395,17 @@ class PlPlayerController {
   ) async {
     // 每次配置时先移除监听
     removeListeners();
+    _listenersInitialized = false;
     isBuffering.value = false;
-    buffered.value = Duration.zero;
+    _buffered.value = Duration.zero;
+    bufferedSeconds.value = 0;
     _heartDuration = 0;
     _position.value = Duration.zero;
+    positionSeconds.value = 0;
+    _sliderPosition.value = Duration.zero;
+    sliderPositionSeconds.value = 0;
+    _duration.value = Duration.zero;
+    durationSeconds.value = 0;
     // 初始化时清空弹幕，防止上次重叠
     if (danmakuController != null) {
       danmakuController!.clear();
@@ -518,7 +527,8 @@ class PlPlayerController {
         }),
         videoPlayerController!.stream.duration.listen((event) {
           if (event > Duration.zero) {
-            duration.value = event;
+            _duration.value = event;
+            updateDurationSecond();
           }
         }),
         videoPlayerController!.stream.buffer.listen((event) {
@@ -553,24 +563,28 @@ class PlPlayerController {
       }
 
       _position.value = position;
+      _sliderPosition.value = position;
       updatePositionSecond();
+      updateSliderPositionSecond();
       _heartDuration = position.inSeconds;
 
       if (duration.value.inSeconds != 0) {
-        if (type != 'slider') {
-          try {
-            await _videoPlayerController!.stream.buffer.first;
-          } catch (e) {
-            print('Error waiting for buffer: $e');
+        isBuffering.value = true;
+        _videoPlayerController!.seek(position).then((_) {
+          if (type == 'slider') {
+            _isSliderMoving.value = false;
           }
-        }
-        await _videoPlayerController!.seek(position);
+        }).catchError((err) {
+          print('Error seeking: $err');
+          _isSliderMoving.value = false;
+        });
       } else {
         _timerForSeek?.cancel();
         _timerForSeek ??= _startSeekTimer(position);
       }
     } catch (err) {
       print('Error while seeking: $err');
+      _isSliderMoving.value = false;
     }
   }
 
@@ -709,7 +723,6 @@ class PlPlayerController {
 
   void onChangedSliderEnd() {
     feedBack();
-    _isSliderMoving.value = false;
     _hideTaskControls();
   }
 
@@ -1026,6 +1039,10 @@ class PlPlayerController {
   }
 
   Future<void> dispose() async {
+    if (_isDisposed) {
+      return;
+    }
+    _isDisposed = true;
     try {
       _timer?.cancel();
       _timerForVolume?.cancel();

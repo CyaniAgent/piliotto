@@ -29,7 +29,7 @@ import 'zan.dart';
 
 Box setting = GStrorage.setting;
 
-class ReplyItem extends StatelessWidget {
+class ReplyItem extends StatefulWidget {
   const ReplyItem({
     this.replyItem,
     this.addReply,
@@ -47,6 +47,23 @@ class ReplyItem extends StatelessWidget {
   final Function? replyReply;
   final ReplyType? replyType;
   final bool? replySave;
+
+  @override
+  State<ReplyItem> createState() => _ReplyItemState();
+}
+
+class _ReplyItemState extends State<ReplyItem> {
+  bool _isExpanded = false;
+
+  bool get _needsExpandButton {
+    if (widget.replyItem!.content!.isText! && widget.replyLevel == '1') {
+      final message = widget.replyItem!.content!.message ?? '';
+      final lineCount = '\n'.allMatches(message).length + 1;
+      final estimatedLines = (message.length / 30).ceil();
+      return lineCount > 6 || estimatedLines > 6;
+    }
+    return false;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -74,14 +91,14 @@ class ReplyItem extends StatelessWidget {
         Hero(
           tag: heroTag,
           child: NetworkImgLayer(
-            src: replyItem!.member!.avatar,
+            src: widget.replyItem!.member!.avatar,
             width: 34,
             height: 34,
             type: 'avatar',
           ),
         ),
-        if (replyItem!.member!.officialVerify != null &&
-            replyItem!.member!.officialVerify!['type'] == 0)
+        if (widget.replyItem!.member!.officialVerify != null &&
+            widget.replyItem!.member!.officialVerify!['type'] == 0)
           Positioned(
             right: 0,
             bottom: 0,
@@ -97,8 +114,8 @@ class ReplyItem extends StatelessWidget {
               ),
             ),
           ),
-        if (replyItem!.member!.vip!['vipStatus'] > 0 &&
-            replyItem!.member!.vip!['vipType'] == 2)
+        if (widget.replyItem!.member!.vip!['vipStatus'] > 0 &&
+            widget.replyItem!.member!.vip!['vipType'] == 2)
           Positioned(
             right: 0,
             bottom: 0,
@@ -118,7 +135,7 @@ class ReplyItem extends StatelessWidget {
   }
 
   Widget content(BuildContext context) {
-    final String heroTag = Utils.makeHeroTag(replyItem!.mid);
+    final String heroTag = Utils.makeHeroTag(widget.replyItem!.mid);
     ColorScheme colorScheme = Theme.of(context).colorScheme;
     TextTheme textTheme = Theme.of(context).textTheme;
     return Column(
@@ -129,8 +146,8 @@ class ReplyItem extends StatelessWidget {
           behavior: HitTestBehavior.opaque,
           onTap: () {
             feedBack();
-            Get.toNamed('/member?mid=${replyItem!.mid}', arguments: {
-              'face': replyItem!.member!.avatar!,
+            Get.toNamed('/member?mid=${widget.replyItem!.mid}', arguments: {
+              'face': widget.replyItem!.member!.avatar!,
               'heroTag': heroTag
             });
           },
@@ -146,27 +163,23 @@ class ReplyItem extends StatelessWidget {
                   Row(
                     children: [
                       Text(
-                        replyItem!.member!.uname!,
+                        widget.replyItem!.member!.uname!,
                         style: TextStyle(
-                          color: replyItem!.member!.vip!['vipStatus'] > 0
+                          color: widget.replyItem!.member!.vip!['vipStatus'] > 0
                               ? const Color.fromARGB(255, 251, 100, 163)
                               : colorScheme.outline,
                           fontSize: 13,
                         ),
                       ),
-                      Padding(
-                        padding: const EdgeInsets.only(left: 6, right: 6),
-                        child: Image.asset(
-                          'assets/images/lv/lv${replyItem!.member!.level}.png',
-                          height: 11,
-                        ),
-                      ),
-                      if (replyItem!.isUp!)
-                        const PBadge(
-                          text: 'UP',
-                          size: 'small',
-                          stack: 'normal',
-                          fs: 9,
+                      if (widget.replyItem!.isUp!)
+                        const Padding(
+                          padding: EdgeInsets.only(left: 6),
+                          child: PBadge(
+                            text: 'UP',
+                            size: 'small',
+                            stack: 'normal',
+                            fs: 9,
+                          ),
                         ),
                     ],
                   ),
@@ -174,22 +187,23 @@ class ReplyItem extends StatelessWidget {
                     text: TextSpan(
                       children: [
                         TextSpan(
-                          text: Utils.dateFormat(replyItem!.ctime),
+                          text: Utils.dateFormat(widget.replyItem!.ctime),
                           style: TextStyle(
                             fontSize: textTheme.labelSmall!.fontSize,
                             color: colorScheme.outline,
                           ),
                         ),
-                        if (replyItem!.replyControl != null &&
-                            replyItem!.replyControl!.location != '')
+                        if (widget.replyItem!.replyControl != null &&
+                            widget.replyItem!.replyControl!.location != '')
                           TextSpan(
-                            text: ' • ${replyItem!.replyControl!.location!}',
+                            text:
+                                ' • ${widget.replyItem!.replyControl!.location!}',
                             style: TextStyle(
                               fontSize: textTheme.labelSmall!.fontSize,
                               color: colorScheme.outline,
                             ),
                           ),
-                        if (replyItem!.invisible!)
+                        if (widget.replyItem!.invisible!)
                           TextSpan(
                             text: ' • 隐藏的评论',
                             style: TextStyle(
@@ -211,12 +225,15 @@ class ReplyItem extends StatelessWidget {
           child: SelectionArea(
             child: Text.rich(
               style: const TextStyle(height: 1.75),
-              maxLines:
-                  replyItem!.content!.isText! && replyLevel == '1' ? 3 : 999,
+              maxLines: widget.replyItem!.content!.isText! &&
+                      widget.replyLevel == '1' &&
+                      !_isExpanded
+                  ? 6
+                  : 999,
               overflow: TextOverflow.ellipsis,
               TextSpan(
                 children: [
-                  if (replyItem!.isTop!)
+                  if (widget.replyItem!.isTop!)
                     const WidgetSpan(
                       alignment: PlaceholderAlignment.top,
                       child: PBadge(
@@ -227,14 +244,34 @@ class ReplyItem extends StatelessWidget {
                         fs: 9,
                       ),
                     ),
-                  buildContent(context, replyItem!, replyReply, null),
+                  buildContent(
+                      context, widget.replyItem!, widget.replyReply, null),
                 ],
               ),
             ),
           ),
         ),
+        // 展开/折叠按钮
+        if (_needsExpandButton)
+          Padding(
+            padding: const EdgeInsets.only(left: 45, top: 4),
+            child: GestureDetector(
+              onTap: () {
+                setState(() {
+                  _isExpanded = !_isExpanded;
+                });
+              },
+              child: Text(
+                _isExpanded ? '收起' : '展开',
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.primary,
+                  fontSize: 13,
+                ),
+              ),
+            ),
+          ),
         // 操作区域
-        bottonAction(context, replyItem!.replyControl, replySave),
+        bottonAction(context, widget.replyItem!.replyControl, widget.replySave),
         // 一楼的评论
         // 暂时禁用二级评论功能
         // if ((replyItem!.replyControl!.isShow! ||
@@ -326,14 +363,14 @@ class ReplyItem extends StatelessWidget {
     return Row(
       children: <Widget>[
         const SizedBox(width: 32),
-        ZanButton(replyItem: replyItem, replyType: replyType),
-        if (replySave!) ...[
+        ZanButton(replyItem: widget.replyItem!, replyType: widget.replyType),
+        if (widget.replySave!) ...[
           SizedBox(
             height: 32,
             child: TextButton(
               onPressed: () {},
               child: Text(
-                IdUtils.av2bv(replyItem!.oid!),
+                IdUtils.av2bv(widget.replyItem!.oid!),
                 style: TextStyle(
                   fontSize: textTheme.labelMedium!.fontSize,
                   color: colorScheme.outline,
@@ -343,7 +380,7 @@ class ReplyItem extends StatelessWidget {
           ),
         ],
         const SizedBox(width: 2),
-        if (replyItem!.upAction!.like!) ...[
+        if (widget.replyItem!.upAction!.like!) ...[
           Text(
             'up主觉得很赞',
             style: TextStyle(
@@ -352,75 +389,77 @@ class ReplyItem extends StatelessWidget {
           ),
           const SizedBox(width: 2),
         ],
-        if (replyItem!.cardLabel!.isNotEmpty &&
-            replyItem!.cardLabel!.contains('热评'))
+        if (widget.replyItem!.cardLabel!.isNotEmpty &&
+            widget.replyItem!.cardLabel!.contains('热评')) ...[
           Text(
             '热评',
             style: TextStyle(
                 color: colorScheme.primary,
                 fontSize: textTheme.labelMedium!.fontSize),
           ),
-        const Spacer(),
-        PopupMenuButton<String>(
-          onSelected: (String value) {
-            _handleMenuAction(context, value, replyItem!);
-          },
-          icon: Icon(Icons.more_horiz, color: colorScheme.outline),
-          position: PopupMenuPosition.under,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          itemBuilder: (BuildContext context) {
-            final bool isOwner = int.parse(replyItem!.member!.mid!) ==
-                (GlobalDataCache().userInfo?.mid ?? -1);
-            return <PopupMenuEntry<String>>[
-              const PopupMenuItem<String>(
-                value: 'copyAll',
-                child: Row(
-                  children: [
-                    Icon(Icons.copy_all_outlined, size: 19),
-                    SizedBox(width: 12),
-                    Text('复制全部'),
-                  ],
-                ),
-              ),
-              const PopupMenuItem<String>(
-                value: 'copyFreedom',
-                child: Row(
-                  children: [
-                    Icon(Icons.copy_outlined, size: 19),
-                    SizedBox(width: 12),
-                    Text('自由复制'),
-                  ],
-                ),
-              ),
-              if (replyItem!.content!.pictures!.isEmpty)
+          const Spacer(),
+          PopupMenuButton<String>(
+            onSelected: (String value) {
+              _handleMenuAction(context, value, widget.replyItem!);
+            },
+            icon: Icon(Icons.more_horiz, color: colorScheme.outline),
+            position: PopupMenuPosition.under,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            itemBuilder: (BuildContext context) {
+              final bool isOwner = int.parse(widget.replyItem!.member!.mid!) ==
+                  (GlobalDataCache().userInfo?.mid ?? -1);
+              return <PopupMenuEntry<String>>[
                 const PopupMenuItem<String>(
-                  value: 'save',
+                  value: 'copyAll',
                   child: Row(
                     children: [
-                      Icon(Icons.save_alt_rounded, size: 19),
+                      Icon(Icons.copy_all_outlined, size: 19),
                       SizedBox(width: 12),
-                      Text('本地保存'),
+                      Text('复制全部'),
                     ],
                   ),
                 ),
-              if (isOwner)
-                PopupMenuItem<String>(
-                  value: 'delete',
+                const PopupMenuItem<String>(
+                  value: 'copyFreedom',
                   child: Row(
                     children: [
-                      Icon(Icons.delete_outline,
-                          size: 19, color: colorScheme.error),
-                      const SizedBox(width: 12),
-                      Text('删除评论', style: TextStyle(color: colorScheme.error)),
+                      Icon(Icons.copy_outlined, size: 19),
+                      SizedBox(width: 12),
+                      Text('自由复制'),
                     ],
                   ),
                 ),
-            ];
-          },
-        ),
-        const SizedBox(width: 5)
+                if (widget.replyItem!.content!.pictures!.isEmpty)
+                  const PopupMenuItem<String>(
+                    value: 'save',
+                    child: Row(
+                      children: [
+                        Icon(Icons.save_alt_rounded, size: 19),
+                        SizedBox(width: 12),
+                        Text('本地保存'),
+                      ],
+                    ),
+                  ),
+                if (isOwner)
+                  PopupMenuItem<String>(
+                    value: 'delete',
+                    child: Row(
+                      children: [
+                        Icon(Icons.delete_outline,
+                            size: 19, color: colorScheme.error),
+                        const SizedBox(width: 12),
+                        Text('删除评论',
+                            style: TextStyle(color: colorScheme.error)),
+                      ],
+                    ),
+                  ),
+              ];
+            },
+          ),
+          const SizedBox(width: 5)
+        ],
       ],
     );
   }

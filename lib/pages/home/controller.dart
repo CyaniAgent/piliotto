@@ -116,7 +116,8 @@ class HomeController extends GetxController with GetTickerProviderStateMixin {
         num: 10,
       );
       if (response.videoList.isNotEmpty) {
-        final random = DateTime.now().millisecondsSinceEpoch % response.videoList.length;
+        final random =
+            DateTime.now().millisecondsSinceEpoch % response.videoList.length;
         defaultSearch.value = response.videoList[random].title;
       }
     } catch (e) {

@@ -48,19 +48,17 @@ class _VideoDetailPageState extends State<VideoDetailPage>
 
   Rx<PlayerStatus> playerStatus = PlayerStatus.playing.obs;
   double doubleOffset = 0;
+  double videoHeight = 0;
 
   final Box<dynamic> localCache = GStrorage.localCache;
   final Box<dynamic> setting = GStrorage.setting;
   late double statusBarHeight;
-  final double videoHeight = Get.size.width * 9 / 16;
   late Future _futureBuilderFuture;
-  // 自动退出全屏
   late bool autoExitFullcreen;
   late bool autoPlayEnable;
   late bool autoPiP;
   late Floating floating;
   RxBool isShowing = true.obs;
-  // 生命周期监听
   late final AppLifecycleListener _lifecycleListener;
   late double statusHeight;
 
@@ -81,6 +79,7 @@ class _VideoDetailPageState extends State<VideoDetailPage>
         setting.get(SettingBoxKey.autoPlayEnable, defaultValue: true);
     autoPiP = setting.get(SettingBoxKey.autoPiP, defaultValue: false);
 
+    videoHeight = Get.size.width * 9 / 16;
     videoSourceInit();
     appbarStreamListen();
     fullScreenStatusListener();
@@ -486,21 +485,20 @@ class _VideoDetailPageState extends State<VideoDetailPage>
   Widget build(BuildContext context) {
     final sizeContext = MediaQuery.sizeOf(context);
     final mediaQuery = MediaQuery.of(context);
-    late double defaultVideoHeight = sizeContext.width * 9 / 16;
-    late RxDouble videoHeight = defaultVideoHeight.obs;
+    final double defaultVideoHeight = sizeContext.width * 9 / 16;
     final double pinnedHeaderHeight =
-        statusBarHeight + kToolbarHeight + videoHeight.value;
+        statusBarHeight + kToolbarHeight + videoHeight;
     // ignore: no_leading_underscores_for_local_identifiers
 
     // 横屏
     final bool isLandscape = mediaQuery.orientation == Orientation.landscape;
-    final Rx<bool> isFullScreen = plPlayerController?.isFullScreen ?? false.obs;
+    final bool isFullScreen = plPlayerController?.isFullScreen.value ?? false;
     // 全屏时高度撑满
-    if (isLandscape || isFullScreen.value == true) {
-      videoHeight.value = Get.size.height;
+    if (isLandscape || isFullScreen) {
+      videoHeight = Get.size.height;
       enterFullScreen();
     } else {
-      videoHeight.value = defaultVideoHeight;
+      videoHeight = defaultVideoHeight;
       exitFullScreen();
     }
 
@@ -527,8 +525,13 @@ class _VideoDetailPageState extends State<VideoDetailPage>
                   ? videoIntroController.showEposideHandler()
                   : null,
               fullScreenCb: (bool status) {
-                videoHeight.value =
-                    status ? Get.size.height : defaultVideoHeight;
+                if (status) {
+                  videoHeight = Get.size.height;
+                  enterFullScreen();
+                } else {
+                  videoHeight = defaultVideoHeight;
+                  exitFullScreen();
+                }
               },
             ));
     }
@@ -536,7 +539,7 @@ class _VideoDetailPageState extends State<VideoDetailPage>
     Widget buildErrorWidget() {
       return Obx(
         () => SizedBox(
-          height: videoHeight.value,
+          height: videoHeight,
           width: Get.size.width,
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -670,7 +673,7 @@ class _VideoDetailPageState extends State<VideoDetailPage>
                                     (orientation == Orientation.landscape
                                         ? 0
                                         : MediaQuery.of(context).padding.top))
-                                : videoHeight.value;
+                                : videoHeight;
                         if (orientation == Orientation.landscape ||
                             isFullScreen) {
                           enterFullScreen();
@@ -928,7 +931,7 @@ class _VideoDetailPageState extends State<VideoDetailPage>
                                     (orientation == Orientation.landscape
                                         ? 0
                                         : MediaQuery.of(context).padding.top))
-                                : videoHeight.value;
+                                : videoHeight;
                             if (orientation == Orientation.landscape ||
                                 isFullScreen) {
                               enterFullScreen();

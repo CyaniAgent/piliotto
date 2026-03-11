@@ -33,35 +33,38 @@ class HomeAppBar extends StatelessWidget {
                   centerTitle: false,
                   title: GestureDetector(
                     onTap: () => Get.toNamed('/search'),
-                    child: Container(
-                      height: 36,
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                        borderRadius: BorderRadius.circular(18),
-                      ),
-                      child: Row(
-                        children: [
-                          const SizedBox(width: 12),
-                          Icon(
-                            CupertinoIcons.search,
-                            size: 18,
-                            color: Theme.of(context).colorScheme.outline,
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Obx(() => Text(
-                              homeController.defaultSearch.value.isEmpty
-                                  ? '搜索视频'
-                                  : homeController.defaultSearch.value,
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Theme.of(context).colorScheme.outline,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                            )),
-                          ),
-                          const SizedBox(width: 12),
-                        ],
+                    child: Hero(
+                      tag: 'searchBar',
+                      child: Container(
+                        height: 36,
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                          borderRadius: BorderRadius.circular(18),
+                        ),
+                        child: Row(
+                          children: [
+                            const SizedBox(width: 12),
+                            Icon(
+                              CupertinoIcons.search,
+                              size: 18,
+                              color: Theme.of(context).colorScheme.outline,
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Obx(() => Text(
+                                homeController.defaultSearch.value.isEmpty
+                                    ? '搜索视频'
+                                    : homeController.defaultSearch.value,
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Theme.of(context).colorScheme.outline,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              )),
+                            ),
+                            const SizedBox(width: 12),
+                          ],
+                        ),
                       ),
                     ),
                   ),

@@ -28,17 +28,19 @@ class VideoCardH extends StatelessWidget {
     this.showDanmaku = true,
     this.showPubdate = false,
     this.showCharge = false,
+    this.rankIndex,
   });
   // ignore: prefer_typing_uninitialized_variables
   final videoItem;
   final Function()? onPressedFn;
-  // normal 推荐, later 稍后再看, search 搜索
+  // normal 推荐, later 稍后再看, search 搜索, rank 排行榜
   final String source;
   final bool showOwner;
   final bool showView;
   final bool showDanmaku;
   final bool showPubdate;
   final bool showCharge;
+  final int? rankIndex;
 
   @override
   Widget build(BuildContext context) {
@@ -91,6 +93,59 @@ class VideoCardH extends StatelessWidget {
                                   height: maxHeight,
                                 ),
                               ),
+                              if (rankIndex != null && rankIndex! <= 3)
+                                Positioned(
+                                  left: 0,
+                                  top: 0,
+                                  child: Container(
+                                    width: 28,
+                                    height: 28,
+                                    decoration: BoxDecoration(
+                                      color: rankIndex == 1
+                                          ? const Color(0xFFFFD700)
+                                          : rankIndex == 2
+                                              ? const Color(0xFFC0C0C0)
+                                              : const Color(0xFFCD7F32),
+                                      borderRadius: const BorderRadius.only(
+                                        topLeft: Radius.circular(8),
+                                        bottomRight: Radius.circular(8),
+                                      ),
+                                    ),
+                                    alignment: Alignment.center,
+                                    child: Text(
+                                      '$rankIndex',
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              if (rankIndex != null && rankIndex! > 3)
+                                Positioned(
+                                  left: 0,
+                                  top: 0,
+                                  child: Container(
+                                    width: 28,
+                                    height: 28,
+                                    decoration: BoxDecoration(
+                                      color: Colors.black54,
+                                      borderRadius: const BorderRadius.only(
+                                        topLeft: Radius.circular(8),
+                                        bottomRight: Radius.circular(8),
+                                      ),
+                                    ),
+                                    alignment: Alignment.center,
+                                    child: Text(
+                                      '$rankIndex',
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                  ),
+                                ),
                               if (videoItem.duration != null &&
                                   videoItem.duration! > 0)
                                 PBadge(

@@ -1,10 +1,8 @@
-import 'dart:async';
-import 'dart:io';
-
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:get/get.dart';
-import 'package:piliotto/utils/feed_back.dart';
+import 'package:piliotto/common/constants.dart';
+import 'package:piliotto/common/widgets/video_card_h.dart';
+import 'package:piliotto/common/skeleton/video_card_h.dart';
 import './controller.dart';
 
 class RankPage extends StatefulWidget {
@@ -15,105 +13,124 @@ class RankPage extends StatefulWidget {
 }
 
 class _RankPageState extends State<RankPage>
-    with AutomaticKeepAliveClientMixin, TickerProviderStateMixin {
+    with AutomaticKeepAliveClientMixin {
   final RankController _rankController = Get.put(RankController());
-  List videoList = [];
-  late Stream<bool> stream;
 
   @override
   bool get wantKeepAlive => true;
 
   @override
-  void initState() {
-    super.initState();
-    stream = _rankController.searchBarStream.stream;
-  }
-
-  @override
   Widget build(BuildContext context) {
     super.build(context);
     return Scaffold(
-      extendBody: true,
-      extendBodyBehindAppBar: true,
-      backgroundColor: Colors.transparent,
       appBar: AppBar(
-        toolbarHeight: 0,
-        elevation: 0,
-        backgroundColor: Colors.transparent,
-        systemOverlayStyle: Platform.isAndroid
-            ? SystemUiOverlayStyle(
-                statusBarIconBrightness:
-                    Theme.of(context).brightness == Brightness.dark
-                        ? Brightness.light
-                        : Brightness.dark,
-              )
-            : Theme.of(context).brightness == Brightness.dark
-                ? SystemUiOverlayStyle.light
-                : SystemUiOverlayStyle.dark,
+        title: const Text('排行榜'),
+        centerTitle: false,
       ),
       body: Column(
         children: [
-          const CustomAppBar(),
-          if (_rankController.tabs.length > 1) ...[
-            const SizedBox(height: 4),
-            SizedBox(
-              width: double.infinity,
-              height: 42,
-              child: Align(
-                alignment: Alignment.center,
-                child: TabBar(
-                  controller: _rankController.tabController,
-                  tabs: [
-                    for (var i in _rankController.tabs) Tab(text: i['label'])
-                  ],
-                  isScrollable: true,
-                  dividerColor: Colors.transparent,
-                  enableFeedback: true,
-                  splashBorderRadius: BorderRadius.circular(10),
-                  tabAlignment: TabAlignment.center,
-                  onTap: (value) {
-                    feedBack();
-                    if (_rankController.initialIndex.value == value) {
-                      _rankController.tabsCtrList[value].animateToTop();
-                    }
-                    _rankController.initialIndex.value = value;
-                  },
-                ),
+          _buildTabBar(),
+          Expanded(
+            child: Obx(() => _buildVideoList()),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTabBar() {
+    return Container(
+      width: double.infinity,
+      height: 42,
+      decoration: BoxDecoration(
+        border: Border(
+          bottom: BorderSide(
+            width: 1,
+            color: Theme.of(context).dividerColor.withValues(alpha: 0.1),
+          ),
+        ),
+      ),
+      child: TabBar(
+        controller: _rankController.tabController,
+        tabs: _rankController.tabs.map((e) => Tab(text: e['label'])).toList(),
+        isScrollable: false,
+        dividerColor: Colors.transparent,
+        tabAlignment: TabAlignment.center,
+      ),
+    );
+  }
+
+  Widget _buildVideoList() {
+    if (_rankController.isLoading.value) {
+      return _buildLoadingSkeleton();
+    }
+
+    if (_rankController.videoList.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.video_library_outlined,
+              size: 64,
+              color: Theme.of(context).colorScheme.outlineVariant,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              '暂无数据',
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.outline,
               ),
             ),
-          ] else ...[
-            const SizedBox(height: 6),
           ],
-          Expanded(
-            child: TabBarView(
-              controller: _rankController.tabController,
-              children: _rankController.tabsPageList,
+        ),
+      );
+    }
+
+    return RefreshIndicator(
+      onRefresh: _rankController.onRefresh,
+      child: CustomScrollView(
+        controller: _rankController.scrollController,
+        slivers: [
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(
+              StyleString.safeSpace,
+              StyleString.safeSpace - 5,
+              StyleString.safeSpace,
+              0,
+            ),
+            sliver: SliverGrid(
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: _rankController.crossAxisCount.value,
+                mainAxisSpacing: 16,
+                crossAxisSpacing: 16,
+                childAspectRatio: 3 / 1,
+              ),
+              delegate: SliverChildBuilderDelegate(
+                (context, index) {
+                  final video = _rankController.videoList[index];
+                  return VideoCardH(
+                    videoItem: video,
+                    source: 'rank',
+                    rankIndex: index + 1,
+                  );
+                },
+                childCount: _rankController.videoList.length,
+              ),
             ),
           ),
         ],
       ),
     );
   }
-}
 
-class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
-  final double height;
-
-  const CustomAppBar({
-    super.key,
-    this.height = kToolbarHeight,
-  });
-
-  @override
-  Size get preferredSize => Size.fromHeight(height);
-
-  @override
-  Widget build(BuildContext context) {
-    final double top = MediaQuery.of(context).padding.top;
-    return Container(
-      width: MediaQuery.of(context).size.width,
-      height: top,
-      color: Colors.transparent,
+  Widget _buildLoadingSkeleton() {
+    return ListView.builder(
+      padding: const EdgeInsets.all(StyleString.safeSpace),
+      itemCount: 10,
+      itemBuilder: (context, index) {
+        return const VideoCardHSkeleton();
+      },
     );
   }
 }

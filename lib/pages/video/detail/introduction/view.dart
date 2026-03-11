@@ -106,7 +106,8 @@ class VideoInfo extends StatefulWidget {
   State<VideoInfo> createState() => _VideoInfoState();
 }
 
-class _VideoInfoState extends State<VideoInfo> with TickerProviderStateMixin {
+class _VideoInfoState extends State<VideoInfo>
+    with TickerProviderStateMixin, AutomaticKeepAliveClientMixin {
   late String heroTag;
   late final VideoIntroController videoIntroController;
   VideoDetailController? videoDetailCtr;
@@ -119,6 +120,9 @@ class _VideoInfoState extends State<VideoInfo> with TickerProviderStateMixin {
   bool isProcessing = false;
   RxBool isExpand = false.obs;
   late ExpandableController _expandableCtr;
+
+  @override
+  bool get wantKeepAlive => true;
 
   void Function()? handleState(Future<dynamic> Function() action) {
     return isProcessing
@@ -149,7 +153,7 @@ class _VideoInfoState extends State<VideoInfo> with TickerProviderStateMixin {
     });
     sheetHeight = localCache.get('sheetHeight');
 
-    _expandableCtr = ExpandableController(initialExpanded: false);
+    _expandableCtr = ExpandableController(initialExpanded: true);
   }
 
   // 收藏
@@ -227,6 +231,7 @@ class _VideoInfoState extends State<VideoInfo> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     final ThemeData t = Theme.of(context);
     final Color outline = t.colorScheme.outline;
     return SliverPadding(
