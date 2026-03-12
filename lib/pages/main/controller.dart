@@ -94,7 +94,7 @@ class MainController extends GetxController {
   void setNavBarConfig() async {
     defaultNavTabs = [...defaultNavigationBars];
     navBarSort =
-        setting.get(SettingBoxKey.navBarSort, defaultValue: [0, 1, 2, 3]);
+        setting.get(SettingBoxKey.navBarSort, defaultValue: [0, 1, 2]);
     defaultNavTabs.retainWhere((item) => navBarSort.contains(item['id']));
     defaultNavTabs.sort((a, b) =>
         navBarSort.indexOf(a['id']).compareTo(navBarSort.indexOf(b['id'])));

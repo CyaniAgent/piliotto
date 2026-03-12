@@ -272,22 +272,21 @@ class _ReplyItemState extends State<ReplyItem> {
           ),
         // 操作区域
         bottonAction(context, widget.replyItem!.replyControl, widget.replySave),
-        // 一楼的评论
-        // 暂时禁用二级评论功能
-        // if ((replyItem!.replyControl!.isShow! ||
-        //         replyItem!.replies!.isNotEmpty) &&
-        //     showReplyRow!) ...[
-        //   Padding(
-        //     padding: const EdgeInsets.only(top: 5, bottom: 12),
-        //     child: ReplyItemRow(
-        //       replies: replyItem!.replies,
-        //       replyControl: replyItem!.replyControl,
-        //       // f_rpid: replyItem!.rpid,
-        //       replyItem: replyItem,
-        //       replyReply: replyReply,
-        //     ),
-        //   ),
-        // ],
+        // 一楼的评论 - 二级评论功能
+        if ((widget.replyItem!.replyControl!.isShow! ||
+                (widget.replyItem!.replies != null &&
+                    widget.replyItem!.replies!.isNotEmpty)) &&
+            widget.showReplyRow!) ...[
+          Padding(
+            padding: const EdgeInsets.only(top: 5, bottom: 12),
+            child: ReplyItemRow(
+              replies: widget.replyItem!.replies,
+              replyControl: widget.replyItem!.replyControl,
+              replyItem: widget.replyItem,
+              replyReply: widget.replyReply,
+            ),
+          ),
+        ],
       ],
     );
   }

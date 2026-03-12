@@ -52,14 +52,16 @@
 ```json
 {
   "status": "success",
-  "uid": 123,
-  "token": "abc123def456...",
-  "avatar_url": "https://example.com/avatar.jpg",
-  "cover_url": "https://example.com/cover.jpg",
-  "if_today_first_login": "yes",
-  "email": "user@qq.com",
-  "is_audit": 0,
-  "is_admin": 0
+  "data": {
+    "uid": 123,
+    "token": "abc123def456...",
+    "avatar_url": "https://example.com/avatar.jpg",
+    "cover_url": "https://example.com/cover.jpg",
+    "if_today_first_login": "yes",
+    "email": "user@qq.com",
+    "is_audit": 0,
+    "is_admin": 0
+  }
 }
 ```
 
@@ -97,9 +99,21 @@
 **成功响应**:
 ```json
 {
-  "status": "success"
+  "status": "success",
+  "data": {
+    "uid": 123,
+    "token": "abc123def456...",
+    "avatar_url": "https://example.com/avatar.jpg",
+    "cover_url": "https://example.com/cover.jpg",
+    "if_today_first_login": "yes",
+    "email": "user@qq.com",
+    "is_audit": 0,
+    "is_admin": 0
+  }
 }
 ```
+
+**注意**: 注册成功后会自动登录，返回与登录接口相同的数据结构。
 
 **错误码**:
 - `missing_argument`: 缺少必需参数
@@ -246,6 +260,8 @@
 - `if_today_first_login`: 是否今日首次登录（`yes` 或 `no`）
   - `yes`: 今日首次登录，已获得10经验值
   - `no`: 今日已登录过，未获得经验值
+
+**注意**: 此接口响应格式特殊，字段直接在根级别，不在 `data` 中。
 
 **错误码**:
 - `missing_argument`: 缺少必需参数

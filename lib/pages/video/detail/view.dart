@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:extended_nested_scroll_view/extended_nested_scroll_view.dart';
 import 'package:floating/floating.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/svg.dart';
@@ -387,6 +386,7 @@ class _VideoDetailPageState extends State<VideoDetailPage>
         ),
       ),
       child: Material(
+        color: Colors.transparent,
         child: Row(
           children: [
             Expanded(
@@ -486,9 +486,6 @@ class _VideoDetailPageState extends State<VideoDetailPage>
     final sizeContext = MediaQuery.sizeOf(context);
     final mediaQuery = MediaQuery.of(context);
     final double defaultVideoHeight = sizeContext.width * 9 / 16;
-    final double pinnedHeaderHeight =
-        statusBarHeight + kToolbarHeight + videoHeight;
-    // ignore: no_leading_underscores_for_local_identifiers
 
     // 横屏
     final bool isLandscape = mediaQuery.orientation == Orientation.landscape;
@@ -622,7 +619,7 @@ class _VideoDetailPageState extends State<VideoDetailPage>
       );
     }
 
-    /// 窄屏布局
+    /// 窄屏布局 - 视频播放器固定，不随内容滚动
     Widget buildNarrowScreenLayout() {
       return SafeArea(
         top: MediaQuery.of(context).orientation == Orientation.portrait &&
@@ -656,141 +653,93 @@ class _VideoDetailPageState extends State<VideoDetailPage>
                   }),
                 ),
               ),
-              body: ExtendedNestedScrollView(
-                controller: _extendNestCtr,
-                headerSliverBuilder:
-                    (BuildContext context2, bool innerBoxIsScrolled) {
-                  return <Widget>[
-                    Obx(
-                      () {
-                        final Orientation orientation =
-                            MediaQuery.of(context).orientation;
-                        final bool isFullScreen =
-                            plPlayerController?.isFullScreen.value == true;
-                        final double expandedHeight =
+              body: Column(
+                children: [
+                  PopScope(
+                    canPop: plPlayerController?.isFullScreen.value != true,
+                    onPopInvokedWithResult: (bool didPop, dynamic result) {
+                      if (plPlayerController?.isFullScreen.value == true) {
+                        plPlayerController!.triggerFullScreen(status: false);
+                      }
+                      if (MediaQuery.of(context).orientation ==
+                          Orientation.landscape) {
+                        verticalScreen();
+                      }
+                    },
+                    child: Obx(() {
+                      final Orientation orientation =
+                          MediaQuery.of(context).orientation;
+                      final bool isFullScreen =
+                          plPlayerController?.isFullScreen.value == true;
+                      if (orientation == Orientation.landscape ||
+                          isFullScreen) {
+                        enterFullScreen();
+                      } else {
+                        exitFullScreen();
+                      }
+                      return SizedBox(
+                        height:
                             orientation == Orientation.landscape || isFullScreen
-                                ? (MediaQuery.sizeOf(context).height -
-                                    (orientation == Orientation.landscape
-                                        ? 0
-                                        : MediaQuery.of(context).padding.top))
-                                : videoHeight;
-                        if (orientation == Orientation.landscape ||
-                            isFullScreen) {
-                          enterFullScreen();
-                        } else {
-                          exitFullScreen();
-                        }
-                        return SliverAppBar(
-                          automaticallyImplyLeading: false,
-                          pinned: true,
-                          elevation: 0,
-                          scrolledUnderElevation: 0,
-                          forceElevated: innerBoxIsScrolled,
-                          expandedHeight: expandedHeight,
-                          backgroundColor: Colors.black,
-                          flexibleSpace: FlexibleSpaceBar(
-                            background: PopScope(
-                              canPop: plPlayerController?.isFullScreen.value !=
-                                  true,
-                              onPopInvokedWithResult:
-                                  (bool didPop, dynamic result) {
-                                if (plPlayerController?.isFullScreen.value ==
-                                    true) {
-                                  plPlayerController!
-                                      .triggerFullScreen(status: false);
-                                }
-                                if (MediaQuery.of(context).orientation ==
-                                    Orientation.landscape) {
-                                  verticalScreen();
-                                }
-                              },
-                              child: LayoutBuilder(
-                                builder: (BuildContext context,
-                                    BoxConstraints constraints) {
-                                  return Hero(
-                                    tag: heroTag,
-                                    child: Stack(
-                                      children: <Widget>[
-                                        Obx(
-                                          () => isShowing.value
-                                              ? buildVideoPlayerPanel()
-                                              : const SizedBox(),
-                                        ),
-
-                                        /// 关闭自动播放时 手动播放
-                                        Obx(
-                                          () => Visibility(
-                                            visible: !vdCtr.autoPlay.value &&
-                                                vdCtr.isShowCover.value,
-                                            child: Positioned(
-                                              top: 0,
-                                              left: 0,
-                                              right: 0,
-                                              child: handlePlayPanel(),
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  );
-                                },
+                                ? MediaQuery.sizeOf(context).height
+                                : videoHeight,
+                        width: Get.size.width,
+                        child: Hero(
+                          tag: heroTag,
+                          child: Stack(
+                            children: <Widget>[
+                              Obx(
+                                () => isShowing.value
+                                    ? buildVideoPlayerPanel()
+                                    : const SizedBox(),
                               ),
-                            ),
+                              Obx(
+                                () => Visibility(
+                                  visible: !vdCtr.autoPlay.value &&
+                                      vdCtr.isShowCover.value,
+                                  child: handlePlayPanel(),
+                                ),
+                              ),
+                            ],
                           ),
-                        );
-                      },
-                    ),
-                  ];
-                },
-
-                /// 不收回
-                pinnedHeaderSliverHeightBuilder: () {
-                  return MediaQuery.of(context).orientation ==
-                              Orientation.landscape ||
-                          plPlayerController?.isFullScreen.value == true
-                      ? MediaQuery.sizeOf(context).height
-                      : playerStatus.value != PlayerStatus.playing
-                          ? kToolbarHeight
-                          : pinnedHeaderHeight;
-                },
-                onlyOneScrollInBody: true,
-                body: Column(
-                  children: [
-                    tabbarBuild(),
-                    Expanded(
-                      child: TabBarView(
-                        controller: vdCtr.tabCtr,
-                        children: <Widget>[
-                          Builder(
-                            builder: (BuildContext context) {
-                              return CustomScrollView(
-                                key: const PageStorageKey<String>('简介'),
-                                slivers: <Widget>[
-                                  if (vdCtr.videoType == 'video') ...[
-                                    VideoIntroPanel(vid: vdCtr.vid),
-                                  ],
-                                  SliverToBoxAdapter(
-                                    child: Divider(
-                                      indent: 12,
-                                      endIndent: 12,
-                                      color: Theme.of(context)
-                                          .dividerColor
-                                          .withValues(alpha: 0.06),
-                                    ),
-                                  ),
+                        ),
+                      );
+                    }),
+                  ),
+                  tabbarBuild(),
+                  Expanded(
+                    child: TabBarView(
+                      controller: vdCtr.tabCtr,
+                      children: <Widget>[
+                        Builder(
+                          builder: (BuildContext context) {
+                            return CustomScrollView(
+                              key: const PageStorageKey<String>('简介'),
+                              physics: const ClampingScrollPhysics(),
+                              slivers: <Widget>[
+                                if (vdCtr.videoType == 'video') ...[
+                                  VideoIntroPanel(vid: vdCtr.vid),
                                 ],
-                              );
-                            },
-                          ),
-                          VideoReplyPanel(
-                            vid: vdCtr.vid,
-                            onControllerCreated: vdCtr.onControllerCreated,
-                          )
-                        ],
-                      ),
+                                SliverToBoxAdapter(
+                                  child: Divider(
+                                    indent: 12,
+                                    endIndent: 12,
+                                    color: Theme.of(context)
+                                        .dividerColor
+                                        .withValues(alpha: 0.06),
+                                  ),
+                                ),
+                              ],
+                            );
+                          },
+                        ),
+                        VideoReplyPanel(
+                          vid: vdCtr.vid,
+                          onControllerCreated: vdCtr.onControllerCreated,
+                        )
+                      ],
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
 

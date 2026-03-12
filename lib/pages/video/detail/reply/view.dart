@@ -6,6 +6,8 @@ import 'package:piliotto/common/skeleton/video_reply.dart';
 import 'package:piliotto/models/common/reply_type.dart';
 import 'controller.dart';
 import 'widgets/reply_item.dart';
+import 'widgets/comment_input.dart';
+import '../controller.dart';
 
 class VideoReplyPanel extends StatefulWidget {
   final int vid;
@@ -37,14 +39,15 @@ class VideoReplyPanelState extends State<VideoReplyPanel>
   @override
   bool get wantKeepAlive => true;
 
-  String get _tag => replyLevel == '2' ? widget.rpid.toString() : _controllerTag;
+  String get _tag =>
+      replyLevel == '2' ? widget.rpid.toString() : _controllerTag;
 
   @override
   void initState() {
     super.initState();
     _controllerTag = Get.arguments?['heroTag'] ?? widget.vid.toString();
     replyLevel = widget.replyLevel ?? '1';
-    
+
     _initController();
     scrollController = ScrollController();
     widget.onControllerCreated?.call(scrollController);
@@ -54,7 +57,7 @@ class VideoReplyPanelState extends State<VideoReplyPanel>
 
   void _initController() {
     final tag = _tag;
-    
+
     if (Get.isRegistered<VideoReplyController>(tag: tag)) {
       _videoReplyController = Get.find<VideoReplyController>(tag: tag);
     } else {
@@ -63,7 +66,7 @@ class VideoReplyPanelState extends State<VideoReplyPanel>
         tag: tag,
       );
     }
-    
+
     if (!_videoReplyController!.hasLoaded) {
       _videoReplyController!.queryReplyList();
     }
@@ -100,51 +103,81 @@ class VideoReplyPanelState extends State<VideoReplyPanel>
     if (!_isInitialized || _videoReplyController == null) {
       return const SizedBox();
     }
-    
+
     final controller = _videoReplyController!;
-    
-    return RefreshIndicator(
-      onRefresh: () async {
-        await controller.queryReplyList(type: 'init');
-      },
-      child: CustomScrollView(
-        controller: scrollController,
-        physics: const AlwaysScrollableScrollPhysics(),
-        key: PageStorageKey<String>('评论_${widget.vid}'),
-        slivers: <Widget>[
-          GetBuilder<VideoReplyController>(
-            init: controller,
-            tag: _tag,
-            builder: (controller) {
-              if (controller.replyList.isEmpty && !controller.isLoadingMore) {
-                return SliverToBoxAdapter(
-                  child: SizedBox(
-                    height: 200,
-                    child: Center(
-                      child: Text(
-                        '暂无评论',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Theme.of(context).colorScheme.outline,
-                        ),
-                      ),
-                    ),
+
+    return Column(
+      children: [
+        Expanded(
+          child: RefreshIndicator(
+            onRefresh: () async {
+              await controller.queryReplyList(type: 'init');
+            },
+            child: GetBuilder<VideoReplyController>(
+              init: controller,
+              tag: _tag,
+              builder: (controller) {
+                return ListView.builder(
+                  controller: scrollController,
+                  physics: const ClampingScrollPhysics(
+                    parent: AlwaysScrollableScrollPhysics(),
                   ),
-                );
-              }
-              
-              return SliverList(
-                delegate: SliverChildBuilderDelegate(
-                  (BuildContext context, int index) {
-                    if (index < 5 && controller.replyList.isEmpty) {
-                      return const VideoReplySkeleton();
+                  key: PageStorageKey<String>('评论_${widget.vid}'),
+                  itemCount: controller.replyList.isEmpty
+                      ? (controller.isLoadingMore ? 5 : 1)
+                      : controller.replyList.length + 1,
+                  itemBuilder: (BuildContext context, int index) {
+                    if (controller.replyList.isEmpty) {
+                      if (controller.isLoadingMore) {
+                        return const VideoReplySkeleton();
+                      }
+                      return SizedBox(
+                        height: 200,
+                        child: Center(
+                          child: Text(
+                            '暂无评论，快来抢沙发喵~',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Theme.of(context).colorScheme.outline,
+                            ),
+                          ),
+                        ),
+                      );
                     }
 
                     if (index == controller.replyList.length) {
-                      double bottom = MediaQuery.of(context).padding.bottom;
+                      if (controller.isLoadingMore) {
+                        return Container(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          child: Center(
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color:
+                                        Theme.of(context).colorScheme.primary,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  '加载中...',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color:
+                                        Theme.of(context).colorScheme.outline,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      }
                       return Container(
-                        padding: EdgeInsets.only(bottom: bottom),
-                        height: bottom + 100,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
                         child: Center(
                           child: Text(
                             controller.noMore,
@@ -163,38 +196,38 @@ class VideoReplyPanelState extends State<VideoReplyPanel>
                       replyItem: replyItem,
                       showReplyRow: true,
                       replyLevel: replyLevel,
-                      replyReply: (replyItem, currentReply, loadMore) {},
+                      replyReply: (replyItem, currentReply, loadMore) {
+                        final heroTag =
+                            Get.arguments?['heroTag'] ?? widget.vid.toString();
+                        try {
+                          final videoDetailCtr =
+                              Get.find<VideoDetailController>(tag: heroTag);
+                          videoDetailCtr.showReplyReplyPanel(
+                            widget.vid,
+                            replyItem.rpid,
+                            replyItem,
+                            currentReply,
+                            loadMore,
+                          );
+                        } catch (e) {
+                          debugPrint('VideoDetailController not found: $e');
+                        }
+                      },
                       replyType: ReplyType.video,
                     );
                   },
-                  childCount: controller.replyList.isEmpty
-                      ? 5
-                      : controller.replyList.length + 1,
-                  findChildIndexCallback: (Key key) {
-                    if (key is ValueKey<String>) {
-                      final keyString = key.value;
-                      if (keyString.startsWith('reply_')) {
-                        final parts = keyString.split('_');
-                        if (parts.length >= 3) {
-                          final rpid = int.tryParse(parts[1]);
-                          if (rpid != null) {
-                            for (int i = 0; i < controller.replyList.length; i++) {
-                              if (controller.replyList[i].rpid == rpid) {
-                                return i;
-                              }
-                            }
-                          }
-                        }
-                      }
-                    }
-                    return null;
-                  },
-                ),
-              );
-            },
-          )
-        ],
-      ),
+                );
+              },
+            ),
+          ),
+        ),
+        CommentInput(
+          vid: widget.vid,
+          onCommentSuccess: () {
+            refresh();
+          },
+        ),
+      ],
     );
   }
 }

@@ -18,8 +18,7 @@ class AuthService {
       },
       requireToken: false,
     );
-    final loginResponse = LoginResponse.fromJson(response);
-    // 保存token
+    final loginResponse = LoginResponse.fromJson(response['data']);
     if (loginResponse.token != null) {
       ApiService.setToken(loginResponse.token!);
     }
@@ -43,8 +42,7 @@ class AuthService {
       },
       requireToken: false,
     );
-    final loginResponse = LoginResponse.fromJson(response);
-    // 保存token
+    final loginResponse = LoginResponse.fromJson(response['data']);
     if (loginResponse.token != null) {
       ApiService.setToken(loginResponse.token!);
     }
@@ -99,6 +97,6 @@ class AuthService {
       '$baseEndpoint/sign-in',
       method: 'POST',
     );
-    return SignInResponse.fromJson(response['data']);
+    return SignInResponse.fromJson(response);
   }
 }

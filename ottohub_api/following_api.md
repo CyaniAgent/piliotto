@@ -66,6 +66,8 @@
 - `new_fans_count`: 被关注用户的最新粉丝数
 - `follow_status`: 关注状态（1=已关注，0=未关注）
 
+**注意**: 此接口响应格式特殊，字段直接在根级别，不在 `data` 中。
+
 **错误码**:
 - `error_following_uid`: 关注目标用户ID无效
 - `error_token`: Token无效或已过期
@@ -104,6 +106,8 @@
 
 **响应字段说明**:
 - `follow_status`: 关注状态（1=已关注，0=未关注）
+
+**注意**: 此接口响应格式特殊，字段直接在根级别，不在 `data` 中。
 
 **错误码**:
 - `error_following_uid`: 用户ID无效

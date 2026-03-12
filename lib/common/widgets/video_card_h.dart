@@ -129,9 +129,9 @@ class VideoCardH extends StatelessWidget {
                                   child: Container(
                                     width: 28,
                                     height: 28,
-                                    decoration: BoxDecoration(
+                                    decoration: const BoxDecoration(
                                       color: Colors.black54,
-                                      borderRadius: const BorderRadius.only(
+                                      borderRadius: BorderRadius.only(
                                         topLeft: Radius.circular(8),
                                         bottomRight: Radius.circular(8),
                                       ),

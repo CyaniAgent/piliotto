@@ -7,7 +7,6 @@ import 'package:piliotto/models/common/dynamic_badge_mode.dart';
 import 'package:piliotto/pages/dynamics/index.dart';
 import 'package:piliotto/pages/home/index.dart';
 import 'package:piliotto/pages/media/index.dart';
-import 'package:piliotto/pages/rank/index.dart';
 import 'package:piliotto/utils/event_bus.dart';
 import 'package:piliotto/utils/feed_back.dart';
 import 'package:piliotto/utils/responsive_util.dart';
@@ -24,11 +23,10 @@ class MainApp extends StatefulWidget {
 class _MainAppState extends State<MainApp> with SingleTickerProviderStateMixin {
   final MainController _mainController = Get.put(MainController());
   late HomeController _homeController;
-  RankController? _rankController;
   DynamicsController? _dynamicController;
   MediaController? _mediaController;
 
-  int? _lastSelectTime; //上次点击时间
+  int? _lastSelectTime;
   Box setting = GStrorage.setting;
   late bool enableMYBar;
 
@@ -48,7 +46,6 @@ class _MainAppState extends State<MainApp> with SingleTickerProviderStateMixin {
     var currentPage = _mainController.pages[value];
     if (currentPage is HomePage) {
       if (_homeController.flag) {
-        // 单击返回顶部 双击并刷新
         if (DateTime.now().millisecondsSinceEpoch - _lastSelectTime! < 500) {
           _homeController.onRefresh();
         } else {
@@ -61,24 +58,8 @@ class _MainAppState extends State<MainApp> with SingleTickerProviderStateMixin {
       _homeController.flag = false;
     }
 
-    if (currentPage is RankPage) {
-      if (_rankController!.flag) {
-        // 单击返回顶部 双击并刷新
-        if (DateTime.now().millisecondsSinceEpoch - _lastSelectTime! < 500) {
-          _rankController!.onRefresh();
-        } else {
-          _rankController!.animateToTop();
-        }
-        _lastSelectTime = DateTime.now().millisecondsSinceEpoch;
-      }
-      _rankController!.flag = true;
-    } else {
-      _rankController?.flag = false;
-    }
-
     if (currentPage is DynamicsPage) {
       if (_dynamicController!.flag) {
-        // 单击返回顶部 双击并刷新
         if (DateTime.now().millisecondsSinceEpoch - _lastSelectTime! < 500) {
           _dynamicController!.onRefresh();
         } else {
@@ -100,12 +81,9 @@ class _MainAppState extends State<MainApp> with SingleTickerProviderStateMixin {
   void controllerInit() {
     _homeController = Get.put(HomeController());
     if (_mainController.pagesIds.contains(1)) {
-      _rankController = Get.put(RankController());
-    }
-    if (_mainController.pagesIds.contains(2)) {
       _dynamicController = Get.put(DynamicsController());
     }
-    if (_mainController.pagesIds.contains(3)) {
+    if (_mainController.pagesIds.contains(2)) {
       _mediaController = Get.put(MediaController());
     }
   }
@@ -123,7 +101,7 @@ class _MainAppState extends State<MainApp> with SingleTickerProviderStateMixin {
     double statusBarHeight = MediaQuery.of(context).padding.top;
     double sheetHeight = MediaQuery.sizeOf(context).height -
         MediaQuery.of(context).padding.top -
-        MediaQuery.sizeOf(context).width * 9 / 16;
+        MediaQuery.of(context).size.width * 9 / 16;
     localCache.put('sheetHeight', sheetHeight);
     localCache.put('statusBarHeight', statusBarHeight);
     bool isWideScreen = ResponsiveUtil.isLg || ResponsiveUtil.isXl;
@@ -238,7 +216,6 @@ class _MainAppState extends State<MainApp> with SingleTickerProviderStateMixin {
     return Scaffold(
       body: Row(
         children: [
-          // 侧边栏
           NavigationRail(
             selectedIndex: _mainController.selectedIndex,
             onDestinationSelected: (value) => setIndex(value),
@@ -261,7 +238,6 @@ class _MainAppState extends State<MainApp> with SingleTickerProviderStateMixin {
               );
             }).toList(),
           ),
-          // 主内容区
           Expanded(
             child: Stack(
               children: [
