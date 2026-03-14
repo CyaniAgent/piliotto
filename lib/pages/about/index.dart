@@ -1,12 +1,11 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
 import 'package:package_info_plus/package_info_plus.dart';
-import 'package:piliotto/http/index.dart';
 import 'package:piliotto/models/github/latest.dart';
 import 'package:piliotto/utils/utils.dart';
 import 'package:url_launcher/url_launcher.dart';
-import '../../utils/cache_manage.dart';
 
 class AboutPage extends StatefulWidget {
   const AboutPage({super.key});
@@ -17,19 +16,6 @@ class AboutPage extends StatefulWidget {
 
 class _AboutPageState extends State<AboutPage> {
   final AboutController _aboutController = Get.put(AboutController());
-  String cacheSize = '';
-
-  @override
-  void initState() {
-    super.initState();
-    // 读取缓存占用
-    getCacheSize();
-  }
-
-  Future<void> getCacheSize() async {
-    final res = await CacheManage().loadApplicationCache();
-    setState(() => cacheSize = res);
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -91,14 +77,6 @@ class _AboutPageState extends State<AboutPage> {
                 ),
               ),
             ),
-            // ListTile(
-            //   onTap: () {},
-            //   title: const Text('更新日志'),
-            //   trailing: const Icon(
-            //     Icons.arrow_forward_ios,
-            //     size: 16,
-            //   ),
-            // ),
             ListTile(
               onTap: () => _aboutController.githubUrl(),
               title: const Text('开源地址'),
@@ -117,41 +95,9 @@ class _AboutPageState extends State<AboutPage> {
               ),
             ),
             ListTile(
-              onTap: () {
-                showModalBottomSheet(
-                  context: context,
-                  builder: (context) {
-                    return Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        SizedBox(
-                            height: MediaQuery.of(context).padding.bottom + 20)
-                      ],
-                    );
-                  },
-                );
-              },
-              title: const Text('交流社区'),
-              trailing: Icon(
-                Icons.arrow_forward_ios,
-                size: 16,
-                color: outline,
-              ),
-            ),
-            ListTile(
               onTap: () => _aboutController.logs(),
               title: const Text('错误日志'),
               trailing: Icon(Icons.arrow_forward_ios, size: 16, color: outline),
-            ),
-            ListTile(
-              onTap: () async {
-                var cleanStatus = await CacheManage().clearCacheAll();
-                if (cleanStatus) {
-                  getCacheSize();
-                }
-              },
-              title: const Text('清除缓存'),
-              subtitle: Text('图片及网络缓存 $cacheSize', style: subTitleStyle),
             ),
             SizedBox(height: MediaQuery.of(context).padding.bottom + 20)
           ],
@@ -172,54 +118,41 @@ class AboutController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    // init();
-    // 获取当前版本
     getCurrentApp();
-    // 获取最新的版本
     getRemoteApp();
   }
 
-  // 获取设备信息
-  // Future init() async {
-  //   DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
-  //   if (Platform.isAndroid) {
-  //     AndroidDeviceInfo androidInfo = await deviceInfo.androidInfo;
-  //     print(androidInfo.supportedAbis);
-  //   } else if (Platform.isIOS) {
-  //     IosDeviceInfo iosInfo = await deviceInfo.iosInfo;
-  //     print(iosInfo);
-  //   }
-  // }
-
-  // 获取当前版本
   Future getCurrentApp() async {
     var result = await PackageInfo.fromPlatform();
     currentVersion.value = result.version;
   }
 
-  // 获取远程版本
   Future getRemoteApp() async {
-    var result = await Request().get(Api.latestApp, extra: {'ua': 'pc'});
-    isLoading.value = false;
-    if (result.data == null || result.data.isEmpty) {
-      SmartDialog.showToast('获取远程版本失败，请检查网络');
-      return;
-    }
-    data = LatestDataModel.fromJson(result.data);
-    remoteAppInfo = data;
-    remoteVersion.value = data.tagName ?? '';
-    if (remoteVersion.value.isNotEmpty) {
-      isUpdate.value =
-          Utils.needUpdate(currentVersion.value, remoteVersion.value);
+    try {
+      var dio = Dio();
+      var result = await dio.get('https://api.github.com/repos/CyaniAgent/piliotto/releases/latest');
+      isLoading.value = false;
+      if (result.data == null || result.data.isEmpty) {
+        SmartDialog.showToast('获取远程版本失败，请检查网络');
+        return;
+      }
+      data = LatestDataModel.fromJson(result.data);
+      remoteAppInfo = data;
+      remoteVersion.value = data.tagName ?? '';
+      if (remoteVersion.value.isNotEmpty) {
+        isUpdate.value =
+            Utils.needUpdate(currentVersion.value, remoteVersion.value);
+      }
+    } catch (e) {
+      isLoading.value = false;
+      SmartDialog.showToast('获取远程版本失败: $e');
     }
   }
 
-  // 跳转下载/本地更新
   Future onUpdate() async {
     Utils.matchVersion(data);
   }
 
-  // 跳转github
   githubUrl() {
     launchUrl(
       Uri.parse('https://github.com/CyaniAgent/piliotto'),
@@ -234,16 +167,13 @@ class AboutController extends GetxController {
     );
   }
 
-  // 问题反馈
   feedback() {
     launchUrl(
       Uri.parse('https://github.com/CyaniAgent/piliotto/issues'),
-      // 系统自带浏览器打开
       mode: LaunchMode.externalApplication,
     );
   }
 
-  // 日志
   logs() {
     Get.toNamed('/logs');
   }

@@ -4,12 +4,11 @@ import 'package:easy_debounce/easy_throttle.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:get/get.dart';
-import 'package:piliotto/common/skeleton/video_reply.dart';
 import 'package:piliotto/pages/dynamics/detail/index.dart';
 import 'package:piliotto/pages/dynamics/widgets/author_panel.dart';
-import 'package:piliotto/pages/video/detail/reply/widgets/reply_item.dart';
+import 'package:piliotto/pages/dynamics/widgets/flat_reply_item.dart';
+import 'package:piliotto/utils/responsive_util.dart';
 
-import '../../../models/video/reply/item.dart';
 import '../widgets/dynamic_panel.dart';
 
 class DynamicDetailPage extends StatefulWidget {
@@ -116,8 +115,27 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
     super.dispose();
   }
 
+  EdgeInsets _buildPadding(bool isWideScreen, double screenWidth) {
+    const contentMaxWidth = 600.0;
+    if (isWideScreen) {
+      final horizontalPadding = (screenWidth - contentMaxWidth) / 2;
+      return EdgeInsets.only(
+        left: horizontalPadding,
+        right: horizontalPadding,
+        bottom: MediaQuery.of(context).padding.bottom + 80,
+      );
+    }
+    return EdgeInsets.only(
+      bottom: MediaQuery.of(context).padding.bottom + 80,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final isWideScreen = ResponsiveUtil.isLg || ResponsiveUtil.isXl;
+    final screenWidth = MediaQuery.of(context).size.width;
+
     return Scaffold(
       appBar: AppBar(
         elevation: 0,
@@ -140,147 +158,113 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
         onRefresh: () async {
           await _dynamicDetailController.queryReplyList();
         },
-        child: CustomScrollView(
-          controller: scrollController,
-          slivers: [
-            if (action != 'comment')
-              SliverToBoxAdapter(
-                child: DynamicPanel(
-                  item: _dynamicDetailController.item,
-                  source: 'detail',
-                ),
-              ),
-            SliverPersistentHeader(
-              delegate: _MySliverPersistentHeaderDelegate(
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.surface,
-                    border: Border(
-                      top: BorderSide(
-                        width: 0.6,
-                        color: Theme.of(context)
-                            .dividerColor
-                            .withValues(alpha: 0.05),
-                      ),
-                    ),
-                  ),
-                  height: 45,
-                  padding: const EdgeInsets.only(left: 12, right: 6),
-                  child: Row(
-                    children: [
-                      Obx(
-                        () => AnimatedSwitcher(
-                          duration: const Duration(milliseconds: 400),
-                          transitionBuilder:
-                              (Widget child, Animation<double> animation) {
-                            return ScaleTransition(
-                                scale: animation, child: child);
-                          },
-                          child: Text(
-                            '${_dynamicDetailController.acount.value}',
-                            key: ValueKey<int>(
-                                _dynamicDetailController.acount.value),
+        child: FutureBuilder(
+          future: _futureBuilderFuture,
+          builder: (context, snapshot) {
+            return Obx(() {
+              final replyList = _dynamicDetailController.replyList;
+              final isLoading = _dynamicDetailController.isLoadingMore.value;
+
+              return ListView.builder(
+                controller: scrollController,
+                padding: _buildPadding(isWideScreen, screenWidth),
+                itemCount: replyList.length + 2,
+                itemBuilder: (context, index) {
+                  if (index == 0) {
+                    if (action != 'comment') {
+                      return DynamicPanel(
+                        item: _dynamicDetailController.item,
+                        source: 'detail',
+                      );
+                    }
+                    return const SizedBox.shrink();
+                  }
+
+                  if (index == 1) {
+                    return Container(
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.surface,
+                        border: Border(
+                          top: BorderSide(
+                            width: 0.6,
+                            color: Theme.of(context)
+                                .dividerColor
+                                .withValues(alpha: 0.05),
                           ),
                         ),
                       ),
-                      const Text('条回复'),
-                    ],
-                  ),
-                ),
-              ),
-              pinned: true,
-            ),
-            FutureBuilder(
-              future: _futureBuilderFuture,
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.done) {
-                  RxList<ReplyItemModel> replyList =
-                      _dynamicDetailController.replyList;
-                  return Obx(
-                    () => replyList.isEmpty &&
-                            _dynamicDetailController.isLoadingMore.value
-                        ? SliverList(
-                            delegate:
-                                SliverChildBuilderDelegate((context, index) {
-                              return const VideoReplySkeleton();
-                            }, childCount: 8),
-                          )
-                        : SliverList(
-                            delegate: SliverChildBuilderDelegate(
-                              (context, index) {
-                                if (index == replyList.length) {
-                                  return Container(
-                                    padding: EdgeInsets.only(
-                                        bottom: MediaQuery.of(context)
-                                            .padding
-                                            .bottom),
-                                    height:
-                                        MediaQuery.of(context).padding.bottom +
-                                            100,
-                                    child: Center(
-                                      child: Obx(
-                                        () => Text(
-                                          _dynamicDetailController.noMore.value,
-                                          style: TextStyle(
-                                            fontSize: 12,
-                                            color: Theme.of(context)
-                                                .colorScheme
-                                                .outline,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  );
-                                } else {
-                                  return ReplyItem(
-                                    replyItem: replyList[index],
-                                    showReplyRow: true,
-                                    replyLevel: '1',
-                                    showLikeButton: false,
-                                  );
-                                }
+                      height: 45,
+                      padding: const EdgeInsets.only(left: 12, right: 6),
+                      child: Row(
+                        children: [
+                          Obx(
+                            () => AnimatedSwitcher(
+                              duration: const Duration(milliseconds: 400),
+                              transitionBuilder:
+                                  (Widget child, Animation<double> animation) {
+                                return ScaleTransition(
+                                    scale: animation, child: child);
                               },
-                              childCount: replyList.length + 1,
+                              child: Text(
+                                '${_dynamicDetailController.acount.value}',
+                                key: ValueKey<int>(
+                                    _dynamicDetailController.acount.value),
+                              ),
                             ),
                           ),
+                          const Text('条回复'),
+                        ],
+                      ),
+                    );
+                  }
+
+                  final replyIndex = index - 2;
+                  if (replyIndex == replyList.length) {
+                    return Container(
+                      padding: const EdgeInsets.symmetric(vertical: 20),
+                      child: Center(
+                        child: isLoading
+                            ? Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  SizedBox(
+                                    width: 16,
+                                    height: 16,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: colorScheme.primary,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Text(
+                                    '加载中...',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      color: colorScheme.outline,
+                                    ),
+                                  ),
+                                ],
+                              )
+                            : Text(
+                                _dynamicDetailController.noMore.value,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: colorScheme.outline,
+                                ),
+                              ),
+                      ),
+                    );
+                  }
+
+                  return FlatReplyItem(
+                    replyItem: replyList[replyIndex],
                   );
-                } else {
-                  return SliverList(
-                    delegate: SliverChildBuilderDelegate((context, index) {
-                      return const VideoReplySkeleton();
-                    }, childCount: 8),
-                  );
-                }
-              },
-            )
-          ],
+                },
+              );
+            });
+          },
         ),
       ),
     );
-  }
-}
-
-class _MySliverPersistentHeaderDelegate extends SliverPersistentHeaderDelegate {
-  final double _minExtent = 45;
-  final double _maxExtent = 45;
-  final Widget child;
-
-  _MySliverPersistentHeaderDelegate({required this.child});
-
-  @override
-  Widget build(
-      BuildContext context, double shrinkOffset, bool overlapsContent) {
-    return child;
-  }
-
-  @override
-  double get maxExtent => _maxExtent;
-
-  @override
-  double get minExtent => _minExtent;
-
-  @override
-  bool shouldRebuild(covariant _MySliverPersistentHeaderDelegate oldDelegate) {
-    return true;
   }
 }

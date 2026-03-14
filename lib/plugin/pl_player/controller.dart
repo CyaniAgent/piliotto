@@ -601,7 +601,6 @@ class PlPlayerController {
 
   /// 设置倍速
   Future<void> setPlaybackSpeed(double speed) async {
-    /// TODO  _duration.value丢失
     if (_videoPlayerController != null) {
       try {
         await _videoPlayerController!.setRate(speed);
@@ -639,7 +638,6 @@ class PlPlayerController {
   }
 
   /// 播放视频
-  /// TODO  _duration.value丢失
   Future<void> play(
       {bool repeat = false, bool hideControls = true, dynamic duration}) async {
     // 播放时自动隐藏控制条

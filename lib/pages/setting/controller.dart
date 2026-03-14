@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
 import 'package:hive/hive.dart';
-import 'package:piliotto/http/init.dart';
 import 'package:piliotto/models/common/theme_type.dart';
 import 'package:piliotto/utils/feed_back.dart';
 import 'package:piliotto/utils/login.dart';
@@ -61,10 +60,6 @@ class SettingController extends GetxController {
             ),
             TextButton(
               onPressed: () async {
-                // 清空cookie
-                await Request.cookieManager.cookieJar.deleteAll();
-                Request.dio.options.headers['cookie'] = '';
-
                 // 清空本地存储的用户标识
                 userInfoCache.put('userInfoCache', null);
                 localCache

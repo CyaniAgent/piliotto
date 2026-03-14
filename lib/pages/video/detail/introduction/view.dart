@@ -308,6 +308,14 @@ class _VideoInfoState extends State<VideoInfo>
                       color: t.colorScheme.outline,
                     ),
                   ),
+                  const SizedBox(width: 10),
+                  SelectableText(
+                    'OV${widget.vid}',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: t.colorScheme.outline,
+                    ),
+                  ),
                 ],
               ),
             ),

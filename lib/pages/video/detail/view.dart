@@ -172,7 +172,8 @@ class _VideoDetailPageState extends State<VideoDetailPage>
       if (isFullScreen) {
         vdCtr.hiddenReplyReplyPanel();
       }
-      if (!isFullScreen && vdCtr.bottomList.contains(BottomControlType.episode)) {
+      if (!isFullScreen &&
+          vdCtr.bottomList.contains(BottomControlType.episode)) {
         vdCtr.bottomList.removeAt(3);
       }
     });
@@ -565,44 +566,46 @@ class _VideoDetailPageState extends State<VideoDetailPage>
 
     /// 右侧内容面板
     Widget buildRightContentPanel() {
-      return CustomScrollView(
-        slivers: <Widget>[
-          SliverToBoxAdapter(
-            child: tabbarBuild(),
-          ),
-          SliverFillRemaining(
-            child: TabBarView(
-              controller: vdCtr.tabCtr,
-              children: <Widget>[
-                Builder(
-                  builder: (BuildContext context) {
-                    return CustomScrollView(
-                      key: const PageStorageKey<String>('简介'),
-                      slivers: <Widget>[
-                        if (vdCtr.videoType == 'video') ...[
-                          VideoIntroPanel(vid: vdCtr.vid),
-                        ],
-                        SliverToBoxAdapter(
-                          child: Divider(
-                            indent: 16,
-                            endIndent: 16,
-                            color: Theme.of(context)
-                                .dividerColor
-                                .withValues(alpha: 0.1),
+      return Scaffold(
+        key: vdCtr.rightContentScaffoldKey,
+        backgroundColor: Theme.of(context).colorScheme.surface,
+        body: Column(
+          children: [
+            tabbarBuild(),
+            Expanded(
+              child: TabBarView(
+                controller: vdCtr.tabCtr,
+                children: <Widget>[
+                  Builder(
+                    builder: (BuildContext context) {
+                      return CustomScrollView(
+                        key: const PageStorageKey<String>('简介'),
+                        slivers: <Widget>[
+                          if (vdCtr.videoType == 'video') ...[
+                            VideoIntroPanel(vid: vdCtr.vid),
+                          ],
+                          SliverToBoxAdapter(
+                            child: Divider(
+                              indent: 16,
+                              endIndent: 16,
+                              color: Theme.of(context)
+                                  .dividerColor
+                                  .withValues(alpha: 0.1),
+                            ),
                           ),
-                        ),
-                      ],
-                    );
-                  },
-                ),
-                VideoReplyPanel(
-                  vid: vdCtr.vid,
-                  onControllerCreated: vdCtr.onControllerCreated,
-                )
-              ],
+                        ],
+                      );
+                    },
+                  ),
+                  VideoReplyPanel(
+                    vid: vdCtr.vid,
+                    onControllerCreated: vdCtr.onControllerCreated,
+                  )
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       );
     }
 
@@ -744,8 +747,6 @@ class _VideoDetailPageState extends State<VideoDetailPage>
                 );
               }),
             ),
-
-
           ],
         ),
       );
@@ -882,16 +883,7 @@ class _VideoDetailPageState extends State<VideoDetailPage>
                   // 右侧内容区
                   Expanded(
                     flex: 1,
-                    child: Container(
-                      padding: EdgeInsets.zero,
-                      child: Column(
-                        children: [
-                          Expanded(
-                            child: buildRightContentPanel(),
-                          ),
-                        ],
-                      ),
-                    ),
+                    child: buildRightContentPanel(),
                   ),
                 ],
               ),
@@ -911,7 +903,6 @@ class _VideoDetailPageState extends State<VideoDetailPage>
                 );
               }),
             ),
-
           ],
         ),
       );

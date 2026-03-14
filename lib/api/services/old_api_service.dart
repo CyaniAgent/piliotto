@@ -333,4 +333,50 @@ class OldApiService {
       requireAuth: true,
     );
   }
+
+  // 获取视频历史记录
+  static Future<Map<String, dynamic>> getVideoHistory() async {
+    return request(
+      'profile',
+      'history_video_list',
+      {
+        'token': null,
+      },
+      requireAuth: true,
+    );
+  }
+
+  // 获取收藏视频列表
+  static Future<Map<String, dynamic>> getFavoriteVideoList({
+    int offset = 0,
+    int num = 20,
+  }) async {
+    return request(
+      'profile',
+      'favorite_video_list',
+      {
+        'offset': offset.toString(),
+        'num': num.toString(),
+        'token': null,
+      },
+      requireAuth: true,
+    );
+  }
+
+  // 获取收藏动态列表
+  static Future<Map<String, dynamic>> getFavoriteBlogList({
+    int offset = 0,
+    int num = 20,
+  }) async {
+    return request(
+      'profile',
+      'favorite_blog_list',
+      {
+        'offset': offset.toString(),
+        'num': num.toString(),
+        'token': null,
+      },
+      requireAuth: true,
+    );
+  }
 }

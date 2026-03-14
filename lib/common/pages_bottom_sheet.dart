@@ -53,10 +53,10 @@ class EpisodeBottomSheet {
             },
             dense: false,
             leading: isCurrentIndex
-                ? Image.asset(
-                    'assets/images/live.gif',
+                ? Icon(
+                    Icons.play_circle_filled,
                     color: primary,
-                    height: 12,
+                    size: 18,
                   )
                 : null,
             title: Text(title,

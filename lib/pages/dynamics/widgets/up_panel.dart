@@ -205,10 +205,13 @@ class _UpPanelState extends State<UpPanel> {
                         src: data.face,
                         type: 'avatar',
                       )
-                    : const CircleAvatar(
+                    : CircleAvatar(
                         radius: 25,
-                        backgroundImage: AssetImage(
-                          'assets/images/noface.jpeg',
+                        backgroundColor: Theme.of(context).colorScheme.onInverseSurface,
+                        child: Icon(
+                          Icons.person,
+                          size: 30,
+                          color: Theme.of(context).colorScheme.outline,
                         ),
                       ),
               ),

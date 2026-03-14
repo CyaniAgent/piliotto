@@ -2,10 +2,8 @@ import 'package:easy_debounce/easy_throttle.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:piliotto/common/skeleton/video_card_h.dart';
-import 'package:piliotto/common/widgets/http_error.dart';
+import 'package:piliotto/common/widgets/video_card_h.dart';
 import 'package:piliotto/pages/fav/index.dart';
-import 'package:piliotto/pages/fav/widgets/item.dart';
-import 'package:piliotto/utils/route_push.dart';
 
 class FavPage extends StatefulWidget {
   const FavPage({super.key});
@@ -16,19 +14,17 @@ class FavPage extends StatefulWidget {
 
 class _FavPageState extends State<FavPage> {
   final FavController _favController = Get.put(FavController());
-  late Future _futureBuilderFuture;
   late ScrollController scrollController;
 
   @override
   void initState() {
     super.initState();
-    _futureBuilderFuture = _favController.queryFavFolder();
     scrollController = _favController.scrollController;
     scrollController.addListener(
       () {
         if (scrollController.position.pixels >=
             scrollController.position.maxScrollExtent - 300) {
-          EasyThrottle.throttle('history', const Duration(seconds: 1), () {
+          EasyThrottle.throttle('fav', const Duration(seconds: 1), () {
             _favController.onLoad();
           });
         }
@@ -42,50 +38,14 @@ class _FavPageState extends State<FavPage> {
       appBar: AppBar(
         centerTitle: false,
         titleSpacing: 0,
-        title: Obx(() => Text(
-              '${_favController.isOwner.value ? '我' : 'Ta'}的收藏',
-              style: Theme.of(context).textTheme.titleMedium,
-            )),
-        actions: [
-          Obx(() => !_favController.isOwner.value
-              ? IconButton(
-                  onPressed: () =>
-                      Get.toNamed('/subscription?mid=${_favController.mid}'),
-                  icon: const Icon(Icons.subscriptions_outlined, size: 21),
-                  tooltip: 'Ta的订阅',
-                )
-              : const SizedBox.shrink()),
-
-          // 新建收藏夹
-          Obx(() => _favController.isOwner.value
-              ? IconButton(
-                  onPressed: () async {
-                    await Get.toNamed('/favEdit');
-                    _favController.hasMore.value = true;
-                    _favController.currentPage = 1;
-                    setState(() {
-                      _futureBuilderFuture = _favController.queryFavFolder();
-                    });
-                  },
-                  icon: const Icon(Icons.add_outlined),
-                  tooltip: '新建收藏夹',
-                )
-              : const SizedBox.shrink()),
-          IconButton(
-            onPressed: () => Get.toNamed(
-                '/favSearch?searchType=1&mediaId=${_favController.favFolderData.value.list!.first.id}'),
-            icon: const Icon(Icons.search_outlined),
-          ),
-          const SizedBox(width: 14),
-        ],
+        title: Text(
+          '我的收藏',
+          style: Theme.of(context).textTheme.titleMedium,
+        ),
       ),
       body: RefreshIndicator(
         onRefresh: () async {
-          _favController.hasMore.value = true;
-          _favController.currentPage = 1;
-          setState(() {
-            _futureBuilderFuture = _favController.queryFavFolder(type: 'init');
-          });
+          await _favController.onRefresh();
         },
         child: _buildBody(),
       ),
@@ -93,54 +53,80 @@ class _FavPageState extends State<FavPage> {
   }
 
   Widget _buildBody() {
-    return FutureBuilder(
-      future: _futureBuilderFuture,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.done) {
-          Map? data = snapshot.data;
-          if (data != null && data['status']) {
-            return Obx(
-              () => ListView.builder(
-                controller: scrollController,
-                itemCount: _favController.favFolderList.length,
-                itemBuilder: (context, index) {
-                  return FavItem(
-                    favFolderItem: _favController.favFolderList[index],
-                    isOwner: _favController.isOwner.value,
-                  );
-                },
-              ),
-            );
-          } else {
-            return CustomScrollView(
-              physics: const NeverScrollableScrollPhysics(),
-              slivers: [
-                HttpError(
-                  errMsg: data?['msg'] ?? '请求异常',
-                  btnText: data?['code'] == -101 ? '去登录' : null,
-                  fn: () {
-                    if (data?['code'] == -101) {
-                      RoutePush.loginRedirectPush();
-                    } else {
-                      setState(() {
-                        _futureBuilderFuture = _favController.queryFavFolder();
-                      });
-                    }
-                  },
+    return Obx(() {
+      if (_favController.isLoading.value &&
+          _favController.favoriteList.isEmpty) {
+        return ListView.builder(
+          itemBuilder: (context, index) {
+            return const VideoCardHSkeleton();
+          },
+          itemCount: 10,
+        );
+      }
+
+      if (_favController.favoriteList.isEmpty) {
+        return CustomScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          slivers: [
+            SliverFillRemaining(
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.favorite_border,
+                      size: 64,
+                      color: Theme.of(context).colorScheme.outline,
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      '暂无收藏',
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.outline,
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            );
+              ),
+            ),
+          ],
+        );
+      }
+
+      return ListView.builder(
+        controller: scrollController,
+        itemCount: _favController.favoriteList.length + 1,
+        itemBuilder: (context, index) {
+          if (index == _favController.favoriteList.length) {
+            return Obx(() => Container(
+                  height: 60,
+                  alignment: Alignment.center,
+                  child: Text(
+                    _favController.hasMore.value ? '加载中...' : '没有更多了',
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.outline,
+                      fontSize: 13,
+                    ),
+                  ),
+                ));
           }
-        } else {
-          // 骨架屏
-          return ListView.builder(
-            itemBuilder: (context, index) {
-              return const VideoCardHSkeleton();
+          final video = _favController.favoriteList[index];
+          return Dismissible(
+            key: Key('fav_${video.vid}'),
+            direction: DismissDirection.endToStart,
+            background: Container(
+              alignment: Alignment.centerRight,
+              padding: const EdgeInsets.only(right: 20),
+              color: Colors.red,
+              child: const Icon(Icons.delete, color: Colors.white),
+            ),
+            onDismissed: (direction) {
+              _favController.removeFavorite(video.vid);
             },
-            itemCount: 10,
+            child: VideoCardH(videoItem: video),
           );
-        }
-      },
-    );
+        },
+      );
+    });
   }
 }

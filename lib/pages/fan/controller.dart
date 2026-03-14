@@ -1,21 +1,24 @@
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
 import 'package:hive/hive.dart';
-import 'package:piliotto/http/fan.dart';
-import 'package:piliotto/models/fans/result.dart';
+import 'package:piliotto/api/models/following.dart';
+import 'package:piliotto/services/ottohub_service.dart';
+import 'package:piliotto/services/loggeer.dart';
 import 'package:piliotto/utils/storage.dart';
 
-class FansController extends GetxController {
+final _logger = getLogger();
+
+class FanController extends GetxController {
   Box userInfoCache = GStrorage.userInfo;
-  int pn = 1;
-  int ps = 20;
-  int total = 0;
-  RxList<FansItemModel> fansList = <FansItemModel>[].obs;
+  int offset = 0;
+  int num = 20;
+  RxList<FollowingUser> fanList = <FollowingUser>[].obs;
   late int mid;
   late String name;
   dynamic userInfo;
   RxString loadingText = '加载中...'.obs;
-  RxBool isOwner = false.obs;
+  RxBool isLoading = false.obs;
+  RxBool hasMore = true.obs;
 
   @override
   void onInit() {
@@ -23,39 +26,55 @@ class FansController extends GetxController {
     userInfo = userInfoCache.get('userInfoCache');
     mid = Get.parameters['mid'] != null
         ? int.parse(Get.parameters['mid']!)
-        : userInfo.mid;
-    isOwner.value = mid == userInfo.mid;
-    name = Get.parameters['name'] ?? userInfo.uname;
+        : userInfo?.mid ?? 0;
+    name = Get.parameters['name'] ?? userInfo?.uname ?? '';
   }
 
-  Future queryFans(type) async {
-    if (type == 'init') {
-      pn = 1;
-      loadingText.value == '加载中...';
+  Future<void> queryFans({bool isLoadMore = false}) async {
+    if (isLoading.value) return;
+
+    if (!isLoadMore) {
+      offset = 0;
+      loadingText.value = '加载中...';
+    } else {
+      if (!hasMore.value) return;
     }
-    if (loadingText.value == '没有更多了') {
-      return;
-    }
-    var res = await FanHttp.fans(
-      vmid: mid,
-      pn: pn,
-      ps: ps,
-      orderType: 'attention',
-    );
-    if (res['status']) {
-      if (type == 'init') {
-        fansList.value = res['data'].list;
-        total = res['data'].total;
-      } else if (type == 'onLoad') {
-        fansList.addAll(res['data'].list);
+
+    isLoading.value = true;
+
+    try {
+      final response = await OttohubService.getFansList(
+        uid: mid,
+        offset: offset,
+        num: num,
+      );
+
+      final List<FollowingUser> users = response.userList;
+
+      if (isLoadMore) {
+        fanList.addAll(users);
+      } else {
+        fanList.value = users;
       }
-      if ((pn == 1 && total < ps) || res['data'].list.isEmpty) {
+
+      hasMore.value = users.length >= num;
+      if (!hasMore.value) {
         loadingText.value = '没有更多了';
       }
-      pn += 1;
-    } else {
-      SmartDialog.showToast(res['msg']);
+      offset++;
+    } catch (e) {
+      _logger.e('获取粉丝列表失败: $e');
+      SmartDialog.showToast('获取粉丝列表失败');
+    } finally {
+      isLoading.value = false;
     }
-    return res;
+  }
+
+  Future<void> onLoad() async {
+    await queryFans(isLoadMore: true);
+  }
+
+  Future<void> onRefresh() async {
+    await queryFans();
   }
 }

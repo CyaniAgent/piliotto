@@ -1,74 +1,87 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
-import 'package:hive/hive.dart';
-import 'package:piliotto/http/user.dart';
-import 'package:piliotto/models/user/fav_folder.dart';
-import 'package:piliotto/models/user/info.dart';
-import 'package:piliotto/utils/storage.dart';
+import 'package:piliotto/api/models/video.dart';
+import 'package:piliotto/services/ottohub_service.dart';
+import 'package:piliotto/services/loggeer.dart';
+
+final _logger = getLogger();
 
 class FavController extends GetxController {
   final ScrollController scrollController = ScrollController();
-  Rx<FavFolderData> favFolderData = FavFolderData().obs;
-  RxList<FavFolderItemData> favFolderList = <FavFolderItemData>[].obs;
-  Box userInfoCache = GStrorage.userInfo;
-  UserInfoData? userInfo;
-  int currentPage = 1;
-  int pageSize = 60;
+
+  RxList<Video> favoriteList = <Video>[].obs;
+  RxBool isLoading = false.obs;
+  RxBool isLoadingMore = false.obs;
   RxBool hasMore = true.obs;
-  late int mid;
-  late int ownerMid;
-  RxBool isOwner = false.obs;
+
+  int _currentPage = 0;
+  final int _pageSize = 20;
 
   @override
   void onInit() {
-    mid = int.parse(Get.parameters['mid'] ?? '-1');
-    userInfo = userInfoCache.get('userInfoCache');
-    ownerMid = userInfo != null ? userInfo!.mid! : -1;
-    isOwner.value = mid == -1 || mid == ownerMid;
     super.onInit();
+    queryFavorites();
   }
 
-  Future<dynamic> queryFavFolder({type = 'init'}) async {
-    if (userInfo == null) {
-      return {'status': false, 'msg': '账号未登录', 'code': -101};
-    }
-    if (!hasMore.value) {
-      return;
-    }
-    var res = await UserHttp.userfavFolder(
-      pn: currentPage,
-      ps: pageSize,
-      mid: isOwner.value ? ownerMid : mid,
-    );
-    if (res['status']) {
-      if (type == 'init') {
-        favFolderData.value = res['data'];
-        favFolderList.value = res['data'].list;
-      } else {
-        if (res['data'].list.isNotEmpty) {
-          favFolderList.addAll(res['data'].list);
-          favFolderData.update((val) {});
-        }
-      }
-      hasMore.value = res['data'].hasMore;
-      currentPage++;
+  Future<void> queryFavorites({bool isLoadMore = false}) async {
+    if (isLoading.value || isLoadingMore.value) return;
+
+    if (!isLoadMore) {
+      isLoading.value = true;
+      _currentPage = 0;
     } else {
-      SmartDialog.showToast(res['msg']);
+      if (!hasMore.value) return;
+      isLoadingMore.value = true;
     }
-    return res;
-  }
 
-  Future onLoad() async {
-    queryFavFolder(type: 'onload');
-  }
+    try {
+      final response = await OttohubService.getFavoriteVideos(
+        offset: _currentPage,
+        num: _pageSize,
+      );
 
-  removeFavFolder({required int mediaIds}) async {
-    for (var i in favFolderList) {
-      if (i.id == mediaIds) {
-        favFolderList.remove(i);
-        break;
+      final List<Video> videos = response.videoList;
+
+      if (isLoadMore) {
+        favoriteList.addAll(videos);
+      } else {
+        favoriteList.value = videos;
       }
+
+      hasMore.value = videos.length >= _pageSize;
+      _currentPage++;
+    } catch (e) {
+      _logger.e('获取收藏列表失败: $e');
+    } finally {
+      isLoading.value = false;
+      isLoadingMore.value = false;
+    }
+  }
+
+  Future<void> onLoad() async {
+    await queryFavorites(isLoadMore: true);
+  }
+
+  Future<void> onRefresh() async {
+    await queryFavorites();
+  }
+
+  Future<void> removeFavorite(int vid) async {
+    try {
+      await OttohubService.toggleFavorite(vid: vid);
+      favoriteList.removeWhere((v) => v.vid == vid);
+    } catch (e) {
+      _logger.e('取消收藏失败: $e');
+    }
+  }
+
+  void animateToTop() async {
+    if (scrollController.offset >=
+        MediaQuery.of(Get.context!).size.height * 5) {
+      scrollController.jumpTo(0);
+    } else {
+      await scrollController.animateTo(0,
+          duration: const Duration(milliseconds: 500), curve: Curves.easeInOut);
     }
   }
 }

@@ -1,153 +1,80 @@
-import 'package:flutter/material.dart';
-import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
-import 'package:piliotto/http/user.dart';
-import 'package:piliotto/http/video.dart';
-import 'package:piliotto/models/user/fav_detail.dart';
-import 'package:piliotto/models/user/fav_folder.dart';
-import 'package:piliotto/pages/fav/index.dart';
-import 'package:piliotto/utils/utils.dart';
+import 'package:piliotto/api/models/video.dart';
+import 'package:piliotto/services/ottohub_service.dart';
+import 'package:piliotto/services/loggeer.dart';
+
+final _logger = getLogger();
 
 class FavDetailController extends GetxController {
-  FavFolderItemData? item;
   RxString title = ''.obs;
-
-  int? mediaId;
-  late String heroTag;
-  int currentPage = 1;
-  bool isLoadingMore = false;
-  RxMap favInfo = {}.obs;
-  RxList<FavDetailItemData> favList = <FavDetailItemData>[].obs;
+  RxList<Video> favList = <Video>[].obs;
+  RxBool isLoading = false.obs;
+  RxBool isLoadingMore = false.obs;
+  RxBool hasMore = true.obs;
   RxString loadingText = '加载中...'.obs;
-  RxInt mediaCount = 0.obs;
-  late String isOwner;
+
+  int _currentPage = 0;
+  final int _pageSize = 20;
 
   @override
   void onInit() {
-    item = Get.arguments;
-    title.value = item!.title!;
-    if (Get.parameters.keys.isNotEmpty) {
-      mediaId = int.parse(Get.parameters['mediaId']!);
-      heroTag = Get.parameters['heroTag']!;
-      isOwner = Get.parameters['isOwner']!;
-    }
     super.onInit();
+    title.value = Get.parameters['title'] ?? '我的收藏';
+    queryFavorites();
   }
 
-  Future<dynamic> queryUserFavFolderDetail({type = 'init'}) async {
-    if (type == 'onLoad' && favList.length >= mediaCount.value) {
-      loadingText.value = '没有更多了';
-      return;
+  Future<void> queryFavorites({bool isLoadMore = false}) async {
+    if (isLoading.value || isLoadingMore.value) return;
+
+    if (!isLoadMore) {
+      isLoading.value = true;
+      _currentPage = 0;
+    } else {
+      if (!hasMore.value) return;
+      isLoadingMore.value = true;
     }
-    isLoadingMore = true;
-    var res = await UserHttp.userFavFolderDetail(
-      pn: currentPage,
-      ps: 20,
-      mediaId: mediaId!,
-    );
-    if (res['status']) {
-      favInfo.value = res['data'].info;
-      if (currentPage == 1 && type == 'init') {
-        favList.value = res['data'].medias;
-        mediaCount.value = res['data'].info['media_count'];
-      } else if (type == 'onLoad') {
-        favList.addAll(res['data'].medias);
+
+    try {
+      final response = await OttohubService.getFavoriteVideos(
+        offset: _currentPage,
+        num: _pageSize,
+      );
+
+      final List<Video> videos = response.videoList;
+
+      if (isLoadMore) {
+        favList.addAll(videos);
+      } else {
+        favList.value = videos;
       }
-      if (favList.length >= mediaCount.value) {
+
+      hasMore.value = videos.length >= _pageSize;
+      if (!hasMore.value && favList.isNotEmpty) {
         loadingText.value = '没有更多了';
       }
-    }
-    currentPage += 1;
-    isLoadingMore = false;
-    return res;
-  }
-
-  onCancelFav(int id) async {
-    var result = await VideoHttp.favVideo(
-        aid: id, addIds: '', delIds: mediaId.toString());
-    if (result['status']) {
-      List dataList = favList;
-      for (var i in dataList) {
-        if (i.id == id) {
-          dataList.remove(i);
-          break;
-        }
-      }
-      SmartDialog.showToast('取消收藏');
+      _currentPage++;
+    } catch (e) {
+      _logger.e('获取收藏列表失败: $e');
+    } finally {
+      isLoading.value = false;
+      isLoadingMore.value = false;
     }
   }
 
-  onLoad() {
-    queryUserFavFolderDetail(type: 'onLoad');
+  Future<void> onLoad() async {
+    await queryFavorites(isLoadMore: true);
   }
 
-  onDelFavFolder() async {
-    SmartDialog.show(
-      useSystem: true,
-      animationType: SmartAnimationType.centerFade_otherSlide,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('提示'),
-          content: const Text('确定删除这个收藏夹吗？'),
-          actions: [
-            TextButton(
-              onPressed: () async {
-                SmartDialog.dismiss();
-              },
-              child: Text(
-                '点错了',
-                style: TextStyle(color: Theme.of(context).colorScheme.outline),
-              ),
-            ),
-            TextButton(
-              onPressed: () async {
-                var res = await UserHttp.delFavFolder(mediaIds: mediaId!);
-                SmartDialog.dismiss();
-                SmartDialog.showToast(res['status'] ? '操作成功' : res['msg']);
-                if (res['status']) {
-                  FavController favController = Get.find<FavController>();
-                  await favController.removeFavFolder(mediaIds: mediaId!);
-                  Get.back();
-                }
-              },
-              child: const Text('确认'),
-            )
-          ],
-        );
-      },
-    );
+  Future<void> onRefresh() async {
+    await queryFavorites();
   }
 
-  onEditFavFolder() async {
-    var res = await Get.toNamed(
-      '/favEdit',
-      arguments: {
-        'mediaId': mediaId.toString(),
-        'title': item!.title,
-        'intro': item!.intro,
-        'cover': item!.cover,
-        'privacy': [23, 1].contains(item!.attr) ? 1 : 0,
-      },
-    );
-    title.value = res['title'];
-    // 标题: $title
-  }
-
-  Future toViewPlayAll() async {
-    final FavDetailItemData firstItem = favList.first;
-    final String heroTag = Utils.makeHeroTag(firstItem.bvid);
-    Get.toNamed(
-      '/video?bvid=${firstItem.bvid}&cid=${firstItem.cid}',
-      arguments: {
-        'videoItem': firstItem,
-        'heroTag': heroTag,
-        'sourceType': 'fav',
-        'mediaId': favInfo['id'],
-        'oid': firstItem.id,
-        'favTitle': favInfo['title'],
-        'favInfo': favInfo,
-        'count': favInfo['media_count'],
-      },
-    );
+  Future<void> removeFavorite(int vid) async {
+    try {
+      await OttohubService.toggleFavorite(vid: vid);
+      favList.removeWhere((v) => v.vid == vid);
+    } catch (e) {
+      _logger.e('取消收藏失败: $e');
+    }
   }
 }

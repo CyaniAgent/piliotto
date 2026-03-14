@@ -1,360 +1,250 @@
-import 'dart:convert';
-import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:hive/hive.dart';
-import 'package:html/parser.dart';
-import 'package:piliotto/models/member/article.dart';
-import 'package:piliotto/models/member/like.dart';
-import '../common/constants.dart';
-import '../models/dynamics/result.dart';
-import '../models/follow/result.dart';
-import '../models/member/archive.dart';
-import '../models/member/coin.dart';
-import '../models/member/info.dart';
-import '../models/member/seasons.dart';
-import '../models/member/tags.dart';
+import '../api/services/following_service.dart';
+import '../api/services/video_service.dart';
 import '../utils/storage.dart';
-import '../utils/utils.dart';
-import '../utils/wbi_sign.dart';
-import 'index.dart';
 
 class MemberHttp {
-  static Future memberInfo({
-    int? mid,
-    String token = '',
-  }) async {
-    Map params = await WbiSign().makSign({
-      'mid': mid,
-      'token': token,
-      'platform': 'web',
-      'web_location': 1550101,
-    });
-    var res = await Request().get(
-      Api.memberInfo,
-      data: params,
-      extra: {'ua': 'pc'},
-    );
-    if (res.data['code'] == 0) {
-      return {
-        'status': true,
-        'data': MemberInfoModel.fromJson(res.data['data'])
-      };
-    } else {
-      return {
-        'status': false,
-        'data': [],
-        'msg': res.data['message'],
-      };
-    }
-  }
+  static Box localCache = GStrorage.localCache;
+  static Box setting = GStrorage.setting;
+  static Box userInfoCache = GStrorage.userInfo;
 
-  static Future memberStat({int? mid}) async {
-    var res = await Request().get(Api.userStat, data: {'vmid': mid});
-    if (res.data['code'] == 0) {
-      return {'status': true, 'data': res.data['data']};
-    } else {
-      return {
-        'status': false,
-        'data': [],
-        'msg': res.data['message'],
-      };
-    }
-  }
-
-  static Future memberCardInfo({int? mid}) async {
-    var res = await Request()
-        .get(Api.memberCardInfo, data: {'mid': mid, 'photo': true});
-    if (res.data['code'] == 0) {
-      return {'status': true, 'data': res.data['data']};
-    } else {
-      return {
-        'status': false,
-        'data': [],
-        'msg': res.data['message'],
-      };
-    }
-  }
-
+  // 获取用户视频列表
   static Future memberArchive({
-    int? mid,
+    required int uid,
     int ps = 30,
     int tid = 0,
-    int? pn,
+    int pn = 1,
     String? keyword,
     String order = 'pubdate',
     bool orderAvoided = true,
   }) async {
-    String dmImgStr = Utils.base64EncodeRandomString(16, 64);
-    String dmCoverImgStr = Utils.base64EncodeRandomString(32, 128);
-    Map params = await WbiSign().makSign({
-      'mid': mid,
-      'ps': ps,
-      'tid': tid,
-      'pn': pn,
-      'keyword': keyword ?? '',
-      'order': order,
-      'platform': 'web',
-      'web_location': 1550101,
-      'order_avoided': orderAvoided,
-      'dm_img_list': '[]',
-      'dm_img_str': dmImgStr.substring(0, dmImgStr.length - 2),
-      'dm_cover_img_str': dmCoverImgStr.substring(0, dmCoverImgStr.length - 2),
-      'dm_img_inter': '{"ds":[],"wh":[0,0,0],"of":[0,0,0]}',
-      ...order == 'charge'
-          ? {
-              'order': 'pubdate',
-              'special_type': 'charging',
-            }
-          : {}
-    });
-
-    var res = await Request().get(
-      Api.memberArchive,
-      data: params,
-      extra: {'ua': 'pc'},
-    );
-    if (res.data['code'] == 0) {
+    try {
+      final response = await VideoService.getUserVideos(
+        uid,
+        offset: (pn - 1) * ps,
+        num: ps,
+      );
       return {
         'status': true,
-        'data': MemberArchiveDataModel.fromJson(res.data['data'])
+        'data': {
+          'list': response.videoList,
+          'page': {'pn': pn, 'ps': ps},
+        },
       };
-    } else {
-      Map errMap = {
-        -352: '风控校验失败，请检查登录状态',
-      };
-      return {
-        'status': false,
-        'data': [],
-        'msg': errMap[res.data['code']] ?? res.data['message'],
-      };
+    } catch (err) {
+      return {'status': false, 'data': [], 'msg': err.toString()};
     }
   }
 
-  // 用户动态
-  static Future memberDynamic({String? offset, int? mid}) async {
-    var res = await Request().get(Api.memberDynamic, data: {
-      'offset': offset ?? '',
-      'host_mid': mid,
-      'timezone_offset': '-480',
-      'features': 'itemOpusStyle',
-    });
-    if (res.data['code'] == 0) {
+  // 获取用户时间线（动态）
+  static Future memberDynamic({String? offset, int? uid}) async {
+    try {
+      final response = await FollowingService.getUserTimeline(
+        uid: uid!,
+        offset: int.tryParse(offset ?? '0') ?? 0,
+        num: 20,
+      );
       return {
         'status': true,
-        'data': DynamicsDataModel.fromJson(res.data['data']),
+        'data': {
+          'items': response.timelineList,
+          'offset': response.timelineList.length,
+          'has_more': response.timelineList.length >= 20,
+        },
       };
-    } else {
-      Map errMap = {
-        -352: '风控校验失败，请检查登录状态',
-      };
-      return {
-        'status': false,
-        'data': [],
-        'msg': errMap[res.data['code']] ?? res.data['message'],
-      };
+    } catch (err) {
+      return {'status': false, 'data': [], 'msg': err.toString()};
     }
   }
 
-  // 搜索用户动态
+  // 关注/取消关注
+  static Future relationMod({
+    required int mid,
+    required int act,
+    required int reSrc,
+  }) async {
+    try {
+      final response = await FollowingService.followUser(followingUid: mid);
+      return {
+        'status': true,
+        'data': {
+          'follow_status': response.followStatus,
+          'fans_count': response.newFansCount,
+        },
+      };
+    } catch (err) {
+      return {'status': false, 'msg': err.toString()};
+    }
+  }
+
+  // 获取关注状态
+  static Future hasFollow({required int mid}) async {
+    try {
+      final response = await FollowingService.getFollowStatus(followingUid: mid);
+      return {
+        'status': true,
+        'data': {
+          'attribute': response.followStatus,
+        },
+      };
+    } catch (err) {
+      return {'status': false, 'msg': err.toString()};
+    }
+  }
+
+  // 获取关注列表
+  static Future followings({
+    required int vmid,
+    int pn = 1,
+    int ps = 20,
+    String order = 'desc',
+    String orderType = 'attention',
+  }) async {
+    try {
+      final response = await FollowingService.getFollowingList(
+        uid: vmid,
+        offset: (pn - 1) * ps,
+        num: ps,
+      );
+      return {
+        'status': true,
+        'data': {
+          'list': response.userList,
+          'total': response.userList.length,
+        },
+      };
+    } catch (err) {
+      return {'status': false, 'data': [], 'msg': err.toString()};
+    }
+  }
+
+  // 获取粉丝列表
+  static Future fans({
+    required int vmid,
+    int pn = 1,
+    int ps = 20,
+    String order = 'desc',
+    String orderType = 'attention',
+  }) async {
+    try {
+      final response = await FollowingService.getFansList(
+        uid: vmid,
+        offset: (pn - 1) * ps,
+        num: ps,
+      );
+      return {
+        'status': true,
+        'data': {
+          'list': response.userList,
+          'total': response.userList.length,
+        },
+      };
+    } catch (err) {
+      return {'status': false, 'data': [], 'msg': err.toString()};
+    }
+  }
+
+  // 获取关注者的时间线
+  static Future getFollowingTimeline({
+    int offset = 0,
+    int num = 20,
+  }) async {
+    try {
+      final response = await FollowingService.getFollowingTimeline(
+        offset: offset,
+        num: num,
+      );
+      return {
+        'status': true,
+        'data': response.timelineList,
+      };
+    } catch (err) {
+      return {'status': false, 'data': [], 'msg': err.toString()};
+    }
+  }
+
+  // 获取活跃关注者
+  static Future getActiveFollowers({
+    required int uid,
+    int offset = 0,
+    int num = 20,
+  }) async {
+    try {
+      final response = await FollowingService.getActiveFollowers(
+        uid: uid,
+        offset: offset,
+        num: num,
+      );
+      return {
+        'status': true,
+        'data': response.userList,
+      };
+    } catch (err) {
+      return {'status': false, 'data': [], 'msg': err.toString()};
+    }
+  }
+
+  // ========== 以下为兼容旧接口的方法（不支持或已移除） ==========
+
+  // 用户信息（Ottohub 需要从视频详情或用户列表获取）
+  static Future memberInfo({int? mid, String token = ''}) async {
+    return {
+      'status': false,
+      'msg': '请使用视频详情接口获取用户信息',
+    };
+  }
+
+  // 用户统计（Ottohub 不支持）
+  static Future memberStat({int? mid}) async {
+    return {'status': false, 'msg': 'Ottohub API 不支持用户统计功能'};
+  }
+
+  // 用户卡片信息（Ottohub 不支持）
+  static Future memberCardInfo({int? mid}) async {
+    return {'status': false, 'msg': 'Ottohub API 不支持用户卡片功能'};
+  }
+
+  // 搜索用户动态（Ottohub 不支持）
   static Future memberDynamicSearch({int? pn, int? ps, int? mid}) async {
-    var res = await Request().get(Api.memberDynamic, data: {
-      'keyword': '海拔',
-      'mid': mid,
-      'pn': pn,
-      'ps': ps,
-      'platform': 'web'
-    });
-    if (res.data['code'] == 0) {
-      return {
-        'status': true,
-        'data': DynamicsDataModel.fromJson(res.data['data']),
-      };
-    } else {
-      return {
-        'status': false,
-        'data': [],
-        'msg': res.data['message'],
-      };
-    }
+    return {'status': false, 'msg': 'Ottohub API 不支持搜索动态功能'};
   }
 
-  // 查询分组
+  // 查询分组（Ottohub 不支持）
   static Future followUpTags() async {
-    var res = await Request().get(Api.followUpTag);
-    if (res.data['code'] == 0) {
-      return {
-        'status': true,
-        'data': res.data['data']
-            .map<MemberTagItemModel>((e) => MemberTagItemModel.fromJson(e))
-            .toList()
-      };
-    } else {
-      return {
-        'status': false,
-        'data': [],
-        'msg': res.data['message'],
-      };
-    }
+    return {'status': false, 'msg': 'Ottohub API 不支持分组功能'};
   }
 
-  // 设置分组
+  // 设置分组（Ottohub 不支持）
   static Future addUsers(int? fids, String? tagids) async {
-    var res = await Request().post(
-      Api.addUsers,
-      data: {
-        'fids': fids,
-        'tagids': tagids ?? '0',
-        'csrf': await Request.getCsrf(),
-      },
-      queryParameters: {'cross_domain': true},
-    );
-    if (res.data['code'] == 0) {
-      return {'status': true, 'data': [], 'msg': '操作成功'};
-    } else {
-      return {
-        'status': false,
-        'data': [],
-        'msg': res.data['message'],
-      };
-    }
+    return {'status': false, 'msg': 'Ottohub API 不支持分组功能'};
   }
 
-  // 获取某分组下的up
-  static Future followUpGroup(
-    int? mid,
-    int? tagid,
-    int? pn,
-    int? ps,
-  ) async {
-    var res = await Request().get(Api.followUpGroup, data: {
-      'mid': mid,
-      'tagid': tagid,
-      'pn': pn,
-      'ps': ps,
-    });
-    if (res.data['code'] == 0) {
-      // FollowItemModel
-      return {
-        'status': true,
-        'data': res.data['data']
-            .map<FollowItemModel>((e) => FollowItemModel.fromJson(e))
-            .toList()
-      };
-    } else {
-      return {
-        'status': false,
-        'data': [],
-        'msg': res.data['message'],
-      };
-    }
+  // 获取某分组下的up（Ottohub 不支持）
+  static Future followUpGroup(int? mid, int? tagid, int? pn, int? ps) async {
+    return {'status': false, 'msg': 'Ottohub API 不支持分组功能'};
   }
 
-  // 获取up置顶
+  // 获取up置顶（Ottohub 不支持）
   static Future getTopVideo(String? vmid) async {
-    var res = await Request().get(Api.getTopVideoApi);
-    if (res.data['code'] == 0) {
-      return {
-        'status': true,
-        'data': res.data['data']
-            .map<MemberTagItemModel>((e) => MemberTagItemModel.fromJson(e))
-            .toList()
-      };
-    } else {
-      return {
-        'status': false,
-        'data': [],
-        'msg': res.data['message'],
-      };
-    }
+    return {'status': false, 'msg': 'Ottohub API 不支持置顶视频功能'};
   }
 
-  // 获取uo专栏
+  // 获取up专栏（Ottohub 不支持）
   static Future getMemberSeasons(int? mid, int? pn, int? ps) async {
-    var res = await Request().get(Api.getMemberSeasonsApi, data: {
-      'mid': mid,
-      'page_num': pn,
-      'page_size': ps,
-    });
-    if (res.data['code'] == 0) {
-      return {
-        'status': true,
-        'data': MemberSeasonsDataModel.fromJson(res.data['data']['items_lists'])
-      };
-    } else {
-      return {
-        'status': false,
-        'data': [],
-        'msg': res.data['message'],
-      };
-    }
+    return {'status': false, 'msg': 'Ottohub API 不支持专栏功能'};
   }
 
-  // 最近投币
+  // 最近投币（Ottohub 不支持）
   static Future getRecentCoinVideo({required int mid}) async {
-    Map params = await WbiSign().makSign({
-      'mid': mid,
-      'gaia_source': 'main_web',
-      'web_location': 333.999,
-    });
-    var res = await Request().get(
-      Api.getRecentCoinVideoApi,
-      data: {
-        'vmid': mid,
-        'gaia_source': 'main_web',
-        'web_location': 333.999,
-        'w_rid': params['w_rid'],
-        'wts': params['wts'],
-      },
-    );
-    if (res.data['code'] == 0) {
-      return {
-        'status': true,
-        'data': res.data['data']
-            .map<MemberCoinsDataModel>((e) => MemberCoinsDataModel.fromJson(e))
-            .toList(),
-      };
-    } else {
-      return {
-        'status': false,
-        'data': [],
-        'msg': res.data['message'],
-      };
-    }
+    return {'status': false, 'msg': 'Ottohub API 不支持投币功能'};
   }
 
-  // 最近点赞
+  // 最近点赞（Ottohub 不支持）
   static Future getRecentLikeVideo({required int mid}) async {
-    Map params = await WbiSign().makSign({
-      'mid': mid,
-      'gaia_source': 'main_web',
-      'web_location': 333.999,
-    });
-    var res = await Request().get(
-      Api.getRecentLikeVideoApi,
-      data: {
-        'vmid': mid,
-        'gaia_source': 'main_web',
-        'web_location': 333.999,
-        'w_rid': params['w_rid'],
-        'wts': params['wts'],
-      },
-    );
-    if (res.data['code'] == 0) {
-      return {
-        'status': true,
-        'data': res.data['data']['list']
-            .map<MemberLikeDataModel>((e) => MemberLikeDataModel.fromJson(e))
-            .toList(),
-      };
-    } else {
-      return {
-        'status': false,
-        'data': [],
-        'msg': res.data['message'],
-      };
-    }
+    return {'status': false, 'msg': 'Ottohub API 不支持点赞历史功能'};
   }
 
-  // 查看某个专栏
+  // 查看某个专栏（Ottohub 不支持）
   static Future getSeasonDetail({
     required int mid,
     required int seasonId,
@@ -362,262 +252,56 @@ class MemberHttp {
     required int pn,
     required int ps,
   }) async {
-    var res = await Request().get(
-      Api.getSeasonDetailApi,
-      data: {
-        'mid': mid,
-        'season_id': seasonId,
-        'sort_reverse': sortReverse,
-        'page_num': pn,
-        'page_size': ps,
-      },
-    );
-    if (res.data['code'] == 0) {
-      try {
-        return {
-          'status': true,
-          'data': MemberSeasonsList.fromJson(res.data['data'])
-        };
-      } catch (err) {
-        // 错误处理: $err
-      }
-    } else {
-      return {
-        'status': false,
-        'data': [],
-        'msg': res.data['message'],
-      };
-    }
+    return {'status': false, 'msg': 'Ottohub API 不支持专栏功能'};
   }
 
-  // 获取TV authCode
+  // 获取TV authCode（Ottohub 不需要）
   static Future getTVCode() async {
-    SmartDialog.showLoading();
-    var params = {
-      'appkey': Constants.appKey,
-      'local_id': '0',
-      'ts': (DateTime.now().millisecondsSinceEpoch ~/ 1000).toString(),
-    };
-    String sign = Utils.appSign(
-      params,
-      Constants.appKey,
-      Constants.appSec,
-    );
-    var res = await Request()
-        .post(Api.getTVCode, queryParameters: {...params, 'sign': sign});
-    if (res.data['code'] == 0) {
-      return {
-        'status': true,
-        'data': res.data['data']['auth_code'],
-        'msg': '操作成功'
-      };
-    } else {
-      return {
-        'status': false,
-        'data': [],
-        'msg': res.data['message'],
-      };
-    }
+    return {'status': false, 'msg': 'Ottohub 不需要 TV 授权'};
   }
 
-  // 获取access_key
+  // 获取access_key（Ottohub 不需要）
   static Future cookieToKey() async {
-    var authCodeRes = await getTVCode();
-    if (authCodeRes['status']) {
-      var res = await Request().post(
-        Api.cookieToKey,
-        data: {
-          'auth_code': authCodeRes['data'],
-          'build': 708200,
-          'csrf': await Request.getCsrf(),
-        },
-      );
-      await Future.delayed(const Duration(milliseconds: 300));
-      await qrcodePoll(authCodeRes['data']);
-      if (res.data['code'] == 0) {
-        return {'status': true, 'data': [], 'msg': '操作成功'};
-      } else {
-        return {
-          'status': false,
-          'data': [],
-          'msg': res.data['message'],
-        };
-      }
-    }
+    return {'status': false, 'msg': 'Ottohub 使用 token 认证'};
   }
 
-  static Future qrcodePoll(authCode) async {
-    var params = {
-      'appkey': Constants.appKey,
-      'auth_code': authCode.toString(),
-      'local_id': '0',
-      'ts': (DateTime.now().millisecondsSinceEpoch ~/ 1000).toString(),
-    };
-    String sign = Utils.appSign(
-      params,
-      Constants.appKey,
-      Constants.appSec,
-    );
-    var res = await Request()
-        .post(Api.qrcodePoll, queryParameters: {...params, 'sign': sign});
-    SmartDialog.dismiss();
-    if (res.data['code'] == 0) {
-      String accessKey = res.data['data']['access_token'];
-      Box localCache = GStrorage.localCache;
-      Box userInfoCache = GStrorage.userInfo;
-      var userInfo = userInfoCache.get('userInfoCache');
-      localCache.put(
-          LocalCacheKey.accessKey, {'mid': userInfo.mid, 'value': accessKey});
-      return {'status': true, 'data': [], 'msg': '操作成功'};
-    } else {
-      return {
-        'status': false,
-        'data': [],
-        'msg': res.data['message'],
-      };
-    }
-  }
-
-  // 获取up播放数、点赞数
+  // 获取up播放数、点赞数（Ottohub 不支持）
   static Future memberView({required int mid}) async {
-    var res = await Request().get(Api.getMemberViewApi, data: {'mid': mid});
-    if (res.data['code'] == 0) {
-      return {'status': true, 'data': res.data['data']};
-    } else {
-      return {
-        'status': false,
-        'data': [],
-        'msg': res.data['message'],
-      };
-    }
+    return {'status': false, 'msg': 'Ottohub API 不支持用户播放统计功能'};
   }
 
-  // 搜索follow
+  // 搜索follow（Ottohub 不支持）
   static Future getfollowSearch({
     required int mid,
     required int ps,
     required int pn,
     required String name,
   }) async {
-    Map<String, dynamic> data = {
-      'vmid': mid,
-      'pn': pn,
-      'ps': ps,
-      'order': 'desc',
-      'order_type': 'attention',
-      'gaia_source': 'main_web',
-      'name': name,
-      'web_location': 333.999,
-    };
-    Map params = await WbiSign().makSign(data);
-    var res = await Request().get(Api.followSearch, data: {
-      ...data,
-      'w_rid': params['w_rid'],
-      'wts': params['wts'],
-    });
-    if (res.data['code'] == 0) {
-      return {
-        'status': true,
-        'data': FollowDataModel.fromJson(res.data['data'])
-      };
-    } else {
-      return {
-        'status': false,
-        'data': [],
-        'msg': res.data['message'],
-      };
-    }
+    return {'status': false, 'msg': 'Ottohub API 不支持搜索关注功能'};
   }
 
+  // 获取系列详情（Ottohub 不支持）
   static Future getSeriesDetail({
     required int mid,
     required int currentMid,
     required int seriesId,
     required int pn,
   }) async {
-    var res = await Request().get(
-      Api.getSeriesDetailApi,
-      data: {
-        'mid': mid,
-        'series_id': seriesId,
-        'only_normal': true,
-        'sort': 'desc',
-        'pn': pn,
-        'ps': 30,
-        'current_mid': currentMid,
-      },
-    );
-    if (res.data['code'] == 0) {
-      try {
-        return {
-          'status': true,
-          'data': MemberSeasonsDataModel.fromJson(res.data['data'])
-        };
-      } catch (err) {
-        // 错误处理: $err
-      }
-    } else {
-      return {
-        'status': false,
-        'data': [],
-        'msg': res.data['message'],
-      };
-    }
+    return {'status': false, 'msg': 'Ottohub API 不支持系列功能'};
   }
 
+  // 获取w_webid（Ottohub 不需要）
   static Future getWWebid({required int mid}) async {
-    var res = await Request().get('https://space.bilibili.com/$mid/article');
-    String? headContent = parse(res.data).head?.outerHtml;
-    final regex = RegExp(
-        r'<script id="__RENDER_DATA__" type="application/json">(.*?)</script>');
-    if (headContent != null) {
-      final match = regex.firstMatch(headContent);
-      if (match != null && match.groupCount >= 1) {
-        final content = match.group(1);
-        String decodedString = Uri.decodeComponent(content!);
-        Map<String, dynamic> map = jsonDecode(decodedString);
-        return {'status': true, 'data': map['access_id']};
-      } else {
-        return {'status': false, 'data': '请检查登录状态'};
-      }
-    }
-    return {'status': false, 'data': '请检查登录状态'};
+    return {'status': false, 'msg': 'Ottohub 不需要 w_webid'};
   }
 
-  // 获取用户专栏
+  // 获取用户专栏（Ottohub 不支持）
   static Future getMemberArticle({
     required int mid,
     required int pn,
     required String wWebid,
     String? offset,
   }) async {
-    Map params = await WbiSign().makSign({
-      'host_mid': mid,
-      'page': pn,
-      'offset': offset,
-      'web_location': 333.999,
-      'w_webid': wWebid,
-    });
-    var res = await Request().get(Api.opusList, data: {
-      'host_mid': mid,
-      'page': pn,
-      'offset': offset,
-      'web_location': 333.999,
-      'w_webid': wWebid,
-      'w_rid': params['w_rid'],
-      'wts': params['wts'],
-    });
-    if (res.data['code'] == 0) {
-      return {
-        'status': true,
-        'data': MemberArticleDataModel.fromJson(res.data['data'])
-      };
-    } else {
-      return {
-        'status': false,
-        'data': [],
-        'msg': res.data['message'] ?? '请求异常',
-      };
-    }
+    return {'status': false, 'msg': 'Ottohub API 不支持专栏功能'};
   }
 }

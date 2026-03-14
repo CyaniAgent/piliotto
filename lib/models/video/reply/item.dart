@@ -121,7 +121,18 @@ class ReplyItemModel {
     rootStr = parentStr;
     like = 0;
     count = json['child_comment_num'];
-    ctime = 0;
+    // 解析时间字符串为时间戳
+    final timeStr = json['time']?.toString() ?? '';
+    if (timeStr.isNotEmpty) {
+      try {
+        final dateTime = DateTime.parse(timeStr);
+        ctime = dateTime.millisecondsSinceEpoch ~/ 1000;
+      } catch (_) {
+        ctime = 0;
+      }
+    } else {
+      ctime = 0;
+    }
     member = ReplyMember(
       mid: json['uid']?.toString() ?? '',
       uname: json['username']?.toString() ?? '未知用户',

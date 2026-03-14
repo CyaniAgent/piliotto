@@ -64,7 +64,7 @@ class _VideoReplyNewDialogState extends State<VideoReplyNewDialog>
 
   _autoFocus() async {
     await Future.delayed(const Duration(milliseconds: 300));
-    if (context.mounted) {
+    if (mounted) {
       FocusScope.of(context).requestFocus(replyContentFocusNode);
     }
   }

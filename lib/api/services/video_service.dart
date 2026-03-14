@@ -146,6 +146,7 @@ class VideoService {
         'offset': offset,
         'num': num,
       },
+      requireToken: true,
     );
     return VideoListResponse.fromJson(response['data']);
   }

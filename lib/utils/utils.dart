@@ -7,12 +7,12 @@ import 'dart:io';
 import 'dart:math';
 import 'package:crypto/crypto.dart';
 import 'package:device_info_plus/device_info_plus.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:url_launcher/url_launcher.dart';
-import '../http/index.dart';
 import '../models/github/latest.dart';
 
 class Utils {
@@ -290,7 +290,8 @@ class Utils {
   static Future<bool> checkUpdata() async {
     SmartDialog.dismiss();
     var currentInfo = await PackageInfo.fromPlatform();
-    var result = await Request().get(Api.latestApp, extra: {'ua': 'mob'});
+    var dio = Dio();
+    var result = await dio.get('https://api.github.com/repos/CyaniAgent/piliotto/releases/latest');
     if (result.data == null || result.data.isEmpty) {
       SmartDialog.showToast('获取远程版本失败，请检查网络');
       return false;

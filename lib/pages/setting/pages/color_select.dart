@@ -47,23 +47,26 @@ class _ColorSelectPageState extends State<ColorSelectPage> {
           Obx(
             () => Column(
               children: [
-                RadioListTile(
-                  value: 0,
-                  title: const Text('动态取色'),
-                  groupValue: ctr.type.value,
-                  onChanged: (dynamic val) async {
-                    ctr.type.value = 0;
-                    ctr.setting.put(SettingBoxKey.dynamicColor, true);
+                RadioGroup<int>(
+                  onChanged: (int? value) {
+                    if (value != null) {
+                      ctr.type.value = value;
+                      ctr.setting.put(SettingBoxKey.dynamicColor, value == 0);
+                    }
                   },
-                ),
-                RadioListTile(
-                  value: 1,
-                  title: const Text('指定颜色'),
                   groupValue: ctr.type.value,
-                  onChanged: (dynamic val) async {
-                    ctr.type.value = 1;
-                    ctr.setting.put(SettingBoxKey.dynamicColor, false);
-                  },
+                  child: const Column(
+                    children: [
+                      RadioListTile<int>(
+                        value: 0,
+                        title: Text('动态取色'),
+                      ),
+                      RadioListTile<int>(
+                        value: 1,
+                        title: Text('指定颜色'),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -96,13 +99,15 @@ class _ColorSelectPageState extends State<ColorSelectPage> {
                                   width: 46,
                                   height: 46,
                                   decoration: BoxDecoration(
-                                    color: e['color'].withValues(alpha: 0.8 * 255),
+                                    color:
+                                        e['color'].withValues(alpha: 0.8 * 255),
                                     borderRadius: BorderRadius.circular(50),
                                     border: Border.all(
                                       width: 2,
                                       color: ctr.currentColor.value == index
                                           ? Colors.black
-                                          : e['color'].withValues(alpha: 0.8 * 255),
+                                          : e['color']
+                                              .withValues(alpha: 0.8 * 255),
                                     ),
                                   ),
                                   child: AnimatedOpacity(
@@ -153,7 +158,6 @@ class ColorSelectController extends GetxController {
   @override
   void onInit() {
     colorThemes = colorThemeTypes;
-    // 默认使用动态取色
     dynamicColor.value =
         setting.get(SettingBoxKey.dynamicColor, defaultValue: true);
     type.value = dynamicColor.value ? 0 : 1;

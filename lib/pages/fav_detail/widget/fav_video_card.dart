@@ -43,7 +43,7 @@ class FavVideoCardH extends StatelessWidget {
           // seasonId = videoItem.ogv['season_id'];
           epId = videoItem.epId;
         } else if (videoItem.page == 0 || videoItem.page > 1) {
-          var result = await VideoHttp.videoIntro(bvid: bvid);
+          var result = await VideoHttp.videoIntro(vid: id);
           if (result['status']) {
             epId = result['data'].epId;
           }

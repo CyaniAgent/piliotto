@@ -1,5 +1,4 @@
 import 'package:get/get.dart';
-import 'package:piliotto/http/init.dart';
 import 'package:piliotto/utils/event_bus.dart';
 import 'package:piliotto/utils/id_utils.dart';
 import 'package:piliotto/utils/login.dart';
@@ -31,7 +30,7 @@ class WebviewController extends GetxController {
 
   webviewInit() {
     controller
-      ..setUserAgent(Request().headerUa())
+      ..setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36')
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..setNavigationDelegate(
         NavigationDelegate(

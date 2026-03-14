@@ -52,7 +52,7 @@ class _HeaderControlState extends State<HeaderControl> {
   double buttonSpace = 8;
   RxBool isFullScreen = false.obs;
   late String heroTag;
-  late VideoIntroController videoIntroController;
+  VideoIntroController? videoIntroController;
 
   @override
   void initState() {
@@ -60,12 +60,10 @@ class _HeaderControlState extends State<HeaderControl> {
     speedsList =
         widget.controller?.speedsList ?? [0.5, 0.75, 1.0, 1.25, 1.5, 2.0];
     fullScreenStatusListener();
-    try {
-      heroTag = Get.arguments['heroTag'] ?? '';
+    heroTag = Get.arguments?['heroTag'] ?? '';
+    if (widget.vid != null) {
       videoIntroController =
           Get.put(VideoIntroController(vid: widget.vid!), tag: heroTag);
-    } catch (e) {
-      // 处理异常
     }
   }
 
@@ -73,8 +71,6 @@ class _HeaderControlState extends State<HeaderControl> {
     if (widget.videoDetailCtr?.plPlayerController != null) {
       widget.videoDetailCtr!.plPlayerController.isFullScreen.listen((bool val) {
         isFullScreen.value = val;
-
-        /// TODO setState() called after dispose()
         if (mounted) {
           setState(() {});
         }
@@ -407,33 +403,30 @@ class _HeaderControlState extends State<HeaderControl> {
                         ),
                       )
                     : SingleChildScrollView(
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            RadioListTile(
-                              value: -1,
-                              title: const Text('关闭字幕'),
-                              groupValue: tempThemeValue,
-                              onChanged: (value) {
-                                tempThemeValue = value!;
-                                widget.controller?.toggleSubtitle(value);
-                                Get.back();
-                              },
-                            ),
-                            ...widget.videoDetailCtr!.subtitles
-                                .map((e) => RadioListTile(
-                                      value: e.id,
-                                      title: Text(e.title),
-                                      groupValue: tempThemeValue,
-                                      onChanged: (value) {
-                                        tempThemeValue = value!;
-                                        widget.controller
-                                            ?.toggleSubtitle(value);
-                                        Get.back();
-                                      },
-                                    ))
-                                .toList(),
-                          ],
+                        child: RadioGroup<int>(
+                          groupValue: tempThemeValue,
+                          onChanged: (int? value) {
+                            if (value != null) {
+                              tempThemeValue = value;
+                              widget.controller?.toggleSubtitle(value);
+                              Get.back();
+                            }
+                          },
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const RadioListTile<int>(
+                                value: -1,
+                                title: Text('关闭字幕'),
+                              ),
+                              ...widget.videoDetailCtr!.subtitles
+                                  .map((e) => RadioListTile<int>(
+                                        value: e.id,
+                                        title: Text(e.title),
+                                      ))
+                                  .toList(),
+                            ],
+                          ),
                         ),
                       );
               },
@@ -504,8 +497,6 @@ class _HeaderControlState extends State<HeaderControl> {
       },
     );
   }
-
-
 
   /// 弹幕功能
   void showSetDanmaku() async {
@@ -922,7 +913,7 @@ class _HeaderControlState extends State<HeaderControl> {
                   constraints: const BoxConstraints(maxWidth: 200),
                   child: Obx(
                     () => Text(
-                      videoIntroController.videoDetail.value.title,
+                      videoIntroController?.videoDetail.value.title ?? '',
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 16,
@@ -940,9 +931,8 @@ class _HeaderControlState extends State<HeaderControl> {
                 color: Colors.white,
               ),
               fuc: () async {
-                // 销毁播放器实例
                 await widget.controller!.dispose();
-                if (mounted) {
+                if (context.mounted) {
                   Navigator.popUntil(
                       context, (Route<dynamic> route) => route.isFirst);
                 }

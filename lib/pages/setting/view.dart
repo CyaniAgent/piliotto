@@ -54,18 +54,6 @@ class SettingPage extends StatelessWidget {
       body: ListView(
         children: [
           buildSettingItem(
-            Icons.privacy_tip_outlined,
-            '隐私设置',
-            '管理隐私和数据权限',
-            () => Get.toNamed('/privacySetting'),
-          ),
-          buildSettingItem(
-            Icons.recommend_outlined,
-            '推荐设置',
-            '个性化推荐内容',
-            () => Get.toNamed('/recommendSetting'),
-          ),
-          buildSettingItem(
             Icons.play_arrow_outlined,
             '播放设置',
             '视频播放相关配置',

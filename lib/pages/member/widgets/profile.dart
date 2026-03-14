@@ -63,9 +63,10 @@ class ProfilePanel extends StatelessWidget {
                                   const BorderRadius.all(Radius.circular(10)),
                             ),
                             child: Row(children: [
-                              Image.asset(
-                                'assets/images/live.gif',
-                                height: 10,
+                              const Icon(
+                                Icons.videocam,
+                                size: 12,
+                                color: Colors.white,
                               ),
                               Text(
                                 ' 直播中',

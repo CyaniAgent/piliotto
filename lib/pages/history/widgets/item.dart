@@ -1,282 +1,102 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
+import 'package:piliotto/api/models/video.dart';
 import 'package:piliotto/common/constants.dart';
-import 'package:piliotto/common/widgets/badge.dart';
 import 'package:piliotto/common/widgets/network_img_layer.dart';
-import 'package:piliotto/http/search.dart';
-import 'package:piliotto/http/user.dart';
-import 'package:piliotto/http/video.dart';
-import 'package:piliotto/models/common/business_type.dart';
-import 'package:piliotto/models/live/item.dart';
-import 'package:piliotto/utils/feed_back.dart';
-import 'package:piliotto/utils/id_utils.dart';
-
 import 'package:piliotto/utils/utils.dart';
 
 class HistoryItem extends StatelessWidget {
-  final dynamic videoItem;
-  final dynamic ctr;
-  final Function? onChoose;
-  final Function? onUpdateMultiple;
+  final Video videoItem;
+
   const HistoryItem({
     super.key,
     required this.videoItem,
-    this.ctr,
-    this.onChoose,
-    this.onUpdateMultiple,
   });
 
   @override
   Widget build(BuildContext context) {
-    int aid = videoItem.history.oid;
-    String bvid = videoItem.history.bvid ?? IdUtils.av2bv(aid);
-    String heroTag = Utils.makeHeroTag(aid);
+    final String heroTag = Utils.makeHeroTag(videoItem.vid);
+
     return InkWell(
-      onTap: () async {
-        if (ctr!.enableMultiple.value) {
-          feedBack();
-          onChoose!();
-          return;
-        }
-        if (videoItem.history.business.contains('article')) {
-          int cid = videoItem.history.cid ??
-              videoItem.history.oid ??
-              await SearchHttp.ab2c(aid: aid, bvid: bvid);
-          if (cid == -1) {
-            return SmartDialog.showToast('无法获取文章内容');
-          }
-          Get.toNamed(
-            '/read',
-            parameters: {
-              'title': videoItem.title,
-              'id': cid.toString(),
-              'articleType': 'read',
-            },
-          );
-        } else if (videoItem.history.business == 'live') {
-          if (videoItem.liveStatus == 1) {
-            LiveItemModel liveItem = LiveItemModel.fromJson({
-              'face': videoItem.authorFace,
-              'roomid': videoItem.history.oid,
-              'pic': videoItem.cover,
-              'title': videoItem.title,
-              'uname': videoItem.authorName,
-              'cover': videoItem.cover,
-            });
-            Get.toNamed(
-              '/liveRoom?roomid=${videoItem.history.oid}',
-              arguments: {'liveItem': liveItem},
-            );
-          } else {
-            SmartDialog.showToast('直播未开播');
-          }
-        } else if (videoItem.badge == '番剧' ||
-            videoItem.tagName.contains('动画')) {
-          /// hack
-          var bvid = videoItem.history.bvid;
-          if (bvid != null && bvid != '') {
-            var result = await VideoHttp.videoIntro(bvid: bvid);
-            if (result['status']) {
-              String bvid = result['data'].bvid!;
-              int cid = result['data'].cid!;
-              String pic = result['data'].pic!;
-              String heroTag = Utils.makeHeroTag(cid);
-              var epid = result['data'].epId;
-              if (epid != null) {
-                Get.toNamed(
-                  '/video?bvid=$bvid&cid=$cid&epId=${result['data'].epId}',
-                  arguments: {
-                    'pic': pic,
-                    'heroTag': heroTag,
-                    'videoType': 'media_bangumi',
-                  },
-                );
-              } else {
-                int cid = videoItem.history.cid ??
-                    // videoItem.history.oid ??
-                    await SearchHttp.ab2c(aid: aid, bvid: bvid);
-                Get.toNamed('/video?bvid=$bvid&cid=$cid',
-                    arguments: {'heroTag': heroTag, 'pic': videoItem.cover});
-              }
-            }
-          } else {
-            if (videoItem.history.epid != '') {
-              SmartDialog.showToast('暂不支持番剧观看');
-            }
-          }
-        } else {
-          int cid = videoItem.history.cid ??
-              // videoItem.history.oid ??
-              await SearchHttp.ab2c(aid: aid, bvid: bvid);
-          Get.toNamed('/video?bvid=$bvid&cid=$cid',
-              arguments: {'heroTag': heroTag, 'pic': videoItem.cover});
-        }
+      onTap: () {
+        Get.toNamed('/video?vid=${videoItem.vid}', arguments: {
+          'heroTag': heroTag,
+          'pic': videoItem.coverUrl,
+        });
       },
-      onLongPress: () {
-        if (!ctr!.enableMultiple.value) {
-          feedBack();
-          ctr!.enableMultiple.value = true;
-          onChoose!();
-          onUpdateMultiple!();
-        }
-      },
-      child: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(
-                StyleString.safeSpace, 5, StyleString.safeSpace, 5),
-            child: LayoutBuilder(
-              builder: (context, boxConstraints) {
-                double width =
-                    (boxConstraints.maxWidth - StyleString.cardSpace * 6) / 2;
-                return SizedBox(
-                  height: width / StyleString.aspectRatio,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Stack(
-                        children: [
-                          AspectRatio(
-                            aspectRatio: StyleString.aspectRatio,
-                            child: LayoutBuilder(
-                              builder: (context, boxConstraints) {
-                                double maxWidth = boxConstraints.maxWidth;
-                                double maxHeight = boxConstraints.maxHeight;
-                                return Stack(
-                                  children: [
-                                    Hero(
-                                      tag: heroTag,
-                                      child: NetworkImgLayer(
-                                        src: (videoItem.cover != ''
-                                            ? videoItem.cover
-                                            : videoItem.covers.first),
-                                        width: maxWidth,
-                                        height: maxHeight,
-                                      ),
-                                    ),
-                                    if (!BusinessType
-                                        .hiddenDurationType.hiddenDurationType
-                                        .contains(videoItem.history.business))
-                                      PBadge(
-                                        text: videoItem.progress == -1
-                                            ? '已看完'
-                                            : '${Utils.timeFormat(videoItem.progress!)}/${Utils.timeFormat(videoItem.duration!)}',
-                                        right: 6.0,
-                                        bottom: 8.0,
-                                        type: 'gray',
-                                      ),
-                                    // 右上角
-                                    if (BusinessType.showBadge.showBadge
-                                            .contains(
-                                                videoItem.history.business) ||
-                                        videoItem.history.business ==
-                                            BusinessType.live.type)
-                                      PBadge(
-                                        text: videoItem.badge,
-                                        top: 6.0,
-                                        right: 6.0,
-                                        bottom: null,
-                                        left: null,
-                                      ),
-                                  ],
-                                );
-                              },
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(
+            StyleString.safeSpace, 5, StyleString.safeSpace, 5),
+        child: LayoutBuilder(
+          builder: (context, boxConstraints) {
+            double width =
+                (boxConstraints.maxWidth - StyleString.cardSpace * 6) / 2;
+            return SizedBox(
+              height: width / StyleString.aspectRatio,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  AspectRatio(
+                    aspectRatio: StyleString.aspectRatio,
+                    child: LayoutBuilder(
+                      builder: (context, boxConstraints) {
+                        double maxWidth = boxConstraints.maxWidth;
+                        double maxHeight = boxConstraints.maxHeight;
+                        return Stack(
+                          children: [
+                            Hero(
+                              tag: heroTag,
+                              child: NetworkImgLayer(
+                                src: videoItem.coverUrl,
+                                width: maxWidth,
+                                height: maxHeight,
+                              ),
                             ),
-                          ),
-                          Obx(
-                            () => Positioned.fill(
-                              child: AnimatedOpacity(
-                                opacity: ctr!.enableMultiple.value ? 1 : 0,
-                                duration: const Duration(milliseconds: 200),
+                            if (videoItem.duration != null &&
+                                videoItem.duration! > 0)
+                              Positioned(
+                                right: 6.0,
+                                bottom: 8.0,
                                 child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 4, vertical: 1),
                                   decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(
-                                        StyleString.imgRadius.x),
-                                    color: Colors.black.withValues(
-                                        alpha: ctr!.enableMultiple.value &&
-                                                videoItem.checked
-                                            ? 0.6
-                                            : 0),
+                                    color: Colors.black54,
+                                    borderRadius: BorderRadius.circular(4),
                                   ),
-                                  child: Center(
-                                    child: SizedBox(
-                                      width: 34,
-                                      height: 34,
-                                      child: AnimatedScale(
-                                        scale: videoItem.checked ? 1 : 0,
-                                        duration:
-                                            const Duration(milliseconds: 250),
-                                        curve: Curves.easeInOut,
-                                        child: IconButton(
-                                          style: ButtonStyle(
-                                            padding: WidgetStateProperty.all(
-                                                EdgeInsets.zero),
-                                            backgroundColor:
-                                                WidgetStateProperty.resolveWith(
-                                              (states) {
-                                                return Colors.white.withValues(
-                                                    alpha: 0.8 * 255);
-                                              },
-                                            ),
-                                          ),
-                                          onPressed: () {
-                                            feedBack();
-                                            onChoose!();
-                                          },
-                                          icon: Icon(Icons.done_all_outlined,
-                                              color: Theme.of(context)
-                                                  .colorScheme
-                                                  .primary),
-                                        ),
-                                      ),
+                                  child: Text(
+                                    Utils.timeFormat(videoItem.duration!),
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 10,
                                     ),
                                   ),
                                 ),
                               ),
-                            ),
-                          ),
-                          videoItem.progress != 0 && videoItem.duration != 0
-                              ? Positioned(
-                                  left: 3,
-                                  right: 3,
-                                  bottom: 0,
-                                  child: ClipRRect(
-                                    borderRadius: BorderRadius.only(
-                                      bottomLeft: Radius.circular(
-                                          StyleString.imgRadius.x),
-                                      bottomRight: Radius.circular(
-                                          StyleString.imgRadius.x),
-                                    ),
-                                    child: LinearProgressIndicator(
-                                      value: videoItem.progress == -1
-                                          ? 100
-                                          : videoItem.progress /
-                                              videoItem.duration,
-                                    ),
-                                  ),
-                                )
-                              : const SizedBox()
-                        ],
-                      ),
-                      VideoContent(videoItem: videoItem, ctr: ctr)
-                    ],
+                          ],
+                        );
+                      },
+                    ),
                   ),
-                );
-              },
-            ),
-          ),
-        ],
+                  _VideoContent(videoItem: videoItem),
+                ],
+              ),
+            );
+          },
+        ),
       ),
     );
   }
 }
 
-class VideoContent extends StatelessWidget {
-  final dynamic videoItem;
-  final dynamic ctr;
-  const VideoContent({super.key, required this.videoItem, this.ctr});
+class _VideoContent extends StatelessWidget {
+  final Video videoItem;
+
+  const _VideoContent({
+    required this.videoItem,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -293,28 +113,15 @@ class VideoContent extends StatelessWidget {
                 fontWeight: FontWeight.w500,
                 letterSpacing: 0.3,
               ),
-              maxLines: videoItem.videos > 1 ? 1 : 2,
+              maxLines: 2,
               overflow: TextOverflow.ellipsis,
             ),
-            if (videoItem.showTitle != null) ...[
-              const SizedBox(height: 2),
-              Text(
-                videoItem.showTitle,
-                textAlign: TextAlign.start,
-                style: TextStyle(
-                    fontSize: Theme.of(context).textTheme.labelMedium!.fontSize,
-                    fontWeight: FontWeight.w400,
-                    color: Theme.of(context).colorScheme.outline),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ],
             const Spacer(),
-            if (videoItem.authorName != '')
+            if (videoItem.username.isNotEmpty)
               Row(
                 children: [
                   Text(
-                    videoItem.authorName,
+                    videoItem.username,
                     style: TextStyle(
                       fontSize:
                           Theme.of(context).textTheme.labelMedium!.fontSize,
@@ -327,7 +134,7 @@ class VideoContent extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  Utils.dateFormat(videoItem.viewAt!),
+                  videoItem.time,
                   style: TextStyle(
                       fontSize:
                           Theme.of(context).textTheme.labelMedium!.fontSize,
@@ -345,34 +152,14 @@ class VideoContent extends StatelessWidget {
                       size: 14,
                     ),
                     position: PopupMenuPosition.under,
-                    // constraints: const BoxConstraints(maxHeight: 35),
                     onSelected: (String type) {},
                     itemBuilder: (BuildContext context) =>
                         <PopupMenuEntry<String>>[
-                      if (videoItem.badge != '番剧' &&
-                          !videoItem.tagName.contains('动画') &&
-                          videoItem.history.business != 'live' &&
-                          !videoItem.history.business.contains('article'))
-                        PopupMenuItem<String>(
-                          onTap: () async {
-                            var res = await UserHttp.toViewLater(
-                                bvid: videoItem.history.bvid);
-                            SmartDialog.showToast(res['msg']);
-                          },
-                          value: 'pause',
-                          height: 35,
-                          child: const Row(
-                            children: [
-                              Icon(Icons.watch_later_outlined, size: 16),
-                              SizedBox(width: 6),
-                              Text('稍后再看', style: TextStyle(fontSize: 13))
-                            ],
-                          ),
-                        ),
                       PopupMenuItem<String>(
-                        onTap: () => ctr!.delHistory(
-                            videoItem.kid, videoItem.history.business),
-                        value: 'pause',
+                        onTap: () {
+                          SmartDialog.showToast('Ottohub API 不支持删除历史记录');
+                        },
+                        value: 'delete',
                         height: 35,
                         child: const Row(
                           children: [

@@ -19,7 +19,7 @@ class HotPage extends StatefulWidget {
 }
 
 class _HotPageState extends State<HotPage> with AutomaticKeepAliveClientMixin {
-  final HotController _hotController = Get.put(HotController());
+  late HotController _hotController;
   List videoList = [];
   Future? _futureBuilderFuture;
 
@@ -29,13 +29,16 @@ class _HotPageState extends State<HotPage> with AutomaticKeepAliveClientMixin {
   @override
   void initState() {
     super.initState();
+    _hotController = Get.put(HotController(),
+        tag: 'hot_${DateTime.now().millisecondsSinceEpoch}');
     _futureBuilderFuture = _hotController.queryHotFeed('init');
     _hotController.scrollController.addListener(_scrollListener);
   }
 
   void _scrollListener() {
-    if (_hotController.scrollController.position.pixels >=
-        _hotController.scrollController.position.maxScrollExtent - 200) {
+    if (_hotController.scrollController.hasClients &&
+        _hotController.scrollController.position.pixels >=
+            _hotController.scrollController.position.maxScrollExtent - 200) {
       if (!_hotController.isLoadingMore) {
         _hotController.isLoadingMore = true;
         _hotController.onLoad();
@@ -64,6 +67,7 @@ class _HotPageState extends State<HotPage> with AutomaticKeepAliveClientMixin {
   @override
   void dispose() {
     _hotController.scrollController.removeListener(_scrollListener);
+    Get.delete<HotController>(tag: 'hot_${_hotController.hashCode}');
     super.dispose();
   }
 

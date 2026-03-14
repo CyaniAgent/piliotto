@@ -69,7 +69,7 @@ class _LogsPageState extends State<LogsPage> {
 
   void copyLogs() async {
     await Clipboard.setData(ClipboardData(text: fileContent));
-    if (context.mounted) {
+    if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('复制成功')),
       );
@@ -86,7 +86,7 @@ class _LogsPageState extends State<LogsPage> {
 
   void clearLogsHandle() async {
     if (await clearLogs()) {
-      if (context.mounted) {
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('已清空')),
         );

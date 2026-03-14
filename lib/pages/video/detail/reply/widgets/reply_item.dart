@@ -38,7 +38,7 @@ class ReplyItem extends StatefulWidget {
     this.replyReply,
     this.replyType,
     this.replySave = false,
-    this.showLikeButton = true,
+    this.showLikeButton = false,
     super.key,
   });
   final ReplyItemModel? replyItem;
@@ -116,24 +116,6 @@ class _ReplyItemState extends State<ReplyItem> {
               ),
             ),
           ),
-        if (widget.replyItem!.member!.vip != null &&
-            widget.replyItem!.member!.vip!['vipStatus'] != null &&
-            widget.replyItem!.member!.vip!['vipStatus'] > 0 &&
-            widget.replyItem!.member!.vip!['vipType'] == 2)
-          Positioned(
-            right: 0,
-            bottom: 0,
-            child: Container(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(7),
-                color: colorScheme.surface,
-              ),
-              child: Image.asset(
-                'assets/images/big-vip.png',
-                height: 14,
-              ),
-            ),
-          ),
       ],
     );
   }
@@ -179,32 +161,36 @@ class _ReplyItemState extends State<ReplyItem> {
                           fontSize: 13,
                         ),
                       ),
-                      // Ottohub 头衔显示
+                      // Ottohub 头衔显示（支持多个称号，用英文逗号分割）
                       if (widget.replyItem!.member!.ottohubData != null &&
                           widget.replyItem!.member!.ottohubData!['honour'] !=
                               null &&
                           widget.replyItem!.member!.ottohubData!['honour']
                               .toString()
                               .isNotEmpty)
-                        Container(
-                          margin: const EdgeInsets.only(left: 6),
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 6,
-                            vertical: 1,
-                          ),
-                          decoration: BoxDecoration(
-                            color: colorScheme.secondaryContainer,
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: Text(
-                            widget.replyItem!.member!.ottohubData!['honour']
-                                .toString(),
-                            style: TextStyle(
-                              fontSize: 10,
-                              color: colorScheme.onSecondaryContainer,
-                            ),
-                          ),
-                        ),
+                        ...widget.replyItem!.member!.ottohubData!['honour']
+                            .toString()
+                            .split(',')
+                            .where((e) => e.trim().isNotEmpty)
+                            .map((title) => Container(
+                                  margin: const EdgeInsets.only(left: 6),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 6,
+                                    vertical: 1,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: colorScheme.secondaryContainer,
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                  child: Text(
+                                    title.trim(),
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      color: colorScheme.onSecondaryContainer,
+                                    ),
+                                  ),
+                                ))
+                            .toList(),
                       if (widget.replyItem!.isUp!)
                         const Padding(
                           padding: EdgeInsets.only(left: 6),

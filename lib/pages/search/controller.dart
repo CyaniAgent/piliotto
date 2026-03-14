@@ -39,8 +39,34 @@ class VideoSearchController extends GetxController {
     }
   }
 
+  bool _isOVNumber(String input) {
+    final RegExp ovPattern = RegExp(r'^OV(\d+)$', caseSensitive: false);
+    return ovPattern.hasMatch(input.trim());
+  }
+
+  int? _extractVidFromOV(String input) {
+    final RegExp ovPattern = RegExp(r'^OV(\d+)$', caseSensitive: false);
+    final match = ovPattern.firstMatch(input.trim());
+    if (match != null) {
+      return int.tryParse(match.group(1)!);
+    }
+    return null;
+  }
+
   Future<void> searchVideos(String keyword, {bool isLoadMore = false}) async {
     if (keyword.isEmpty) return;
+
+    final String trimmedKeyword = keyword.trim();
+
+    if (_isOVNumber(trimmedKeyword)) {
+      final int? vid = _extractVidFromOV(trimmedKeyword);
+      if (vid != null) {
+        Get.toNamed('/video?vid=$vid', arguments: {
+          'heroTag': 'ov_$vid',
+        });
+        return;
+      }
+    }
 
     if (!isLoadMore) {
       isLoading.value = true;

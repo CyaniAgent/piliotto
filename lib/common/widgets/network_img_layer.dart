@@ -102,13 +102,13 @@ class NetworkImgLayer extends StatelessWidget {
   }
 
   Widget placeholder(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Container(
       width: width,
       height: height,
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.onInverseSurface.withValues(alpha: 0.4 * 255),
-
+        color: colorScheme.onInverseSurface.withValues(alpha: 0.4 * 255),
         borderRadius: BorderRadius.circular(type == 'avatar'
             ? 50
             : type == 'emote'
@@ -118,15 +118,20 @@ class NetworkImgLayer extends StatelessWidget {
       child: type == 'bg'
           ? const SizedBox()
           : Center(
-              child: Image.asset(
-                type == 'avatar'
-                    ? 'assets/images/noface.jpeg'
-                    : 'assets/images/loading.png',
-                width: width,
-                height: height,
-                cacheWidth: width.cacheSize(context),
-                cacheHeight: height.cacheSize(context),
-              ),
+              child: type == 'avatar'
+                  ? Icon(
+                      Icons.person,
+                      size: width * 0.6,
+                      color: colorScheme.outline.withValues(alpha: 0.5),
+                    )
+                  : SizedBox(
+                      width: width * 0.3 > 24 ? 24.0 : width * 0.3,
+                      height: height * 0.3 > 24 ? 24.0 : height * 0.3,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: colorScheme.outline.withValues(alpha: 0.5),
+                      ),
+                    ),
             ),
     );
   }

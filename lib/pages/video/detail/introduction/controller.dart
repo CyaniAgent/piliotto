@@ -272,8 +272,6 @@ class VideoIntroController extends GetxController {
     await queryVideoIntro();
   }
 
-
-
   /// 列表循环或者顺序播放时，自动播放下一个
   void nextPlay() {
     // Ottohub API 暂不支持自动播放下一个视频
@@ -284,8 +282,6 @@ class VideoIntroController extends GetxController {
     // Ottohub API 暂不支持关注分组
     SmartDialog.showToast('暂不支持此功能');
   }
-
-
 
   //
   oneThreeDialog() {

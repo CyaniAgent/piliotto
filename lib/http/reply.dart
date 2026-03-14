@@ -1,9 +1,7 @@
-import '../models/video/reply/data.dart';
-import '../models/video/reply/emote.dart';
-import 'api.dart';
-import 'init.dart';
+import '../api/services/old_api_service.dart';
 
 class ReplyHttp {
+  // 视频评论列表
   static Future replyList({
     required int oid,
     required int pageNum,
@@ -11,25 +9,24 @@ class ReplyHttp {
     int? ps,
     int sort = 1,
   }) async {
-    var res = await Request().get(Api.replyList, data: {
-      'oid': oid,
-      'pn': pageNum,
-      'type': type,
-      'sort': sort,
-      'ps': ps ?? 20
-    });
-    if (res.data['code'] == 0) {
+    try {
+      final response = await OldApiService.getVideoComments(
+        vid: oid,
+        parentVcid: 0,
+        offset: (pageNum - 1) * (ps ?? 20),
+        num: ps ?? 20,
+      );
       return {
         'status': true,
-        'data': ReplyData.fromJson(res.data['data']),
+        'data': response,
         'code': 200,
       };
-    } else {
+    } catch (err) {
       return {
         'status': false,
-        'date': [],
-        'code': res.data['code'],
-        'msg': res.data['message'],
+        'data': null,
+        'code': -1,
+        'msg': err.toString(),
       };
     }
   }
@@ -61,28 +58,18 @@ class ReplyHttp {
     };
   }
 
+  // 表情列表（Ottohub 不支持）
   static Future getEmoteList({String? business}) async {
-    var res = await Request().get(Api.emojiList, data: {
-      'business': business ?? 'reply',
-      'web_location': '333.1245',
-    });
-    if (res.data['code'] == 0) {
-      return {
-        'status': true,
-        'data': EmoteModelData.fromJson(res.data['data']),
-      };
-    } else {
-      return {
-        'status': false,
-        'date': [],
-        'msg': res.data['message'],
-      };
-    }
+    return {
+      'status': false,
+      'data': null,
+      'msg': 'Ottohub API 不支持表情功能',
+    };
   }
 
   // 删除评论（Ottohub 不支持）
   static Future replyDel({
-    required type, //replyType
+    required type,
     required int oid,
     required int rpid,
   }) async {

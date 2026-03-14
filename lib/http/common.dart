@@ -1,17 +1,7 @@
-import 'index.dart';
-
+/// 通用相关 API - Ottohub 不支持
 class CommonHttp {
+  // 未读动态
   static Future unReadDynamic() async {
-    var res = await Request().get(Api.getUnreadDynamic,
-        data: {'alltype_offset': 0, 'video_offset': '', 'article_offset': 0});
-    if (res.data['code'] == 0) {
-      return {'status': true, 'data': res.data['data']['dyn_basic_infos']};
-    } else {
-      return {
-        'status': false,
-        'data': [],
-        'msg': res.data['message'],
-      };
-    }
+    return {'status': false, 'data': [], 'msg': 'Ottohub API 不支持未读动态功能'};
   }
 }

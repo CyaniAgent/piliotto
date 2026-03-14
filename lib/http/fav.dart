@@ -1,7 +1,6 @@
-import 'index.dart';
-
+/// 收藏夹相关 API - Ottohub 不支持
 class FavHttp {
-  /// 编辑收藏夹
+  // 编辑收藏夹
   static Future editFolder({
     required String title,
     required String intro,
@@ -9,59 +8,16 @@ class FavHttp {
     String? cover,
     int? privacy,
   }) async {
-    var res = await Request().post(
-      Api.editFavFolder,
-      data: {
-        'title': title,
-        'intro': intro,
-        'media_id': mediaId,
-        'cover': cover ?? '',
-        'privacy': privacy ?? 0,
-        'csrf': await Request.getCsrf(),
-      },
-    );
-    if (res.data['code'] == 0) {
-      return {
-        'status': true,
-        'data': res.data['data'],
-      };
-    } else {
-      return {
-        'status': false,
-        'data': [],
-        'msg': res.data['message'],
-      };
-    }
+    return {'status': false, 'msg': 'Ottohub API 不支持编辑收藏夹功能'};
   }
 
-  /// 新建收藏夹
+  // 新建收藏夹
   static Future addFolder({
     required String title,
     required String intro,
     String? cover,
     int? privacy,
   }) async {
-    var res = await Request().post(
-      Api.addFavFolder,
-      data: {
-        'title': title,
-        'intro': intro,
-        'cover': cover ?? '',
-        'privacy': privacy ?? 0,
-        'csrf': await Request.getCsrf(),
-      },
-    );
-    if (res.data['code'] == 0) {
-      return {
-        'status': true,
-        'data': res.data['data'],
-      };
-    } else {
-      return {
-        'status': false,
-        'data': [],
-        'msg': res.data['message'],
-      };
-    }
+    return {'status': false, 'msg': 'Ottohub API 不支持新建收藏夹功能'};
   }
 }

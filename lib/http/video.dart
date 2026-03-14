@@ -1,287 +1,337 @@
 import 'package:hive/hive.dart';
-import '../common/constants.dart';
+import '../api/services/video_service.dart';
 import '../models/common/reply_type.dart';
-import '../models/home/rcmd/result.dart';
-import '../models/model_hot_video_item.dart';
-import '../models/model_rec_video_item.dart';
-import '../models/user/fav_folder.dart';
-import '../models/video/ai.dart';
-import '../models/video/play/url.dart';
-import '../models/video/subTitile/result.dart';
-import '../models/video_detail_res.dart';
-import '../utils/recommend_filter.dart';
 import '../utils/storage.dart';
-import '../utils/subtitle.dart';
-import '../utils/wbi_sign.dart';
-import 'api.dart';
-import 'init.dart';
 
-/// res.data['code'] == 0 请求正常返回结果
-/// res.data['data'] 为结果
-/// 返回{'status': bool, 'data': List}
-/// view层根据 status 判断渲染逻辑
 class VideoHttp {
   static Box localCache = GStrorage.localCache;
   static Box setting = GStrorage.setting;
-  static bool enableRcmdDynamic =
-      setting.get(SettingBoxKey.enableRcmdDynamic, defaultValue: true);
   static Box userInfoCache = GStrorage.userInfo;
 
-  // 首页推荐视频
-  static Future rcmdVideoList({required int ps, required int freshIdx}) async {
+  // 随机视频列表（替代推荐）
+  static Future randomVideoList({int num = 20}) async {
     try {
-      var res = await Request().get(
-        Api.recommendListWeb,
-        data: {
-          'version': 1,
-          'feed_version': 'V3',
-          'homepage_ver': 1,
-          'ps': ps,
-          'fresh_idx': freshIdx,
-          'brush': freshIdx,
-          'fresh_type': 4
-        },
-      );
-      if (res.data['code'] == 0) {
-        List<RecVideoItemModel> list = [];
-        List<int> blackMidsList =
-            setting.get(SettingBoxKey.blackMidsList, defaultValue: [-1]);
-        for (var i in res.data['data']['item']) {
-          //过滤掉live与ad，以及拉黑用户
-          if (i['goto'] == 'av' &&
-              (i['owner'] != null &&
-                  !blackMidsList.contains(i['owner']['mid']))) {
-            RecVideoItemModel videoItem = RecVideoItemModel.fromJson(i);
-            if (!RecommendFilter.filter(videoItem)) {
-              list.add(videoItem);
-            }
-          }
-        }
-        return {'status': true, 'data': list};
-      } else {
-        return {'status': false, 'data': [], 'msg': res.data['message']};
-      }
+      final response = await VideoService.getRandomVideos(num: num);
+      return {'status': true, 'data': response.videoList};
     } catch (err) {
       return {'status': false, 'data': [], 'msg': err.toString()};
     }
   }
 
-  // 添加额外的loginState变量模拟未登录状态
-  static Future rcmdVideoListApp(
-      {bool loginStatus = true, required int freshIdx}) async {
-    var res = await Request().get(
-      Api.recommendListApp,
-      data: {
-        'idx': freshIdx,
-        'flush': '5',
-        'column': '4',
-        'device': 'pad',
-        'device_type': 0,
-        'device_name': 'vivo',
-        'pull': freshIdx == 0 ? 'true' : 'false',
-        'appkey': Constants.appKey,
-        'access_key': loginStatus
-            ? (localCache
-                    .get(LocalCacheKey.accessKey, defaultValue: {})['value'] ??
-                '')
-            : ''
-      },
-    );
-    if (res.data['code'] == 0) {
-      List<RecVideoItemAppModel> list = [];
-      List<int> blackMidsList =
-          setting.get(SettingBoxKey.blackMidsList, defaultValue: [-1]);
-      for (var i in res.data['data']['items']) {
-        // 屏蔽推广和拉黑用户
-        if (i['card_goto'] != 'ad_av' &&
-            (!enableRcmdDynamic ? i['card_goto'] != 'picture' : true) &&
-            (i['args'] != null &&
-                !blackMidsList.contains(i['args']['up_mid']))) {
-          RecVideoItemAppModel videoItem = RecVideoItemAppModel.fromJson(i);
-          if (!RecommendFilter.filter(videoItem)) {
-            list.add(videoItem);
-          }
-        }
-      }
-      return {'status': true, 'data': list};
-    } else {
-      return {'status': false, 'data': [], 'msg': res.data['message']};
-    }
-  }
-
-  // 最热视频
-  static Future hotVideoList({required int pn, required int ps}) async {
+  // 最新视频列表
+  static Future newVideoList({
+    int offset = 0,
+    int num = 20,
+    String type = 'all',
+  }) async {
     try {
-      var res = await Request().get(
-        Api.hotList,
-        data: {'pn': pn, 'ps': ps},
+      final response = await VideoService.getNewVideos(
+        offset: offset,
+        num: num,
+        type: type,
       );
-      if (res.data['code'] == 0) {
-        List<HotVideoItemModel> list = [];
-        List<int> blackMidsList =
-            setting.get(SettingBoxKey.blackMidsList, defaultValue: [-1]);
-        for (var i in res.data['data']['list']) {
-          if (!blackMidsList.contains(i['owner']['mid'])) {
-            list.add(HotVideoItemModel.fromJson(i));
-          }
-        }
-        return {'status': true, 'data': list};
-      } else {
-        return {'status': false, 'data': [], 'msg': res.data['message']};
-      }
+      return {'status': true, 'data': response.videoList};
     } catch (err) {
-      return {'status': false, 'data': [], 'msg': err};
+      return {'status': false, 'data': [], 'msg': err.toString()};
     }
   }
 
-  // 视频流
-  static Future videoUrl(
-      {int? avid, String? bvid, required int cid, int? qn}) async {
-    Map<String, dynamic> data = {
-      'cid': cid,
-      'qn': qn ?? 80,
-      // 获取所有格式的视频
-      'fnval': 4048,
-    };
-    if (avid != null) {
-      data['avid'] = avid;
-    }
-    if (bvid != null) {
-      data['bvid'] = bvid;
-    }
-
-    // 免登录查看1080p
-    if (userInfoCache.get('userInfoCache') == null &&
-        setting.get(SettingBoxKey.p1080, defaultValue: true)) {
-      data['try_look'] = 1;
-    }
-
-    Map params = await WbiSign().makSign({
-      ...data,
-      'fourk': 1,
-      'voice_balance': 1,
-      'gaia_source': 'pre-load',
-      'web_location': 1550101,
-    });
-
+  // 热门视频列表
+  static Future popularVideoList({
+    int timeLimit = 7,
+    int offset = 0,
+    int num = 20,
+  }) async {
     try {
-      var res = await Request().get(Api.videoUrl, data: params);
-      if (res.data['code'] == 0) {
-        return {
-          'status': true,
-          'data': PlayUrlModel.fromJson(res.data['data'])
-        };
-      } else {
-        return {
-          'status': false,
-          'data': [],
-          'code': res.data['code'],
-          'msg': res.data['message'],
-        };
-      }
+      final response = await VideoService.getPopularVideos(
+        timeLimit: timeLimit,
+        offset: offset,
+        num: num,
+      );
+      return {'status': true, 'data': response.videoList};
     } catch (err) {
-      return {'status': false, 'data': [], 'msg': err};
+      return {'status': false, 'data': [], 'msg': err.toString()};
     }
   }
 
-  // 视频信息 标题、简介
-  static Future videoIntro({required String bvid}) async {
-    var res = await Request().get(Api.videoIntro, data: {'bvid': bvid});
-    if (res.data['code'] == 0) {
-      VideoDetailResponse result = VideoDetailResponse.fromJson(res.data);
-      return {'status': true, 'data': result.data!};
-    } else {
+  // 分类视频列表
+  static Future categoryVideoList(String category, {int num = 20}) async {
+    try {
+      final response = await VideoService.getCategoryVideos(category, num: num);
+      return {'status': true, 'data': response.videoList};
+    } catch (err) {
+      return {'status': false, 'data': [], 'msg': err.toString()};
+    }
+  }
+
+  // 搜索视频列表
+  static Future searchVideoList({
+    String? searchTerm,
+    int offset = 0,
+    int num = 20,
+    int vidDesc = 0,
+    int viewCountDesc = 0,
+    int likeCountDesc = 0,
+    int favoriteCountDesc = 0,
+    int? uid,
+    String? type,
+  }) async {
+    try {
+      final response = await VideoService.searchVideos(
+        searchTerm: searchTerm,
+        offset: offset,
+        num: num,
+        vidDesc: vidDesc,
+        viewCountDesc: viewCountDesc,
+        likeCountDesc: likeCountDesc,
+        favoriteCountDesc: favoriteCountDesc,
+        uid: uid,
+        type: type,
+      );
       return {
-        'status': false,
-        'data': null,
-        'code': res.data['code'],
-        'msg': res.data['message'],
+        'status': true,
+        'data': response.videoList,
+        'count': response.totalCount,
       };
+    } catch (err) {
+      return {'status': false, 'data': [], 'msg': err.toString()};
     }
   }
 
-  // 相关视频
-  static Future relatedVideoList({required String bvid}) async {
-    var res = await Request().get(Api.relatedList, data: {'bvid': bvid});
-    if (res.data['code'] == 0) {
-      List<HotVideoItemModel> list = [];
-      for (var i in res.data['data']) {
-        HotVideoItemModel videoItem = HotVideoItemModel.fromJson(i);
-        if (!RecommendFilter.filter(videoItem, relatedVideos: true)) {
-          list.add(videoItem);
-        }
-      }
-      return {'status': true, 'data': list};
-    } else {
-      return {'status': false, 'data': []};
+  // 视频详情
+  static Future videoIntro({required int vid}) async {
+    try {
+      final video = await VideoService.getVideoDetail(vid);
+      return {'status': true, 'data': video};
+    } catch (err) {
+      return {'status': false, 'data': null, 'msg': err.toString()};
     }
   }
 
-  // 获取点赞状态
+  // 用户视频列表
+  static Future userVideoList(int uid, {int offset = 0, int num = 20}) async {
+    try {
+      final response = await VideoService.getUserVideos(
+        uid,
+        offset: offset,
+        num: num,
+      );
+      return {'status': true, 'data': response.videoList};
+    } catch (err) {
+      return {'status': false, 'data': [], 'msg': err.toString()};
+    }
+  }
+
+  // 相关视频列表
+  static Future relatedVideoList({required int vid, int num = 20}) async {
+    try {
+      final response = await VideoService.getRelatedVideos(vid, num: num);
+      return {'status': true, 'data': response.videoList};
+    } catch (err) {
+      return {'status': false, 'data': [], 'msg': err.toString()};
+    }
+  }
+
+  // 收藏视频列表
+  static Future favoriteVideoList({int offset = 0, int num = 20}) async {
+    try {
+      final response = await VideoService.getFavoriteVideos(
+        offset: offset,
+        num: num,
+      );
+      return {
+        'status': true,
+        'data': response.videoList,
+        'count': response.favoriteVideoCount,
+      };
+    } catch (err) {
+      return {'status': false, 'data': [], 'msg': err.toString()};
+    }
+  }
+
+  // 管理视频列表
+  static Future manageVideoList({int offset = 0, int num = 20}) async {
+    try {
+      final response = await VideoService.getManageVideos(
+        offset: offset,
+        num: num,
+      );
+      return {
+        'status': true,
+        'data': response.videoList,
+        'count': response.manageVideoCount,
+      };
+    } catch (err) {
+      return {'status': false, 'data': [], 'msg': err.toString()};
+    }
+  }
+
+  // 历史视频列表
+  static Future historyVideoList() async {
+    try {
+      final response = await VideoService.getHistoryVideos();
+      return {'status': true, 'data': response.videoList};
+    } catch (err) {
+      return {'status': false, 'data': [], 'msg': err.toString()};
+    }
+  }
+
+  // 保存观看历史
+  static Future saveWatchHistory({
+    required int vid,
+    required int lastWatchSecond,
+  }) async {
+    try {
+      await VideoService.saveWatchHistory(
+        vid: vid,
+        lastWatchSecond: lastWatchSecond,
+      );
+      return {'status': true};
+    } catch (err) {
+      return {'status': false, 'msg': err.toString()};
+    }
+  }
+
+  // 收藏/取消收藏视频
+  static Future toggleFavorite({required int vid}) async {
+    try {
+      final response = await VideoService.toggleFavorite(vid: vid);
+      return {
+        'status': true,
+        'data': {
+          'if_favorite': response.ifFavorite,
+          'favorite_count': response.favoriteCount,
+        },
+      };
+    } catch (err) {
+      return {'status': false, 'msg': err.toString()};
+    }
+  }
+
+  // 点赞/取消点赞视频
+  static Future toggleLike({required int vid}) async {
+    try {
+      final response = await VideoService.toggleLike(vid: vid);
+      return {
+        'status': true,
+        'data': {
+          'if_like': response.ifLike,
+          'like_count': response.likeCount,
+        },
+      };
+    } catch (err) {
+      return {'status': false, 'msg': err.toString()};
+    }
+  }
+
+  // 删除视频
+  static Future deleteVideo({required int vid}) async {
+    try {
+      await VideoService.deleteVideo(vid: vid);
+      return {'status': true};
+    } catch (err) {
+      return {'status': false, 'msg': err.toString()};
+    }
+  }
+
+  // ========== 以下为兼容旧接口的方法 ==========
+
+  // 兼容：首页推荐视频（使用随机视频替代）
+  static Future rcmdVideoList({required int ps, required int freshIdx}) async {
+    return randomVideoList(num: ps);
+  }
+
+  // 兼容：首页推荐视频 App（使用随机视频替代）
+  static Future rcmdVideoListApp({
+    bool loginStatus = true,
+    required int freshIdx,
+  }) async {
+    return randomVideoList(num: 20);
+  }
+
+  // 兼容：最热视频（使用热门视频替代）
+  static Future hotVideoList({required int pn, required int ps}) async {
+    return popularVideoList(offset: (pn - 1) * ps, num: ps);
+  }
+
+  // 兼容：视频流（Ottohub 视频详情中包含 video_url）
+  static Future videoUrl({
+    int? avid,
+    String? bvid,
+    required int cid,
+    int? qn,
+  }) async {
+    return {
+      'status': false,
+      'msg': '请使用视频详情接口获取 video_url',
+    };
+  }
+
+  // 兼容：相关视频（使用 vid）
+  static Future relatedVideoListByBvid({required String bvid}) async {
+    return {
+      'status': false,
+      'msg': '请使用 vid 参数调用 relatedVideoList',
+    };
+  }
+
+  // 兼容：获取点赞状态（从视频详情获取）
   static Future hasLikeVideo({required String bvid}) async {
-    var res = await Request().get(Api.hasLikeVideo, data: {'bvid': bvid});
-    if (res.data['code'] == 0) {
-      return {'status': true, 'data': res.data['data']};
-    } else {
-      return {'status': false, 'data': []};
-    }
+    return {
+      'status': false,
+      'msg': '请使用视频详情接口获取 if_like 字段',
+    };
   }
 
-  // 获取投币状态
+  // 兼容：获取投币状态（Ottohub 不支持）
   static Future hasCoinVideo({required String bvid}) async {
-    var res = await Request().get(Api.hasCoinVideo, data: {'bvid': bvid});
-    // 响应数据: $res
-    if (res.data['code'] == 0) {
-      return {'status': true, 'data': res.data['data']};
-    } else {
-      return {'status': false, 'data': []};
-    }
+    return {'status': false, 'msg': 'Ottohub API 不支持投币功能'};
   }
 
-  // 投币（Ottohub 不支持）
+  // 兼容：投币（Ottohub 不支持）
   static Future coinVideo({required String bvid, required int multiply}) async {
     return {'status': false, 'msg': 'Ottohub API 不支持投币功能'};
   }
 
-  // 获取收藏状态
+  // 兼容：获取收藏状态（从视频详情获取）
   static Future hasFavVideo({required int aid}) async {
-    var res = await Request().get(Api.hasFavVideo, data: {'aid': aid});
-    if (res.data['code'] == 0) {
-      return {'status': true, 'data': res.data['data']};
-    } else {
-      return {'status': false, 'data': []};
-    }
+    return {
+      'status': false,
+      'msg': '请使用视频详情接口获取 if_favorite 字段',
+    };
   }
 
-  // 一键三连（Ottohub 不支持）
+  // 兼容：一键三连（Ottohub 不支持）
   static Future oneThree({required String bvid}) async {
     return {'status': false, 'msg': 'Ottohub API 不支持一键三连功能'};
   }
 
-  // （取消）点赞（Ottohub 不支持）
+  // 兼容：点赞（使用 toggleLike）
   static Future likeVideo({required String bvid, required bool type}) async {
-    return {'status': false, 'msg': 'Ottohub API 不支持点赞功能'};
+    return {
+      'status': false,
+      'msg': '请使用 vid 参数调用 toggleLike',
+    };
   }
 
-  // （取消）收藏（Ottohub 不支持）
-  static Future favVideo(
-      {required int aid, String? addIds, String? delIds}) async {
-    return {'status': false, 'msg': 'Ottohub API 不支持收藏功能'};
+  // 兼容：收藏（使用 toggleFavorite）
+  static Future favVideo({
+    required int aid,
+    String? addIds,
+    String? delIds,
+  }) async {
+    return {
+      'status': false,
+      'msg': '请使用 vid 参数调用 toggleFavorite',
+    };
   }
 
-  // 查看视频被收藏在哪个文件夹
+  // 兼容：查看视频被收藏在哪个文件夹（Ottohub 不支持文件夹）
   static Future videoInFolder({required int mid, required int rid}) async {
-    var res = await Request()
-        .get(Api.videoInFolder, data: {'up_mid': mid, 'rid': rid});
-    if (res.data['code'] == 0) {
-      FavFolderData data = FavFolderData.fromJson(res.data['data']);
-      return {'status': true, 'data': data};
-    } else {
-      return {'status': false, 'data': []};
-    }
+    return {'status': false, 'msg': 'Ottohub API 不支持收藏夹功能'};
   }
 
-  // 发表评论（Ottohub 不支持）
+  // 兼容：发表评论（Ottohub 不支持）
   static Future replyAdd({
     required ReplyType type,
     required int oid,
@@ -292,110 +342,47 @@ class VideoHttp {
     return {'status': false, 'msg': 'Ottohub API 不支持发表评论功能'};
   }
 
-  // 查询是否关注up
+  // 兼容：查询是否关注 up（Ottohub 不支持）
   static Future hasFollow({required int mid}) async {
-    var res = await Request().get(Api.hasFollow, data: {'fid': mid});
-    if (res.data['code'] == 0) {
-      return {'status': true, 'data': res.data['data']};
-    } else {
-      return {'status': false, 'data': []};
-    }
-  }
-
-  // 操作用户关系（Ottohub 不支持）
-  static Future relationMod(
-      {required int mid, required int act, required int reSrc}) async {
     return {'status': false, 'msg': 'Ottohub API 不支持关注功能'};
   }
 
-  // 视频播放进度（Ottohub 不支持）
-  static Future heartBeat({bvid, cid, progress, realtime}) async {
-    // 不执行任何操作
-  }
-
-  // 查看视频同时在看人数
-  static Future onlineTotal({int? aid, String? bvid, int? cid}) async {
-    var res = await Request().get(Api.onlineTotal, data: {
-      'aid': aid,
-      'bvid': bvid,
-      'cid': cid,
-    });
-    if (res.data['code'] == 0) {
-      return {'status': true, 'data': res.data['data']};
-    } else {
-      return {'status': false, 'data': null, 'msg': res.data['message']};
-    }
-  }
-
-  static Future aiConclusion({
-    String? bvid,
-    int? cid,
-    int? upMid,
+  // 兼容：操作用户关系（Ottohub 不支持）
+  static Future relationMod({
+    required int mid,
+    required int act,
+    required int reSrc,
   }) async {
-    Map params = await WbiSign().makSign({
-      'bvid': bvid,
-      'cid': cid,
-      'up_mid': upMid,
-    });
-    var res = await Request().get(Api.aiConclusion, data: params);
-    if (res.data['code'] == 0 && res.data['data']['code'] == 0) {
-      return {
-        'status': true,
-        'data': AiConclusionModel.fromJson(res.data['data']),
-      };
-    } else {
-      return {'status': false, 'data': []};
-    }
+    return {'status': false, 'msg': 'Ottohub API 不支持关注功能'};
   }
 
+  // 兼容：视频播放进度（使用 saveWatchHistory）
+  static Future heartBeat({bvid, cid, progress, realtime}) async {
+    // 不执行任何操作，使用 saveWatchHistory 替代
+  }
+
+  // 兼容：查看视频同时在看人数（Ottohub 不支持）
+  static Future onlineTotal({int? aid, String? bvid, int? cid}) async {
+    return {'status': false, 'msg': 'Ottohub API 不支持在线人数功能'};
+  }
+
+  // 兼容：AI 总结（Ottohub 不支持）
+  static Future aiConclusion({String? bvid, int? cid, int? upMid}) async {
+    return {'status': false, 'msg': 'Ottohub API 不支持 AI 总结功能'};
+  }
+
+  // 兼容：获取字幕（Ottohub 不支持）
   static Future getSubtitle({int? cid, String? bvid}) async {
-    var res = await Request().get(Api.getSubtitleConfig, data: {
-      'cid': cid,
-      'bvid': bvid,
-    });
-    try {
-      if (res.data['code'] == 0) {
-        return {
-          'status': true,
-          'data': SubTitlteModel.fromJson(res.data['data']),
-        };
-      } else {
-        return {'status': false, 'data': [], 'msg': res.data['msg']};
-      }
-    } catch (err) {
-      return {'status': false, 'data': [], 'msg': res.data['msg']};
-    }
+    return {'status': false, 'msg': 'Ottohub API 不支持字幕功能'};
   }
 
-  // 视频排行
+  // 兼容：视频排行（使用热门视频替代）
   static Future getRankVideoList(int rid) async {
-    try {
-      var rankApi = "${Api.getRankApi}?rid=$rid&type=all";
-      var res = await Request().get(rankApi);
-      if (res.data['code'] == 0) {
-        List<HotVideoItemModel> list = [];
-        List<int> blackMidsList =
-            setting.get(SettingBoxKey.blackMidsList, defaultValue: [-1]);
-        for (var i in res.data['data']['list']) {
-          if (!blackMidsList.contains(i['owner']['mid'])) {
-            list.add(HotVideoItemModel.fromJson(i));
-          }
-        }
-        return {'status': true, 'data': list};
-      } else {
-        return {'status': false, 'data': [], 'msg': res.data['message']};
-      }
-    } catch (err) {
-      return {'status': false, 'data': [], 'msg': err};
-    }
+    return popularVideoList();
   }
 
-  // 获取字幕内容
+  // 兼容：获取字幕内容（Ottohub 不支持）
   static Future<Map<String, dynamic>> getSubtitleContent(url) async {
-    var res = await Request().get('https:$url');
-    final String content =
-        await SubTitleUtils.convertToWebVTT(res.data['body']);
-    final List body = res.data['body'];
-    return {'content': content, 'body': body};
+    return {'status': false, 'msg': 'Ottohub API 不支持字幕功能'};
   }
 }

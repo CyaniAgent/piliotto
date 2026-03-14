@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:piliotto/api/models/video.dart';
+import 'package:piliotto/services/loggeer.dart';
 import 'package:piliotto/services/ottohub_service.dart';
 import 'package:piliotto/utils/responsive_util.dart';
 
@@ -59,7 +60,7 @@ class RankController extends GetxController with GetTickerProviderStateMixin {
       );
       videoList.value = response.videoList;
     } catch (e) {
-      print('加载排行榜失败: $e');
+      getLogger().e('加载排行榜失败: $e');
     } finally {
       isLoading.value = false;
     }

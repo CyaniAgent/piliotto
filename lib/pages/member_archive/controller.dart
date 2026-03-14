@@ -36,7 +36,7 @@ class MemberArchiveController extends GetxController {
       archivesList.clear();
     }
     var res = await MemberHttp.memberArchive(
-      mid: mid,
+      uid: mid,
       pn: pn,
       order: currentOrder['type']!,
     );

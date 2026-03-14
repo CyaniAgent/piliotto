@@ -1,30 +1,11 @@
-import 'package:piliotto/http/video.dart';
-
 class SearchHttp {
+  // bvid 转 cid（Ottohub 使用 vid）
   static Future<int> ab2c({int? aid, String? bvid}) async {
-    if (bvid == null) {
-      return -1;
-    }
-    
-    var result = await VideoHttp.videoIntro(bvid: bvid);
-    if (result['status']) {
-      return result['data'].cid!;
-    }
     return -1;
   }
   
+  // bvid 转 cid 和 pic（Ottohub 使用 vid）
   static Future<Map<String, dynamic>> ab2cWithPic({String? bvid}) async {
-    if (bvid == null) {
-      return {'cid': -1, 'pic': null};
-    }
-    
-    var result = await VideoHttp.videoIntro(bvid: bvid);
-    if (result['status']) {
-      return {
-        'cid': result['data'].cid!,
-        'pic': result['data'].pic!
-      };
-    }
     return {'cid': -1, 'pic': null};
   }
 }

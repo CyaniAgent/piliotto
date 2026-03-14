@@ -98,32 +98,34 @@ class _VideoReplyReplyPanelState extends State<VideoReplyReplyPanel> {
 
   @override
   Widget build(BuildContext context) {
+    // 宽屏模式下sheetHeight为null，表示应该填充整个区域
+    final bool isWideScreen = widget.sheetHeight == null;
+
     return Container(
-      height: widget.source == 'videoDetail' ? widget.sheetHeight : null,
+      height: isWideScreen ? null : widget.sheetHeight,
       color: Theme.of(context).colorScheme.surface,
       child: Column(
         children: [
-          if (widget.source == 'videoDetail')
-            AppBar(
-              toolbarHeight: 45,
-              automaticallyImplyLeading: false,
-              centerTitle: false,
-              title: Text(
-                '评论详情',
-                style: Theme.of(context).textTheme.titleSmall,
-              ),
-              actions: [
-                IconButton(
-                  icon: const Icon(Icons.close, size: 20),
-                  onPressed: () {
-                    _videoReplyReplyController.currentPage = 0;
-                    widget.closePanel?.call();
-                    Navigator.pop(context);
-                  },
-                ),
-                const SizedBox(width: 14),
-              ],
+          AppBar(
+            toolbarHeight: 45,
+            automaticallyImplyLeading: false,
+            centerTitle: false,
+            title: Text(
+              '评论详情',
+              style: Theme.of(context).textTheme.titleSmall,
             ),
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.close, size: 20),
+                onPressed: () {
+                  _videoReplyReplyController.currentPage = 0;
+                  widget.closePanel?.call();
+                  Navigator.pop(context);
+                },
+              ),
+              const SizedBox(width: 14),
+            ],
+          ),
           Expanded(
             child: RefreshIndicator(
               onRefresh: () async {

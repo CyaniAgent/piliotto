@@ -10,7 +10,6 @@ import 'package:flutter/material.dart';
 import 'package:dynamic_color/dynamic_color.dart';
 import 'package:hive/hive.dart';
 import 'package:piliotto/common/widgets/custom_toast.dart';
-import 'package:piliotto/http/init.dart';
 import 'package:piliotto/models/common/color_type.dart';
 import 'package:piliotto/models/common/theme_type.dart';
 
@@ -38,8 +37,9 @@ void main() async {
       [DeviceOrientation.portraitUp, DeviceOrientation.portraitDown]);
   await GStrorage.init();
   clearLogs();
-  Request();
-  await Request.setCookie();
+  // Ottohub 不需要初始化 Request 和 Cookie
+  // Request();
+  // await Request.setCookie();
 
   // 异常捕获 logo记录
   final Catcher2Options releaseConfig = Catcher2Options(

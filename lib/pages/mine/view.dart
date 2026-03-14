@@ -125,7 +125,19 @@ class _MinePageState extends State<MinePage> {
                         src: _mineController.userInfo.value.face,
                         width: 85,
                         height: 85)
-                    : Image.asset('assets/images/noface.jpeg'),
+                    : Container(
+                        width: 85,
+                        height: 85,
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.onInverseSurface,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          Icons.person,
+                          size: 50,
+                          color: Theme.of(context).colorScheme.outline,
+                        ),
+                      ),
               ),
             ),
           ),

@@ -32,23 +32,27 @@ class SelectDialogState<T> extends State<SelectDialog<T>> {
       contentPadding: const EdgeInsets.fromLTRB(0, 12, 0, 24),
       content: StatefulBuilder(builder: (context, StateSetter setState) {
         return SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              for (var i in widget.values) ...[
-                RadioListTile<T>(
-                  value: i['value'],
-                  title: Text(i['title'], style: titleStyle),
-                  groupValue: _tempValue,
-                  onChanged: (value) {
-                    setState(() {
-                      _tempValue = value as T;
-                    });
-                    Navigator.pop(context, _tempValue);
-                  },
-                ),
-              ]
-            ],
+          child: RadioGroup<T>(
+            groupValue: _tempValue,
+            onChanged: (T? value) {
+              if (value != null) {
+                setState(() {
+                  _tempValue = value;
+                });
+                Navigator.pop(context, _tempValue);
+              }
+            },
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                for (var i in widget.values) ...[
+                  RadioListTile<T>(
+                    value: i['value'],
+                    title: Text(i['title'], style: titleStyle),
+                  ),
+                ]
+              ],
+            ),
           ),
         );
       }),

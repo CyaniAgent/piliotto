@@ -32,7 +32,6 @@ class _SetDiaplayModeState extends State<SetDiaplayMode> {
     });
   }
 
-  // 获取所有的mode
   Future<void> fetchAll() async {
     preferred = await FlutterDisplayMode.preferred;
     active = await FlutterDisplayMode.active;
@@ -40,12 +39,11 @@ class _SetDiaplayModeState extends State<SetDiaplayMode> {
     setState(() {});
   }
 
-  // 初始化mode/手动设置
   Future<void> init() async {
     try {
       modes = await FlutterDisplayMode.supported;
-    } on PlatformException {
-      // 错误处理
+    } on PlatformException catch (e) {
+      debugPrint('Failed to get display modes: $e');
     }
     var res = await getDisplayModeType(modes);
 
@@ -80,25 +78,29 @@ class _SetDiaplayModeState extends State<SetDiaplayMode> {
               ),
             ),
             Expanded(
-              child: ListView.builder(
-                itemCount: modes.length,
-                itemBuilder: (_, int i) {
-                  final DisplayMode mode = modes[i];
-                  return RadioListTile<DisplayMode>(
-                    value: mode,
-                    title: mode == DisplayMode.auto
-                        ? const Text('自动')
-                        : Text('$mode${mode == active ? "  [系统]" : ""}'),
-                    groupValue: preferred,
-                    onChanged: (DisplayMode? newMode) async {
-                      await FlutterDisplayMode.setPreferredMode(newMode!);
-                      await Future<dynamic>.delayed(
-                        const Duration(milliseconds: 100),
-                      );
-                      await fetchAll();
-                    },
-                  );
+              child: RadioGroup<DisplayMode>(
+                groupValue: preferred,
+                onChanged: (DisplayMode? newMode) async {
+                  if (newMode != null) {
+                    await FlutterDisplayMode.setPreferredMode(newMode);
+                    await Future<dynamic>.delayed(
+                      const Duration(milliseconds: 100),
+                    );
+                    await fetchAll();
+                  }
                 },
+                child: ListView.builder(
+                  itemCount: modes.length,
+                  itemBuilder: (_, int i) {
+                    final DisplayMode mode = modes[i];
+                    return RadioListTile<DisplayMode>(
+                      value: mode,
+                      title: mode == DisplayMode.auto
+                          ? const Text('自动')
+                          : Text('$mode${mode == active ? "  [系统]" : ""}'),
+                    );
+                  },
+                ),
               ),
             ),
           ],

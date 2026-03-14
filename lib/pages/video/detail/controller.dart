@@ -25,13 +25,13 @@ class VideoDetailController extends GetxController
     with GetSingleTickerProviderStateMixin {
   /// 路由传参
   int vid = int.tryParse(
-          Get.parameters['vid'] ?? Get.arguments['vid']?.toString() ?? '0') ??
+          Get.parameters['vid'] ?? Get.arguments?['vid']?.toString() ?? '0') ??
       0;
-  String heroTag = Get.arguments['heroTag'] ?? '';
+  String heroTag = Get.arguments?['heroTag'] ?? '';
   // 视频详情
   late Video videoItem;
   // 视频类型 默认投稿视频
-  String videoType = Get.arguments['videoType'] ?? 'video';
+  String videoType = Get.arguments?['videoType'] ?? 'video';
 
   /// tabs相关配置
   late TabController tabCtr;
@@ -57,6 +57,9 @@ class VideoDetailController extends GetxController
 
   ReplyItemModel? firstFloor;
   final GlobalKey<ScaffoldState> scaffoldKey = GlobalKey<ScaffoldState>();
+  // 宽屏模式下右侧内容区域的Scaffold key
+  final GlobalKey<ScaffoldState> rightContentScaffoldKey =
+      GlobalKey<ScaffoldState>();
   RxString bgCover = ''.obs;
   RxString cover = ''.obs;
   late PlPlayerController plPlayerController;
@@ -85,7 +88,6 @@ class VideoDetailController extends GetxController
   ].obs;
   RxDouble sheetHeight = 0.0.obs;
   ScrollController? replyScrollController;
-
 
   @override
   void onInit() {
@@ -126,13 +128,17 @@ class VideoDetailController extends GetxController
       videoType: videoType,
     );
 
-
     tabCtr.addListener(() {});
   }
 
   showReplyReplyPanel(oid, fRpid, firstFloor, currentReply, loadMore) {
+    // 判断是否为宽屏模式
+    final bool isWideScreen = Get.size.width > 768;
+    // 宽屏模式使用右侧内容区域的 Scaffold，窄屏使用主 Scaffold
+    final scaffold = isWideScreen ? rightContentScaffoldKey : scaffoldKey;
+
     replyReplyBottomSheetCtr =
-        scaffoldKey.currentState?.showBottomSheet((BuildContext context) {
+        scaffold.currentState?.showBottomSheet((BuildContext context) {
       return VideoReplyReplyPanel(
         vid: oid,
         parentVcid: fRpid,
@@ -142,7 +148,7 @@ class VideoDetailController extends GetxController
         firstFloor: firstFloor,
         replyType: ReplyType.video,
         source: 'videoDetail',
-        sheetHeight: sheetHeight.value,
+        sheetHeight: isWideScreen ? null : sheetHeight.value,
         currentReply: currentReply,
         loadMore: loadMore,
       );
@@ -608,8 +614,6 @@ class VideoDetailController extends GetxController
           duration: const Duration(milliseconds: 300), curve: Curves.ease);
     }
   }
-
-
 
   @override
   void onClose() {

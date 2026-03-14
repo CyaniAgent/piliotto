@@ -25,7 +25,7 @@ import '../pages/history/index.dart';
 import '../pages/home/index.dart';
 import '../pages/hot/index.dart';
 import '../pages/html/index.dart';
-import '../pages/later/index.dart';
+
 
 import '../pages/login/index.dart';
 import '../pages/register/view.dart';
@@ -48,12 +48,9 @@ import '../pages/setting/pages/home_tabbar_set.dart';
 import '../pages/setting/pages/navigation_bar_set.dart';
 import '../pages/setting/pages/play_gesture_set.dart';
 import '../pages/setting/pages/play_speed_set.dart';
-import '../pages/setting/recommend_setting.dart';
 import '../pages/setting/play_setting.dart';
-import '../pages/setting/privacy_setting.dart';
 import '../pages/setting/style_setting.dart';
-import '../pages/subscription/index.dart';
-import '../pages/subscription_detail/index.dart';
+
 import '../pages/video/detail/index.dart';
 import '../pages/video/detail/reply_reply/index.dart';
 import '../pages/webview/index.dart';
@@ -84,8 +81,7 @@ class Routes {
     CustomGetPage(name: '/fav', page: () => const FavPage()),
     //
     CustomGetPage(name: '/favDetail', page: () => const FavDetailPage()),
-    // 稍后再看
-    CustomGetPage(name: '/later', page: () => const LaterPage()),
+
     // 历史记录
     CustomGetPage(name: '/history', page: () => const HistoryPage()),
 
@@ -105,15 +101,10 @@ class Routes {
     // 二级回复
     CustomGetPage(
         name: '/replyReply', page: () => const VideoReplyReplyPanel()),
-    // 推荐设置
-    CustomGetPage(
-        name: '/recommendSetting', page: () => const RecommendSetting()),
     // 播放设置
     CustomGetPage(name: '/playSetting', page: () => const PlaySetting()),
     // 外观设置
     CustomGetPage(name: '/styleSetting', page: () => const StyleSetting()),
-    // 隐私设置
-    CustomGetPage(name: '/privacySetting', page: () => const PrivacySetting()),
     // 其他设置
     CustomGetPage(name: '/extraSetting', page: () => const ExtraSetting()),
     //
@@ -156,10 +147,7 @@ class Routes {
         name: '/memberSeasons', page: () => const MemberSeasonsPage()),
     // 日志
     CustomGetPage(name: '/logs', page: () => const LogsPage()),
-    // 订阅
-    CustomGetPage(name: '/subscription', page: () => const SubPage()),
-    // 订阅详情
-    CustomGetPage(name: '/subDetail', page: () => const SubDetailPage()),
+
     // 播放器手势
     CustomGetPage(
         name: '/playerGestureSet', page: () => const PlayGesturePage()),
