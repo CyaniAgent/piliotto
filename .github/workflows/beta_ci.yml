@@ -193,16 +193,3 @@ jobs:
         with:
           name: PiliOtto-Beta
           path: ./PiliOtto-Beta
-
-      - name: 发送到Telegram频道
-        uses: xireiki/channel-post@v1.0.7
-        with:
-          bot_token: ${{ secrets.BOT_TOKEN }}
-          chat_id: ${{ secrets.CHAT_ID }}
-          large_file: true
-          api_id: ${{ secrets.TELEGRAM_API_ID }}
-          api_hash: ${{ secrets.TELEGRAM_API_HASH }}
-          method: sendFile
-          path: PiliOtto-Beta/*
-          parse_mode: Markdown
-          context: "*Beta版本: v${{ needs.update_version.outputs.new_version }}*\n更新内容: [${{ needs.update_version.outputs.last_commit }}]"
