@@ -6,29 +6,19 @@ import 'package:get/get.dart';
 import 'package:piliotto/api/services/auth_service.dart';
 
 class LoginPageController extends GetxController {
-  final GlobalKey loginFormKey = GlobalKey<FormState>();
-  final GlobalKey registerFormKey = GlobalKey<FormState>();
+  final GlobalKey<FormState> loginFormKey = GlobalKey<FormState>();
 
   final TextEditingController emailTextController = TextEditingController();
   final TextEditingController passwordTextController = TextEditingController();
-  final TextEditingController confirmPasswordTextController =
-      TextEditingController();
 
   final FocusNode emailTextFieldNode = FocusNode();
   final FocusNode passwordTextFieldNode = FocusNode();
-  final FocusNode confirmPasswordTextFieldNode = FocusNode();
 
-  RxBool passwordVisible = false.obs;
-  RxBool confirmPasswordVisible = false.obs;
-
-  // 倒计时60s
-  RxInt seconds = 60.obs;
-  Timer? timer;
-  RxBool smsCodeSendStatus = false.obs;
+  RxBool passwordVisible = true.obs;
 
   // 登录方法
   void login() async {
-    if ((loginFormKey.currentState as FormState).validate()) {
+    if (loginFormKey.currentState!.validate()) {
       SmartDialog.showLoading(msg: '登录中...');
       try {
         await AuthService.login(
@@ -45,6 +35,40 @@ class LoginPageController extends GetxController {
       }
     }
   }
+
+  // 跳转到注册页面
+  void goToRegister() {
+    Get.toNamed('/register');
+  }
+
+  @override
+  void dispose() {
+    emailTextController.dispose();
+    passwordTextController.dispose();
+    emailTextFieldNode.dispose();
+    passwordTextFieldNode.dispose();
+    super.dispose();
+  }
+}
+
+class RegisterPageController extends GetxController {
+  final GlobalKey<FormState> registerFormKey = GlobalKey<FormState>();
+
+  final TextEditingController emailTextController = TextEditingController();
+  final TextEditingController passwordTextController = TextEditingController();
+  final TextEditingController verificationCodeController =
+      TextEditingController();
+
+  final FocusNode emailTextFieldNode = FocusNode();
+  final FocusNode passwordTextFieldNode = FocusNode();
+  final FocusNode verificationCodeTextFieldNode = FocusNode();
+
+  RxBool passwordVisible = true.obs;
+
+  // 倒计时60s
+  RxInt seconds = 60.obs;
+  Timer? timer;
+  RxBool smsCodeSendStatus = false.obs;
 
   // 发送验证码
   void sendVerificationCode() async {
@@ -69,18 +93,17 @@ class LoginPageController extends GetxController {
 
   // 注册方法
   void register() async {
-    if ((registerFormKey.currentState as FormState).validate()) {
+    if (registerFormKey.currentState!.validate()) {
       SmartDialog.showLoading(msg: '注册中...');
       try {
         await AuthService.register(
           email: emailTextController.text.trim(),
           password: passwordTextController.text.trim(),
-          verificationCode: confirmPasswordTextController.text.trim(),
+          verificationCode: verificationCodeController.text.trim(),
         );
 
         SmartDialog.showToast('注册成功');
         Get.back(); // 关闭注册页面
-        Get.back(); // 关闭登录页面
       } catch (e) {
         SmartDialog.showToast('注册失败：${e.toString()}');
       } finally {
@@ -89,14 +112,9 @@ class LoginPageController extends GetxController {
     }
   }
 
-  // 跳转到注册页面
-  void goToRegister() {
-    Get.toNamed('/register');
-  }
-
   // 跳转到登录页面
   void goToLogin() {
-    Get.toNamed('/loginPage');
+    Get.back();
   }
 
   // 验证码倒计时
@@ -117,10 +135,10 @@ class LoginPageController extends GetxController {
     timer?.cancel();
     emailTextController.dispose();
     passwordTextController.dispose();
-    confirmPasswordTextController.dispose();
+    verificationCodeController.dispose();
     emailTextFieldNode.dispose();
     passwordTextFieldNode.dispose();
-    confirmPasswordTextFieldNode.dispose();
+    verificationCodeTextFieldNode.dispose();
     super.dispose();
   }
 }

@@ -66,25 +66,29 @@ class VideoReplyController extends GetxController {
     );
 
     final childCommentNum = comment['child_comment_num'] ?? 0;
-    
+
     // 处理二级评论预览
     List<ReplyItemModel> childReplies = [];
-    if (comment['child_comments'] != null && comment['child_comments'] is List) {
+    if (comment['child_comments'] != null &&
+        comment['child_comments'] is List) {
       final List childCommentsList = comment['child_comments'];
       // 最多显示3条热门二级评论预览
-      final previewCount = childCommentsList.length > 3 ? 3 : childCommentsList.length;
+      final previewCount =
+          childCommentsList.length > 3 ? 3 : childCommentsList.length;
       for (int i = 0; i < previewCount; i++) {
         childReplies.add(_convertChildReplyItemModel(childCommentsList[i]));
       }
     }
-    
+
     final replyControl = ReplyControl(
       upReply: false,
       isUpTop: false,
       upLike: false,
       isShow: childCommentNum > 0,
       entryText: childCommentNum > 0
-          ? (childCommentNum > 3 ? '共$childCommentNum条回复' : '共$childCommentNum条回复')
+          ? (childCommentNum > 3
+              ? '共$childCommentNum条回复'
+              : '共$childCommentNum条回复')
           : '',
       titleText: '',
       time: comment['time'] ?? '',

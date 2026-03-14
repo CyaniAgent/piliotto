@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'skeleton.dart';
 
 class DynamicCardSkeleton extends StatelessWidget {
@@ -6,117 +7,196 @@ class DynamicCardSkeleton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Skeleton(
-      child: Container(
-        padding: const EdgeInsets.only(left: 12, right: 12, top: 12),
-        decoration: BoxDecoration(
-          border: Border(
-            bottom: BorderSide(
-              width: 8,
-              color: Theme.of(context).dividerColor.withValues(alpha: 0.05),
-            ),
+      child: Card(
+        elevation: 0,
+        margin: EdgeInsets.zero,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: BorderSide(
+            color: colorScheme.outlineVariant.withAlpha(50),
+            width: 1,
           ),
         ),
-        child: Column(
-          children: [
-            Row(
-              children: [
-                Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.onInverseSurface,
-                    borderRadius: BorderRadius.circular(20),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: colorScheme.surfaceContainerHighest,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          width: double.infinity,
+                          height: 14,
+                          decoration: BoxDecoration(
+                            color: colorScheme.surfaceContainerHighest,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Container(
+                          width: 100,
+                          height: 12,
+                          decoration: BoxDecoration(
+                            color: colorScheme.surfaceContainerHighest,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Container(
+                width: double.infinity,
+                height: 14,
+                decoration: BoxDecoration(
+                  color: colorScheme.surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Container(
+                width: 200,
+                height: 14,
+                decoration: BoxDecoration(
+                  color: colorScheme.surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              ),
+              const SizedBox(height: 12),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: List.generate(
+                  3,
+                  (i) => Container(
+                    width: 60,
+                    height: 20,
+                    decoration: BoxDecoration(
+                      color: colorScheme.surfaceContainerHighest,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
                   ),
                 ),
-                const SizedBox(width: 10),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      color: Theme.of(context).colorScheme.onInverseSurface,
-                      width: 100,
-                      height: 13,
-                      margin: const EdgeInsets.only(bottom: 5),
-                    ),
-                    Container(
-                      color: Theme.of(context).colorScheme.onInverseSurface,
-                      width: 50,
-                      height: 11,
-                    ),
-                  ],
-                )
-              ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class WaterfallSkeleton extends StatelessWidget {
+  final int crossAxisCount;
+
+  const WaterfallSkeleton({
+    super.key,
+    this.crossAxisCount = 2,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    // 生成不同高度的卡片
+    final List<double> heights = [180, 220, 260, 200, 240, 190, 210, 250];
+
+    return MasonryGridView.count(
+      crossAxisCount: crossAxisCount,
+      mainAxisSpacing: 12,
+      crossAxisSpacing: 12,
+      itemCount: 8,
+      itemBuilder: (context, index) {
+        final height = heights[index % heights.length];
+        return Skeleton(
+          child: Container(
+            decoration: BoxDecoration(
+              color: colorScheme.surfaceContainerHighest,
+              borderRadius: BorderRadius.circular(16),
             ),
-            Container(
-              width: double.infinity,
-              margin: const EdgeInsets.only(top: 10),
+            height: height,
+            child: Padding(
+              padding: const EdgeInsets.all(12),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  Row(
+                    children: [
+                      Container(
+                        width: 36,
+                        height: 36,
+                        decoration: BoxDecoration(
+                          color: colorScheme.surface,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Container(
+                              width: double.infinity,
+                              height: 10,
+                              decoration: BoxDecoration(
+                                color: colorScheme.surface,
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Container(
+                              width: 60,
+                              height: 8,
+                              decoration: BoxDecoration(
+                                color: colorScheme.surface,
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const Spacer(),
                   Container(
-                    color: Theme.of(context).colorScheme.onInverseSurface,
                     width: double.infinity,
-                    height: 13,
-                    margin: const EdgeInsets.only(bottom: 7),
+                    height: 10,
+                    decoration: BoxDecoration(
+                      color: colorScheme.surface,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
                   ),
+                  const SizedBox(height: 4),
                   Container(
-                    color: Theme.of(context).colorScheme.onInverseSurface,
-                    width: double.infinity,
-                    height: 13,
-                    margin: const EdgeInsets.only(bottom: 7),
-                  ),
-                  Container(
-                    color: Theme.of(context).colorScheme.onInverseSurface,
-                    width: 300,
-                    height: 13,
-                    margin: const EdgeInsets.only(bottom: 7),
-                  ),
-                  Container(
-                    color: Theme.of(context).colorScheme.onInverseSurface,
-                    width: 250,
-                    height: 13,
-                    margin: const EdgeInsets.only(bottom: 7),
-                  ),
-                  Container(
-                    color: Theme.of(context).colorScheme.onInverseSurface,
                     width: 100,
-                    height: 13,
-                    margin: const EdgeInsets.only(bottom: 7),
+                    height: 10,
+                    decoration: BoxDecoration(
+                      color: colorScheme.surface,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
                   ),
                 ],
               ),
             ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                for (var i = 0; i < 3; i++)
-                  TextButton.icon(
-                    onPressed: () {},
-                    icon: const Icon(
-                      Icons.radio_button_unchecked_outlined,
-                      size: 20,
-                    ),
-                    style: TextButton.styleFrom(
-                      padding: const EdgeInsets.fromLTRB(15, 0, 15, 0),
-                      foregroundColor: Theme.of(context)
-                          .colorScheme
-                          .outline
-                          .withValues(alpha: 0.2),
-                    ),
-                    label: Text(
-                      i == 0
-                          ? '转发'
-                          : i == 1
-                              ? '评论'
-                              : '点赞',
-                    ),
-                  )
-              ],
-            )
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 }

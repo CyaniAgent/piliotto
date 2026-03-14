@@ -82,24 +82,71 @@ class ReplyItemModel {
     parentStr = json['parent_str'];
     like = json['like'];
     action = json['action'];
-    member = json['member'] != null ? ReplyMember.fromJson(json['member']) : ReplyMember(mid: '', uname: '', sign: '', avatar: '', level: 1);
-    content = json['content'] != null ? ReplyContent.fromJson(json['content']) : ReplyContent(message: '');
+    member = json['member'] != null
+        ? ReplyMember.fromJson(json['member'])
+        : ReplyMember(mid: '', uname: '', sign: '', avatar: '', level: 1);
+    content = json['content'] != null
+        ? ReplyContent.fromJson(json['content'])
+        : ReplyContent(message: '');
     replies = json['replies'] != null
         ? json['replies']
             .map((item) => ReplyItemModel.fromJson(item, upperMid))
             .toList()
         : [];
     assist = json['assist'];
-    upAction = json['up_action'] != null ? UpAction.fromJson(json['up_action']) : UpAction(like: false, reply: false);
+    upAction = json['up_action'] != null
+        ? UpAction.fromJson(json['up_action'])
+        : UpAction(like: false, reply: false);
     invisible = json['invisible'];
     replyControl = json['reply_control'] == null
         ? null
         : ReplyControl.fromJson(json['reply_control']);
-    isUp = json['member'] != null ? upperMid.toString() == json['member']['mid'] : false;
+    isUp = json['member'] != null
+        ? upperMid.toString() == json['member']['mid']
+        : false;
     isTop = isTopStatus;
     cardLabel = json['card_label'] != null
         ? json['card_label'].map((e) => e['text_content']).toList()
         : [];
+  }
+
+  // 从Ottohub API返回的数据创建ReplyItemModel
+  ReplyItemModel.fromOttohubJson(Map<String, dynamic> json) {
+    rpid = int.tryParse(json['bcid']?.toString() ?? '0');
+    rpidStr = json['bcid']?.toString();
+    mid = int.tryParse(json['uid']?.toString() ?? '0');
+    parent = int.tryParse(json['parent_bcid']?.toString() ?? '0');
+    parentStr = json['parent_bcid']?.toString();
+    root = parent;
+    rootStr = parentStr;
+    like = 0;
+    count = json['child_comment_num'];
+    ctime = 0;
+    member = ReplyMember(
+      mid: json['uid']?.toString() ?? '',
+      uname: json['username']?.toString() ?? '未知用户',
+      sign: '',
+      avatar: json['avatar_url']?.toString() ?? '',
+      level: 1,
+      vip: {'vipStatus': 0, 'vipType': 0},
+      officialVerify: {},
+      userSailing: UserSailing(),
+      ottohubData: {
+        'honour': json['honour'],
+      },
+    );
+    content = ReplyContent.fromJson({
+      'message': json['content']?.toString() ?? '',
+    });
+    replies = [];
+    upAction = UpAction(like: false, reply: false);
+    invisible = false;
+    isUp = false;
+    isTop = false;
+    cardLabel = [];
+    replyControl = ReplyControl(
+      time: json['time']?.toString(),
+    );
   }
 }
 

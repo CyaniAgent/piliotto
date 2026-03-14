@@ -1,26 +1,14 @@
-import 'dart:async';
-
-import 'package:custom_sliding_segmented_control/custom_sliding_segmented_control.dart';
 import 'package:easy_debounce/easy_throttle.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:get/get.dart';
-import 'package:hive/hive.dart';
 import 'package:piliotto/common/skeleton/dynamic_card.dart';
-import 'package:piliotto/common/widgets/http_error.dart';
 import 'package:piliotto/common/widgets/no_data.dart';
-import 'package:piliotto/models/dynamics/result.dart';
-import 'package:piliotto/plugin/pl_popup/index.dart';
 import 'package:piliotto/utils/feed_back.dart';
-import 'package:piliotto/utils/main_stream.dart';
 import 'package:piliotto/utils/responsive_util.dart';
-import 'package:piliotto/utils/route_push.dart';
-import 'package:piliotto/utils/storage.dart';
 
-import '../mine/controller.dart';
 import 'controller.dart';
 import 'widgets/dynamic_panel.dart';
-import 'up_dynamic/route_panel.dart';
-import 'widgets/up_panel.dart';
 
 class DynamicsPage extends StatefulWidget {
   const DynamicsPage({super.key});
@@ -30,13 +18,9 @@ class DynamicsPage extends StatefulWidget {
 }
 
 class _DynamicsPageState extends State<DynamicsPage>
-    with AutomaticKeepAliveClientMixin {
+    with AutomaticKeepAliveClientMixin, TickerProviderStateMixin {
   final DynamicsController _dynamicsController = Get.put(DynamicsController());
-  final MineController mineController = Get.put(MineController());
-  late Future _futureBuilderFuture;
-  late Future _futureBuilderFutureUp;
-  Box userInfoCache = GStrorage.userInfo;
-  late ScrollController scrollController;
+  late TabController _tabController;
 
   @override
   bool get wantKeepAlive => true;
@@ -44,300 +28,397 @@ class _DynamicsPageState extends State<DynamicsPage>
   @override
   void initState() {
     super.initState();
-    _futureBuilderFuture = _dynamicsController.queryFollowDynamic();
-    _futureBuilderFutureUp = _dynamicsController.queryFollowUp();
-    scrollController = _dynamicsController.scrollController;
-    scrollController.addListener(
-      () async {
-        if (scrollController.position.pixels >=
-            scrollController.position.maxScrollExtent - 200) {
-          EasyThrottle.throttle(
-              'queryFollowDynamic', const Duration(seconds: 1), () {
-            _dynamicsController.queryFollowDynamic(type: 'onLoad');
-          });
-        }
-        handleScrollEvent(scrollController);
-      },
-    );
-
-    _dynamicsController.userLogin.listen((status) {
-      if (mounted) {
-        setState(() {
-          _futureBuilderFuture = _dynamicsController.queryFollowDynamic();
-          _futureBuilderFutureUp = _dynamicsController.queryFollowUp();
-        });
-      }
-    });
+    _tabController = TabController(length: 2, vsync: this);
+    _tabController.addListener(_onTabChanged);
+    _dynamicsController.queryFollowDynamic();
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // 初始计算列数
     _dynamicsController.updateCrossAxisCount();
-  }
-
-  @override
-  void didUpdateWidget(covariant DynamicsPage oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    // 屏幕尺寸变化时的防抖处理
     EasyThrottle.throttle(
-        'dynamicsPageDidChange', const Duration(milliseconds: 100), () {
-      // 更新列数
-      _dynamicsController.updateCrossAxisCount();
-    });
+        'dynamicsPageDidChange', const Duration(milliseconds: 100), () {});
   }
 
   @override
   void dispose() {
-    scrollController.removeListener(() {});
+    _tabController.removeListener(_onTabChanged);
+    _tabController.dispose();
     super.dispose();
+  }
+
+  void _onTabChanged() {
+    if (_tabController.indexIsChanging) return;
+    final tab = _tabController.index == 0 ? 'latest' : 'popular';
+    _dynamicsController.onTabChanged(tab);
   }
 
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    bool isWideScreen = ResponsiveUtil.isMd;
-    double screenWidth = MediaQuery.of(context).size.width;
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    // 宽屏包括大屏幕和超大屏幕
+    final isWideScreen = ResponsiveUtil.isLg || ResponsiveUtil.isXl;
+    final top = MediaQuery.of(context).padding.top;
 
     return Scaffold(
-      appBar: AppBar(
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        title: SizedBox(
-          height: 34,
-          child: Stack(
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Obx(() {
-                    if (_dynamicsController.mid.value != -1 &&
-                        _dynamicsController.upInfo.value.uname != null) {
-                      return SizedBox(
-                        height: 36,
-                        child: AnimatedSwitcher(
-                          duration: const Duration(milliseconds: 300),
-                          transitionBuilder:
-                              (Widget child, Animation<double> animation) {
-                            return ScaleTransition(
-                                scale: animation, child: child);
-                          },
-                          child: Text(
-                              '${_dynamicsController.upInfo.value.uname!}的动态',
-                              key: ValueKey<String>(
-                                  _dynamicsController.upInfo.value.uname!),
-                              style: TextStyle(
-                                fontSize: Theme.of(context)
-                                    .textTheme
-                                    .labelLarge!
-                                    .fontSize,
-                              )),
-                        ),
-                      );
-                    } else {
-                      return const SizedBox();
-                    }
-                  }),
-                  Obx(
-                    () => _dynamicsController.userLogin.value
-                        ? Visibility(
-                            visible: _dynamicsController.mid.value == -1,
-                            child: Theme(
-                              data: ThemeData(
-                                splashColor:
-                                    Colors.transparent, // 点击时的水波纹颜色设置为透明
-                                highlightColor:
-                                    Colors.transparent, // 点击时的背景高亮颜色设置为透明
-                              ),
-                              child: CustomSlidingSegmentedControl<int>(
-                                initialValue:
-                                    _dynamicsController.initialValue.value,
-                                children: {
-                                  0: Text(
-                                    '全部',
-                                    style: TextStyle(
-                                        fontSize: Theme.of(context)
-                                            .textTheme
-                                            .labelMedium!
-                                            .fontSize),
-                                  ),
-                                  1: Text('投稿',
-                                      style: TextStyle(
-                                          fontSize: Theme.of(context)
-                                              .textTheme
-                                              .labelMedium!
-                                              .fontSize)),
-                                  2: Text('番剧',
-                                      style: TextStyle(
-                                          fontSize: Theme.of(context)
-                                              .textTheme
-                                              .labelMedium!
-                                              .fontSize)),
-                                  3: Text('专栏',
-                                      style: TextStyle(
-                                          fontSize: Theme.of(context)
-                                              .textTheme
-                                              .labelMedium!
-                                              .fontSize)),
-                                },
-                                padding: 13.0,
-                                decoration: BoxDecoration(
-                                  color: Theme.of(context)
-                                      .colorScheme
-                                      .surfaceContainerHighest
-                                      .withValues(alpha: 0.7),
-                                  borderRadius: BorderRadius.circular(20),
-                                ),
-                                thumbDecoration: BoxDecoration(
-                                  color: Theme.of(context).colorScheme.surface,
-                                  borderRadius: BorderRadius.circular(20),
-                                ),
-                                duration: const Duration(milliseconds: 300),
-                                curve: Curves.easeInOut,
-                                onValueChanged: (v) {
-                                  feedBack();
-                                  _dynamicsController.onSelectType(v);
-                                },
-                              ),
-                            ),
-                          )
-                        : Text('动态',
-                            style: Theme.of(context).textTheme.titleMedium),
-                  )
+      body: Column(
+        children: [
+          SizedBox(height: top + 6),
+          _buildHeader(theme, colorScheme, isWideScreen),
+          const SizedBox(height: 4),
+          SizedBox(
+            width: double.infinity,
+            height: 42,
+            child: Align(
+              alignment: Alignment.center,
+              child: TabBar(
+                controller: _tabController,
+                tabs: const [
+                  Tab(text: '最新'),
+                  Tab(text: '热门'),
                 ],
+                isScrollable: true,
+                dividerColor: Colors.transparent,
+                enableFeedback: true,
+                splashBorderRadius: BorderRadius.circular(10),
+                tabAlignment: TabAlignment.center,
+                onTap: (value) {
+                  feedBack();
+                  _dynamicsController
+                      .onTabChanged(value == 0 ? 'latest' : 'popular');
+                },
               ),
-            ],
+            ),
           ),
-        ),
-      ),
-      body: RefreshIndicator(
-        onRefresh: () => _dynamicsController.onRefresh(),
-        child: CustomScrollView(
-          controller: _dynamicsController.scrollController,
-          slivers: [
-            FutureBuilder(
-              future: _futureBuilderFutureUp,
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.done) {
-                  if (snapshot.data == null) {
-                    return const SliverToBoxAdapter(child: SizedBox());
-                  }
-                  Map data = snapshot.data;
-                  if (data['status']) {
-                    return Obx(
-                      () => UpPanel(
-                        upData: _dynamicsController.upData.value,
-                        onClickUpCb: (data) {
-                          // _dynamicsController.onTapUp(data);
-                          Navigator.push(
-                            context,
-                            PlPopupRoute(
-                              child: OverlayPanel(
-                                  ctr: _dynamicsController, upInfo: data),
-                            ),
-                          );
-                        },
-                      ),
-                    );
-                  } else {
-                    return const SliverToBoxAdapter(
-                      child: SizedBox(height: 80),
-                    );
-                  }
-                } else {
-                  return const SliverToBoxAdapter(
-                      child: SizedBox(
-                    height: 90,
-                    child: UpPanelSkeleton(),
-                  ));
-                }
-              },
+          Expanded(
+            child: TabBarView(
+              controller: _tabController,
+              children: [
+                _TabPage(
+                  tab: 'latest',
+                  dynamicsController: _dynamicsController,
+                ),
+                _TabPage(
+                  tab: 'popular',
+                  dynamicsController: _dynamicsController,
+                ),
+              ],
             ),
-            FutureBuilder(
-              future: _futureBuilderFuture,
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.done) {
-                  if (snapshot.data == null) {
-                    return const SliverToBoxAdapter(child: SizedBox());
-                  }
-                  Map? data = snapshot.data;
-                  if (data != null && data['status']) {
-                    List<DynamicItemModel> list =
-                        _dynamicsController.dynamicsList;
-                    return Obx(
-                      () {
-                        if (list.isEmpty) {
-                          if (_dynamicsController.isLoadingDynamic.value) {
-                            return skeleton();
-                          } else {
-                            return const SliverToBoxAdapter(child: NoData());
-                          }
-                        } else {
-                          return SliverPadding(
-                            padding: EdgeInsets.symmetric(
-                              horizontal: isWideScreen ? screenWidth * 0.2 : 0,
-                            ),
-                            sliver: SliverList(
-                              delegate: SliverChildBuilderDelegate(
-                                (context, index) {
-                                  return DynamicPanel(item: list[index]);
-                                },
-                                childCount: list.length,
-                              ),
-                            ),
-                          );
-                        }
-                      },
-                    );
-                  } else {
-                    return SliverPadding(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: isWideScreen ? screenWidth * 0.2 : 0,
-                      ),
-                      sliver: SliverToBoxAdapter(
-                        child: HttpError(
-                          errMsg: data?['msg'] ?? '请求异常',
-                          btnText: data?['code'] == -101 ? '去登录' : null,
-                          fn: () {
-                            if (data?['code'] == -101) {
-                              RoutePush.loginRedirectPush();
-                            } else {
-                              setState(() {
-                                _futureBuilderFuture =
-                                    _dynamicsController.queryFollowDynamic();
-                                _futureBuilderFutureUp =
-                                    _dynamicsController.queryFollowUp();
-                              });
-                            }
-                          },
-                        ),
-                      ),
-                    );
-                  }
-                } else {
-                  // 骨架屏
-                  return SliverPadding(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: isWideScreen ? screenWidth * 0.2 : 0,
-                    ),
-                    sliver: skeleton(),
-                  );
-                }
-              },
-            ),
-            const SliverToBoxAdapter(child: SizedBox(height: 40))
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 
-  Widget skeleton() {
-    return SliverList(
-      delegate: SliverChildBuilderDelegate((context, index) {
-        return const DynamicCardSkeleton();
-      }, childCount: 5),
+  Widget _buildHeader(
+      ThemeData theme, ColorScheme colorScheme, bool isWideScreen) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 14),
+      child: Row(
+        children: [
+          Text(
+            '动态',
+            style: theme.textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const Spacer(),
+          if (isWideScreen)
+            Obx(() => IconButton(
+                  onPressed: () => _dynamicsController.toggleWideScreenLayout(),
+                  icon: Icon(
+                    _dynamicsController.wideScreenLayout.value == 'center'
+                        ? Icons.view_column_outlined
+                        : Icons.view_agenda_outlined,
+                    color: colorScheme.onSurface,
+                  ),
+                  tooltip:
+                      _dynamicsController.wideScreenLayout.value == 'center'
+                          ? '切换为瀑布流布局'
+                          : '切换为居中布局',
+                )),
+          IconButton(
+            onPressed: () {},
+            icon: Icon(
+              Icons.edit_outlined,
+              color: colorScheme.onSurface,
+            ),
+          ),
+        ],
+      ),
     );
+  }
+}
+
+class _TabPage extends StatefulWidget {
+  final String tab;
+  final DynamicsController dynamicsController;
+
+  const _TabPage({
+    required this.tab,
+    required this.dynamicsController,
+  });
+
+  @override
+  State<_TabPage> createState() => _TabPageState();
+}
+
+class _TabPageState extends State<_TabPage> with AutomaticKeepAliveClientMixin {
+  final ScrollController _scrollController = ScrollController();
+
+  @override
+  bool get wantKeepAlive => true;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(_onScroll);
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - 200) {
+      EasyThrottle.throttle(
+          'queryFollowDynamic_${widget.tab}', const Duration(seconds: 1), () {
+        widget.dynamicsController.queryFollowDynamic(type: 'onLoad');
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context);
+    final colorScheme = Theme.of(context).colorScheme;
+    // 宽屏包括大屏幕和超大屏幕
+    final isWideScreen = ResponsiveUtil.isLg || ResponsiveUtil.isXl;
+    final screenWidth = MediaQuery.of(context).size.width;
+
+    return Obx(() {
+      final currentTab = widget.dynamicsController.currentTab.value;
+      final isCurrentTab = currentTab == widget.tab;
+
+      // 获取当前 tab 的缓存数据
+      final cachedList = widget.dynamicsController.getTabData(widget.tab);
+      final hasLoaded = widget.dynamicsController.hasTabLoaded(widget.tab);
+      final wideScreenLayout = widget.dynamicsController.wideScreenLayout.value;
+
+      // 如果是当前 tab 且缓存为空且未加载，显示骨架屏
+      if (cachedList.isEmpty && !hasLoaded) {
+        if (widget.dynamicsController.isLoadingDynamic.value && isCurrentTab) {
+          return _buildSkeletonList(
+              isWideScreen, screenWidth, wideScreenLayout);
+        } else {
+          return const NoData();
+        }
+      }
+
+      return RefreshIndicator(
+        onRefresh: () => widget.dynamicsController.onRefresh(),
+        child: _buildContentList(
+          cachedList,
+          colorScheme,
+          isWideScreen,
+          screenWidth,
+          wideScreenLayout,
+        ),
+      );
+    });
+  }
+
+  Widget _buildContentList(
+    List<dynamic> cachedList,
+    ColorScheme colorScheme,
+    bool isWideScreen,
+    double screenWidth,
+    String wideScreenLayout,
+  ) {
+    // 宽屏 + 瀑布流模式
+    if (isWideScreen && wideScreenLayout == 'waterfall') {
+      return _buildWaterfallList(cachedList, colorScheme, screenWidth);
+    }
+
+    // 居中模式（默认）
+    return _buildCenteredList(
+        cachedList, colorScheme, isWideScreen, screenWidth);
+  }
+
+  Widget _buildCenteredList(
+    List<dynamic> cachedList,
+    ColorScheme colorScheme,
+    bool isWideScreen,
+    double screenWidth,
+  ) {
+    const contentMaxWidth = 600.0;
+
+    return ListView.builder(
+      controller: _scrollController,
+      padding:
+          _buildCenteredListPadding(isWideScreen, screenWidth, contentMaxWidth),
+      itemCount: cachedList.length + 1,
+      itemBuilder: (context, index) {
+        if (index == cachedList.length) {
+          return _buildLoadingIndicator(colorScheme);
+        }
+
+        return Container(
+          margin: const EdgeInsets.symmetric(vertical: 6),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final itemWidth = isWideScreen ? 600.0 : constraints.maxWidth;
+              return SizedBox(
+                width: itemWidth,
+                child: DynamicPanel(item: cachedList[index]),
+              );
+            },
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildWaterfallList(
+    List<dynamic> cachedList,
+    ColorScheme colorScheme,
+    double screenWidth,
+  ) {
+    // 根据屏幕宽度自适应列数
+    int crossAxisCount;
+    if (screenWidth >= 1200) {
+      crossAxisCount = 4;
+    } else if (screenWidth >= 900) {
+      crossAxisCount = 3;
+    } else {
+      crossAxisCount = 2;
+    }
+
+    return MasonryGridView.count(
+      controller: _scrollController,
+      padding: const EdgeInsets.only(
+        left: 12,
+        right: 12,
+        top: 8,
+        bottom: 80,
+      ),
+      crossAxisCount: crossAxisCount,
+      mainAxisSpacing: 12,
+      crossAxisSpacing: 12,
+      itemCount: cachedList.length + 1,
+      itemBuilder: (context, index) {
+        if (index == cachedList.length) {
+          return _buildLoadingIndicator(colorScheme);
+        }
+        return DynamicPanel(item: cachedList[index]);
+      },
+    );
+  }
+
+  Widget _buildSkeletonList(
+      bool isWideScreen, double screenWidth, String wideScreenLayout) {
+    // 宽屏 + 瀑布流模式
+    if (isWideScreen && wideScreenLayout == 'waterfall') {
+      return _buildWaterfallSkeletonList(screenWidth);
+    }
+
+    // 居中模式（默认）
+    return _buildCenteredSkeletonList(isWideScreen, screenWidth);
+  }
+
+  Widget _buildCenteredSkeletonList(bool isWideScreen, double screenWidth) {
+    const contentMaxWidth = 600.0;
+
+    return ListView.builder(
+      padding:
+          _buildCenteredListPadding(isWideScreen, screenWidth, contentMaxWidth),
+      itemCount: 5,
+      itemBuilder: (context, index) => Container(
+        margin: const EdgeInsets.symmetric(vertical: 6),
+        child: const DynamicCardSkeleton(),
+      ),
+    );
+  }
+
+  Widget _buildWaterfallSkeletonList(double screenWidth) {
+    int crossAxisCount;
+    if (screenWidth >= 1200) {
+      crossAxisCount = 4;
+    } else if (screenWidth >= 900) {
+      crossAxisCount = 3;
+    } else {
+      crossAxisCount = 2;
+    }
+
+    return Padding(
+      padding: const EdgeInsets.only(
+        left: 12,
+        right: 12,
+        top: 8,
+        bottom: 80,
+      ),
+      child: WaterfallSkeleton(crossAxisCount: crossAxisCount),
+    );
+  }
+
+  EdgeInsets _buildCenteredListPadding(
+      bool isWideScreen, double screenWidth, double maxWidth) {
+    if (isWideScreen) {
+      final horizontalPadding = (screenWidth - maxWidth) / 2;
+      return EdgeInsets.only(
+        left: horizontalPadding,
+        right: horizontalPadding,
+        top: 8,
+        bottom: MediaQuery.of(context).padding.bottom + 80,
+      );
+    }
+    return const EdgeInsets.only(
+      left: 12,
+      right: 12,
+      bottom: 80,
+    );
+  }
+
+  Widget _buildLoadingIndicator(ColorScheme colorScheme) {
+    return Obx(() => Container(
+          padding: const EdgeInsets.symmetric(vertical: 20),
+          child: Center(
+            child: widget.dynamicsController.isLoadingDynamic.value
+                ? Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: colorScheme.primary,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Text(
+                        '加载中...',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: colorScheme.outline,
+                        ),
+                      ),
+                    ],
+                  )
+                : Text(
+                    widget.dynamicsController.hasMore.value ? '' : '没有更多了',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: colorScheme.outline,
+                    ),
+                  ),
+          ),
+        ));
   }
 }

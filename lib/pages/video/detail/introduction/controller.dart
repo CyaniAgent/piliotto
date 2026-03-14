@@ -48,14 +48,8 @@ class VideoIntroController extends GetxController {
 
   dynamic userInfo;
 
-  // 同时观看
-  bool isShowOnlineTotal = false;
-  RxString total = '1'.obs;
-  Timer? timer;
-  bool isPaused = false;
   String heroTag = '';
   PersistentBottomSheetController? bottomSheetController;
-  late bool enableRelatedVideo;
 
   @override
   void onInit() {
@@ -63,14 +57,6 @@ class VideoIntroController extends GetxController {
     userInfo = userInfoCache.get('userInfoCache');
     heroTag = Get.arguments?['heroTag'] ?? '';
     userLogin = userInfo != null;
-    isShowOnlineTotal =
-        setting.get(SettingBoxKey.enableOnlineTotal, defaultValue: false);
-    if (isShowOnlineTotal) {
-      queryOnlineTotal();
-      startTimer(); // 在页面加载时启动定时器
-    }
-    enableRelatedVideo =
-        setting.get(SettingBoxKey.enableRelatedVideo, defaultValue: true);
   }
 
   // 获取视频简介
@@ -286,28 +272,7 @@ class VideoIntroController extends GetxController {
     await queryVideoIntro();
   }
 
-  void startTimer() {
-    const duration = Duration(seconds: 10); // 设置定时器间隔为10秒
-    timer = Timer.periodic(duration, (Timer timer) {
-      if (!isPaused) {
-        queryOnlineTotal(); // 定时器回调函数，发起请求
-      }
-    });
-  }
 
-  // 查看同时在看人数
-  Future queryOnlineTotal() async {
-    // Ottohub API 暂不支持获取同时观看人数
-    total.value = '1';
-  }
-
-  @override
-  void onClose() {
-    if (timer != null) {
-      timer!.cancel(); // 销毁页面时取消定时器
-    }
-    super.onClose();
-  }
 
   /// 列表循环或者顺序播放时，自动播放下一个
   void nextPlay() {
@@ -320,21 +285,7 @@ class VideoIntroController extends GetxController {
     SmartDialog.showToast('暂不支持此功能');
   }
 
-  // ai总结
-  Future aiConclusion() async {
-    // Ottohub API 暂不支持AI视频总结
-    SmartDialog.showToast('暂不支持此功能');
-  }
 
-  hiddenEpisodeBottomSheet() {
-    bottomSheetController?.close();
-  }
-
-  // 播放器底栏 选集 回调
-  void showEposideHandler() {
-    // Ottohub API 暂不支持分P或番剧分集
-    SmartDialog.showToast('暂不支持此功能');
-  }
 
   //
   oneThreeDialog() {

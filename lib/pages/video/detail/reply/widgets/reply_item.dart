@@ -38,6 +38,7 @@ class ReplyItem extends StatefulWidget {
     this.replyReply,
     this.replyType,
     this.replySave = false,
+    this.showLikeButton = true,
     super.key,
   });
   final ReplyItemModel? replyItem;
@@ -47,6 +48,7 @@ class ReplyItem extends StatefulWidget {
   final Function? replyReply;
   final ReplyType? replyType;
   final bool? replySave;
+  final bool showLikeButton;
 
   @override
   State<ReplyItem> createState() => _ReplyItemState();
@@ -56,7 +58,7 @@ class _ReplyItemState extends State<ReplyItem> {
   bool _isExpanded = false;
 
   bool get _needsExpandButton {
-    if (widget.replyItem!.content!.isText! && widget.replyLevel == '1') {
+    if (widget.replyItem!.content?.isText == true && widget.replyLevel == '1') {
       final message = widget.replyItem!.content!.message ?? '';
       final lineCount = '\n'.allMatches(message).length + 1;
       final estimatedLines = (message.length / 30).ceil();
@@ -114,7 +116,9 @@ class _ReplyItemState extends State<ReplyItem> {
               ),
             ),
           ),
-        if (widget.replyItem!.member!.vip!['vipStatus'] > 0 &&
+        if (widget.replyItem!.member!.vip != null &&
+            widget.replyItem!.member!.vip!['vipStatus'] != null &&
+            widget.replyItem!.member!.vip!['vipStatus'] > 0 &&
             widget.replyItem!.member!.vip!['vipType'] == 2)
           Positioned(
             right: 0,
@@ -163,14 +167,44 @@ class _ReplyItemState extends State<ReplyItem> {
                   Row(
                     children: [
                       Text(
-                        widget.replyItem!.member!.uname!,
+                        widget.replyItem!.member!.uname ?? '',
                         style: TextStyle(
-                          color: widget.replyItem!.member!.vip!['vipStatus'] > 0
+                          color: widget.replyItem!.member!.vip != null &&
+                                  widget.replyItem!.member!.vip!['vipStatus'] !=
+                                      null &&
+                                  widget.replyItem!.member!.vip!['vipStatus'] >
+                                      0
                               ? const Color.fromARGB(255, 251, 100, 163)
                               : colorScheme.outline,
                           fontSize: 13,
                         ),
                       ),
+                      // Ottohub 头衔显示
+                      if (widget.replyItem!.member!.ottohubData != null &&
+                          widget.replyItem!.member!.ottohubData!['honour'] !=
+                              null &&
+                          widget.replyItem!.member!.ottohubData!['honour']
+                              .toString()
+                              .isNotEmpty)
+                        Container(
+                          margin: const EdgeInsets.only(left: 6),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 1,
+                          ),
+                          decoration: BoxDecoration(
+                            color: colorScheme.secondaryContainer,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(
+                            widget.replyItem!.member!.ottohubData!['honour']
+                                .toString(),
+                            style: TextStyle(
+                              fontSize: 10,
+                              color: colorScheme.onSecondaryContainer,
+                            ),
+                          ),
+                        ),
                       if (widget.replyItem!.isUp!)
                         const Padding(
                           padding: EdgeInsets.only(left: 6),
@@ -194,16 +228,18 @@ class _ReplyItemState extends State<ReplyItem> {
                           ),
                         ),
                         if (widget.replyItem!.replyControl != null &&
-                            widget.replyItem!.replyControl!.location != '')
+                            widget.replyItem!.replyControl!.location != null &&
+                            widget
+                                .replyItem!.replyControl!.location!.isNotEmpty)
                           TextSpan(
                             text:
-                                ' • ${widget.replyItem!.replyControl!.location!}',
+                                ' • ${widget.replyItem!.replyControl!.location}',
                             style: TextStyle(
                               fontSize: textTheme.labelSmall!.fontSize,
                               color: colorScheme.outline,
                             ),
                           ),
-                        if (widget.replyItem!.invisible!)
+                        if (widget.replyItem!.invisible == true)
                           TextSpan(
                             text: ' • 隐藏的评论',
                             style: TextStyle(
@@ -225,7 +261,7 @@ class _ReplyItemState extends State<ReplyItem> {
           child: SelectionArea(
             child: Text.rich(
               style: const TextStyle(height: 1.75),
-              maxLines: widget.replyItem!.content!.isText! &&
+              maxLines: widget.replyItem!.content?.isText == true &&
                       widget.replyLevel == '1' &&
                       !_isExpanded
                   ? 6
@@ -233,7 +269,7 @@ class _ReplyItemState extends State<ReplyItem> {
               overflow: TextOverflow.ellipsis,
               TextSpan(
                 children: [
-                  if (widget.replyItem!.isTop!)
+                  if (widget.replyItem!.isTop == true)
                     const WidgetSpan(
                       alignment: PlaceholderAlignment.top,
                       child: PBadge(
@@ -273,10 +309,10 @@ class _ReplyItemState extends State<ReplyItem> {
         // 操作区域
         bottonAction(context, widget.replyItem!.replyControl, widget.replySave),
         // 一楼的评论 - 二级评论功能
-        if ((widget.replyItem!.replyControl!.isShow! ||
+        if ((widget.replyItem!.replyControl?.isShow == true ||
                 (widget.replyItem!.replies != null &&
                     widget.replyItem!.replies!.isNotEmpty)) &&
-            widget.showReplyRow!) ...[
+            widget.showReplyRow == true) ...[
           Padding(
             padding: const EdgeInsets.only(top: 5, bottom: 12),
             child: ReplyItemRow(
@@ -362,7 +398,8 @@ class _ReplyItemState extends State<ReplyItem> {
     return Row(
       children: <Widget>[
         const SizedBox(width: 32),
-        ZanButton(replyItem: widget.replyItem!, replyType: widget.replyType),
+        if (widget.showLikeButton)
+          ZanButton(replyItem: widget.replyItem!, replyType: widget.replyType),
         if (widget.replySave!) ...[
           SizedBox(
             height: 32,

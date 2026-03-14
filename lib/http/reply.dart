@@ -34,6 +34,7 @@ class ReplyHttp {
     }
   }
 
+  // 楼中楼评论列表（Ottohub 不支持）
   static Future replyReplyList({
     required int oid,
     required String root,
@@ -41,60 +42,23 @@ class ReplyHttp {
     required int type,
     int sort = 1,
   }) async {
-    var res = await Request().get(Api.replyReplyList, data: {
-      'oid': oid,
-      'root': root,
-      'pn': pageNum,
-      'type': type,
-      'sort': 1,
-      'csrf': await Request.getCsrf(),
-    });
-    if (res.data['code'] == 0) {
-      return {
-        'status': true,
-        'data': ReplyData.fromJson(res.data['data']),
-      };
-    } else {
-      Map errMap = {
-        -400: '请求错误',
-        -404: '无此项',
-        12002: '评论区已关闭',
-        12009: '评论主体的type不合法',
-      };
-      return {
-        'status': false,
-        'date': [],
-        'msg': errMap[res.data['code']] ?? '请求异常',
-      };
-    }
+    return {
+      'status': false,
+      'msg': 'Ottohub API 不支持楼中楼评论功能',
+    };
   }
 
-  // 评论点赞
+  // 评论点赞（Ottohub 不支持）
   static Future likeReply({
     required int type,
     required int oid,
     required int rpid,
     required int action,
   }) async {
-    var res = await Request().post(
-      Api.likeReply,
-      data: {
-        'type': type,
-        'oid': oid,
-        'rpid': rpid,
-        'action': action,
-        'csrf': await Request.getCsrf(),
-      },
-    );
-    if (res.data['code'] == 0) {
-      return {'status': true, 'data': res.data['data']};
-    } else {
-      return {
-        'status': false,
-        'date': [],
-        'msg': res.data['message'],
-      };
-    }
+    return {
+      'status': false,
+      'msg': 'Ottohub API 不支持评论点赞功能',
+    };
   }
 
   static Future getEmoteList({String? business}) async {
@@ -116,24 +80,15 @@ class ReplyHttp {
     }
   }
 
+  // 删除评论（Ottohub 不支持）
   static Future replyDel({
-    required int type, //replyType
+    required type, //replyType
     required int oid,
     required int rpid,
   }) async {
-    var res = await Request().post(
-      Api.replyDel,
-      queryParameters: {
-        'type': type, //type.index
-        'oid': oid,
-        'rpid': rpid,
-        'csrf': await Request.getCsrf(),
-      },
-    );
-    if (res.data['code'] == 0) {
-      return {'status': true, 'msg': '删除成功'};
-    } else {
-      return {'status': false, 'msg': res.data['message']};
-    }
+    return {
+      'status': false,
+      'msg': 'Ottohub API 不支持删除评论功能',
+    };
   }
 }

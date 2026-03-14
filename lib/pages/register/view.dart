@@ -11,11 +11,19 @@ class RegisterPage extends StatefulWidget {
 }
 
 class _RegisterPageState extends State<RegisterPage> {
-  final LoginPageController _loginPageCtr = Get.put(LoginPageController());
+  late String heroTag;
+  late RegisterPageController _registerPageCtr;
+
+  @override
+  void initState() {
+    super.initState();
+    heroTag = 'register_${DateTime.now().millisecondsSinceEpoch}';
+    _registerPageCtr = Get.put(RegisterPageController(), tag: heroTag);
+  }
 
   @override
   void dispose() {
-    _loginPageCtr.timer?.cancel();
+    _registerPageCtr.timer?.cancel();
     super.dispose();
   }
 
@@ -25,9 +33,9 @@ class _RegisterPageState extends State<RegisterPage> {
       appBar: AppBar(
         leading: IconButton(
           onPressed: () async {
-            _loginPageCtr.emailTextFieldNode.unfocus();
-            _loginPageCtr.passwordTextFieldNode.unfocus();
-            _loginPageCtr.confirmPasswordTextFieldNode.unfocus();
+            _registerPageCtr.emailTextFieldNode.unfocus();
+            _registerPageCtr.passwordTextFieldNode.unfocus();
+            _registerPageCtr.verificationCodeTextFieldNode.unfocus();
             await Future.delayed(const Duration(milliseconds: 200));
             Get.back();
           },
@@ -37,12 +45,11 @@ class _RegisterPageState extends State<RegisterPage> {
       body: LayoutBuilder(
         builder: (context, constraints) {
           bool isWideScreen = constraints.maxWidth > 800;
-          
+
           if (isWideScreen) {
             return Center(
               child: Row(
                 children: [
-                  // 左侧占位区域，占60%宽度
                   Expanded(
                     flex: 3,
                     child: Container(
@@ -53,10 +60,13 @@ class _RegisterPageState extends State<RegisterPage> {
                           children: [
                             Text(
                               'Ottohub',
-                              style: Theme.of(context).textTheme.displayLarge!.copyWith(
-                                fontWeight: FontWeight.bold,
-                                color: Theme.of(context).colorScheme.primary,
-                              ),
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .displayLarge!
+                                  .copyWith(
+                                    fontWeight: FontWeight.bold,
+                                    color: Theme.of(context).colorScheme.primary,
+                                  ),
                             ),
                             const SizedBox(height: 20),
                             Text(
@@ -68,7 +78,6 @@ class _RegisterPageState extends State<RegisterPage> {
                       ),
                     ),
                   ),
-                  // 右侧注册表单，占40%宽度
                   Expanded(
                     flex: 2,
                     child: Padding(
@@ -77,18 +86,21 @@ class _RegisterPageState extends State<RegisterPage> {
                         vertical: 40,
                       ),
                       child: Form(
-                        key: _loginPageCtr.registerFormKey,
+                        key: _registerPageCtr.registerFormKey,
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Text(
                               '注册',
-                              style: Theme.of(context).textTheme.titleLarge!.copyWith(
-                                  letterSpacing: 1,
-                                  height: 2.1,
-                                  fontSize: 34,
-                                  fontWeight: FontWeight.w500),
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleLarge!
+                                  .copyWith(
+                                      letterSpacing: 1,
+                                      height: 2.1,
+                                      fontSize: 34,
+                                      fontWeight: FontWeight.w500),
                             ),
                             Text(
                               '创建您的 Ottohub 账号。',
@@ -97,8 +109,8 @@ class _RegisterPageState extends State<RegisterPage> {
                             Container(
                               margin: const EdgeInsets.only(top: 38, bottom: 15),
                               child: TextFormField(
-                                controller: _loginPageCtr.emailTextController,
-                                focusNode: _loginPageCtr.emailTextFieldNode,
+                                controller: _registerPageCtr.emailTextController,
+                                focusNode: _registerPageCtr.emailTextFieldNode,
                                 keyboardType: TextInputType.emailAddress,
                                 decoration: InputDecoration(
                                   isDense: true,
@@ -121,10 +133,13 @@ class _RegisterPageState extends State<RegisterPage> {
                             Container(
                               margin: const EdgeInsets.only(bottom: 15),
                               child: Obx(() => TextFormField(
-                                    controller: _loginPageCtr.passwordTextController,
-                                    focusNode: _loginPageCtr.passwordTextFieldNode,
+                                    controller:
+                                        _registerPageCtr.passwordTextController,
+                                    focusNode:
+                                        _registerPageCtr.passwordTextFieldNode,
                                     keyboardType: TextInputType.visiblePassword,
-                                    obscureText: _loginPageCtr.passwordVisible.value,
+                                    obscureText:
+                                        _registerPageCtr.passwordVisible.value,
                                     decoration: InputDecoration(
                                       isDense: true,
                                       labelText: '输入密码',
@@ -133,13 +148,17 @@ class _RegisterPageState extends State<RegisterPage> {
                                       ),
                                       suffixIcon: IconButton(
                                         icon: Icon(
-                                          _loginPageCtr.passwordVisible.value
+                                          _registerPageCtr.passwordVisible.value
                                               ? Icons.visibility
                                               : Icons.visibility_off,
-                                          color: Theme.of(context).colorScheme.primary,
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .primary,
                                         ),
                                         onPressed: () {
-                                          _loginPageCtr.passwordVisible.value = !_loginPageCtr.passwordVisible.value;
+                                          _registerPageCtr.passwordVisible
+                                              .value = !_registerPageCtr
+                                              .passwordVisible.value;
                                         },
                                       ),
                                     ),
@@ -160,29 +179,38 @@ class _RegisterPageState extends State<RegisterPage> {
                                 children: [
                                   Expanded(
                                     child: TextFormField(
-                                      controller: _loginPageCtr.confirmPasswordTextController,
-                                      focusNode: _loginPageCtr.confirmPasswordTextFieldNode,
+                                      controller: _registerPageCtr
+                                          .verificationCodeController,
+                                      focusNode: _registerPageCtr
+                                          .verificationCodeTextFieldNode,
                                       maxLength: 6,
                                       keyboardType: TextInputType.number,
                                       decoration: InputDecoration(
                                         isDense: true,
                                         labelText: '输入验证码',
                                         border: OutlineInputBorder(
-                                          borderRadius: BorderRadius.circular(6.0),
+                                          borderRadius:
+                                              BorderRadius.circular(6.0),
                                         ),
                                       ),
                                       validator: (v) {
-                                        return v!.trim().isNotEmpty ? null : "验证码不能为空";
+                                        return v!.trim().isNotEmpty
+                                            ? null
+                                            : "验证码不能为空";
                                       },
                                     ),
                                   ),
                                   const SizedBox(width: 10),
                                   Obx(() => TextButton(
-                                        onPressed: _loginPageCtr.smsCodeSendStatus.value
+                                        onPressed: _registerPageCtr
+                                                .smsCodeSendStatus.value
                                             ? null
-                                            : () => _loginPageCtr.sendVerificationCode(),
-                                        child: _loginPageCtr.smsCodeSendStatus.value
-                                            ? Text('重新获取(${_loginPageCtr.seconds.value}s)')
+                                            : () => _registerPageCtr
+                                                .sendVerificationCode(),
+                                        child: _registerPageCtr
+                                                .smsCodeSendStatus.value
+                                            ? Text(
+                                                '重新获取(${_registerPageCtr.seconds.value}s)')
                                             : const Text('获取验证码'),
                                       )),
                                 ],
@@ -193,24 +221,23 @@ class _RegisterPageState extends State<RegisterPage> {
                               width: double.infinity,
                               child: TextButton(
                                 style: TextButton.styleFrom(
-                                  padding: const EdgeInsets.fromLTRB(20, 12, 20, 12),
-                                  foregroundColor: Theme.of(context).colorScheme.onPrimary,
-                                  backgroundColor: Theme.of(context).colorScheme.primary,
+                                  padding:
+                                      const EdgeInsets.fromLTRB(20, 12, 20, 12),
+                                  foregroundColor:
+                                      Theme.of(context).colorScheme.onPrimary,
+                                  backgroundColor:
+                                      Theme.of(context).colorScheme.primary,
                                 ),
-                                onPressed: () => _loginPageCtr.register(),
+                                onPressed: () => _registerPageCtr.register(),
                                 child: const Text('注册'),
                               ),
                             ),
                             const SizedBox(height: 15),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                const Text('已有账号？'),
-                                TextButton(
-                                  onPressed: () => _loginPageCtr.goToLogin(),
-                                  child: const Text('立即登录'),
-                                ),
-                              ],
+                            Center(
+                              child: TextButton(
+                                onPressed: () => _registerPageCtr.goToLogin(),
+                                child: const Text('冲刺'),
+                              ),
                             ),
                           ],
                         ),
@@ -221,7 +248,6 @@ class _RegisterPageState extends State<RegisterPage> {
               ),
             );
           } else {
-            // 窄屏设备保持原有布局
             return Padding(
               padding: EdgeInsets.only(
                 left: 20,
@@ -230,7 +256,7 @@ class _RegisterPageState extends State<RegisterPage> {
                 bottom: MediaQuery.of(context).padding.bottom + 10,
               ),
               child: Form(
-                key: _loginPageCtr.registerFormKey,
+                key: _registerPageCtr.registerFormKey,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.max,
@@ -250,8 +276,8 @@ class _RegisterPageState extends State<RegisterPage> {
                     Container(
                       margin: const EdgeInsets.only(top: 38, bottom: 15),
                       child: TextFormField(
-                        controller: _loginPageCtr.emailTextController,
-                        focusNode: _loginPageCtr.emailTextFieldNode,
+                        controller: _registerPageCtr.emailTextController,
+                        focusNode: _registerPageCtr.emailTextFieldNode,
                         keyboardType: TextInputType.emailAddress,
                         decoration: InputDecoration(
                           isDense: true,
@@ -274,10 +300,10 @@ class _RegisterPageState extends State<RegisterPage> {
                     Container(
                       margin: const EdgeInsets.only(bottom: 15),
                       child: Obx(() => TextFormField(
-                            controller: _loginPageCtr.passwordTextController,
-                            focusNode: _loginPageCtr.passwordTextFieldNode,
+                            controller: _registerPageCtr.passwordTextController,
+                            focusNode: _registerPageCtr.passwordTextFieldNode,
                             keyboardType: TextInputType.visiblePassword,
-                            obscureText: _loginPageCtr.passwordVisible.value,
+                            obscureText: _registerPageCtr.passwordVisible.value,
                             decoration: InputDecoration(
                               isDense: true,
                               labelText: '输入密码',
@@ -286,13 +312,14 @@ class _RegisterPageState extends State<RegisterPage> {
                               ),
                               suffixIcon: IconButton(
                                 icon: Icon(
-                                  _loginPageCtr.passwordVisible.value
+                                  _registerPageCtr.passwordVisible.value
                                       ? Icons.visibility
                                       : Icons.visibility_off,
                                   color: Theme.of(context).colorScheme.primary,
                                 ),
                                 onPressed: () {
-                                  _loginPageCtr.passwordVisible.value = !_loginPageCtr.passwordVisible.value;
+                                  _registerPageCtr.passwordVisible.value =
+                                      !_registerPageCtr.passwordVisible.value;
                                 },
                               ),
                             ),
@@ -313,8 +340,10 @@ class _RegisterPageState extends State<RegisterPage> {
                         children: [
                           Expanded(
                             child: TextFormField(
-                              controller: _loginPageCtr.confirmPasswordTextController,
-                              focusNode: _loginPageCtr.confirmPasswordTextFieldNode,
+                              controller:
+                                  _registerPageCtr.verificationCodeController,
+                              focusNode:
+                                  _registerPageCtr.verificationCodeTextFieldNode,
                               maxLength: 6,
                               keyboardType: TextInputType.number,
                               decoration: InputDecoration(
@@ -325,45 +354,48 @@ class _RegisterPageState extends State<RegisterPage> {
                                 ),
                               ),
                               validator: (v) {
-                                return v!.trim().isNotEmpty ? null : "验证码不能为空";
+                                return v!.trim().isNotEmpty
+                                    ? null
+                                    : "验证码不能为空";
                               },
                             ),
                           ),
                           const SizedBox(width: 10),
                           Obx(() => TextButton(
-                                onPressed: _loginPageCtr.smsCodeSendStatus.value
-                                    ? null
-                                    : () => _loginPageCtr.sendVerificationCode(),
-                                child: _loginPageCtr.smsCodeSendStatus.value
-                                    ? Text('重新获取(${_loginPageCtr.seconds.value}s)')
+                                onPressed:
+                                    _registerPageCtr.smsCodeSendStatus.value
+                                        ? null
+                                        : () =>
+                                            _registerPageCtr.sendVerificationCode(),
+                                child: _registerPageCtr.smsCodeSendStatus.value
+                                    ? Text(
+                                        '重新获取(${_registerPageCtr.seconds.value}s)')
                                     : const Text('获取验证码'),
                               )),
                         ],
                       ),
                     ),
-                    const Spacer(),
+                    const SizedBox(height: 30),
                     SizedBox(
                       width: double.infinity,
                       child: TextButton(
                         style: TextButton.styleFrom(
                           padding: const EdgeInsets.fromLTRB(20, 12, 20, 12),
-                          foregroundColor: Theme.of(context).colorScheme.onPrimary,
-                          backgroundColor: Theme.of(context).colorScheme.primary,
+                          foregroundColor:
+                              Theme.of(context).colorScheme.onPrimary,
+                          backgroundColor:
+                              Theme.of(context).colorScheme.primary,
                         ),
-                        onPressed: () => _loginPageCtr.register(),
+                        onPressed: () => _registerPageCtr.register(),
                         child: const Text('注册'),
                       ),
                     ),
                     const SizedBox(height: 15),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Text('已有账号？'),
-                        TextButton(
-                          onPressed: () => _loginPageCtr.goToLogin(),
-                          child: const Text('立即登录'),
-                        ),
-                      ],
+                    Center(
+                      child: TextButton(
+                        onPressed: () => _registerPageCtr.goToLogin(),
+                        child: const Text('冲刺'),
+                      ),
                     ),
                   ],
                 ),

@@ -1,19 +1,13 @@
 // ignore_for_file: avoid_print
 import 'dart:async';
-import 'dart:convert';
-import 'dart:developer';
 import 'dart:io';
-import 'dart:math' show Random;
 import 'package:cookie_jar/cookie_jar.dart';
 import 'package:dio/dio.dart';
 import 'package:dio/io.dart';
 import 'package:dio_cookie_manager/dio_cookie_manager.dart';
-// import 'package:dio_http2_adapter/dio_http2_adapter.dart';
 import 'package:hive/hive.dart';
-import 'package:piliotto/utils/id_utils.dart';
 import '../utils/storage.dart';
 import '../utils/utils.dart';
-import 'api.dart';
 import 'constants.dart';
 import 'interceptor.dart';
 
@@ -27,9 +21,6 @@ class Request {
   late bool enableSystemProxy;
   late String systemProxyHost;
   late String systemProxyPort;
-  static final RegExp spmPrefixExp =
-      RegExp(r'<meta name="spm_prefix" content="([^"]+?)">');
-  static String? buvid;
 
   /// 设置cookie
   static setCookie() async {
@@ -44,23 +35,7 @@ class Request {
     final List<Cookie> cookie = await cookieManager.cookieJar
         .loadForRequest(Uri.parse(HttpString.baseUrl));
     final userInfo = userInfoCache.get('userInfoCache');
-    if (userInfo != null && userInfo.mid != null) {
-      final List<Cookie> cookie2 = await cookieManager.cookieJar
-          .loadForRequest(Uri.parse(HttpString.tUrl));
-      if (cookie2.isEmpty) {
-        try {
-          await Request().get(HttpString.tUrl);
-        } catch (e) {
-          log("setCookie, ${e.toString()}");
-        }
-      }
-    }
     setOptionsHeaders(userInfo, userInfo != null && userInfo.mid != null);
-    try {
-      await buvidActivate();
-    } catch (e) {
-      log("setCookie, ${e.toString()}");
-    }
 
     final String cookieString = cookie
         .map((Cookie cookie) => '${cookie.name}=${cookie.value}')
@@ -69,75 +44,26 @@ class Request {
     dio.options.headers['cookie'] = cookieString;
   }
 
-  // 从cookie中获取 csrf token
+  // 从cookie中获取 csrf token（已禁用）
   static Future<String> getCsrf() async {
-    List<Cookie> cookies = await cookieManager.cookieJar
-        .loadForRequest(Uri.parse(HttpString.apiBaseUrl));
-    String token = '';
-    if (cookies.where((e) => e.name == 'bili_jct').isNotEmpty) {
-      token = cookies.firstWhere((e) => e.name == 'bili_jct').value;
-    }
-    return token;
+    throw UnimplementedError(
+      '哔哩哔哩 CSRF Token 已禁用\n'
+      'Ottohub API 不需要 CSRF Token\n'
+      '调用堆栈:\n${StackTrace.current}'
+    );
   }
 
+  // 获取 buvid（已禁用）
   static Future<String> getBuvid() async {
-    if (buvid != null) {
-      return buvid!;
-    }
-
-    final List<Cookie> cookies = await cookieManager.cookieJar
-        .loadForRequest(Uri.parse(HttpString.baseUrl));
-    buvid = cookies.firstWhere((cookie) => cookie.name == 'buvid3').value;
-    if (buvid == null) {
-      try {
-        var result = await Request().get(
-          "${HttpString.apiBaseUrl}/x/frontend/finger/spi",
-        );
-        buvid = result["data"]["b_3"].toString();
-      } catch (e) {
-        // 处理请求错误
-        buvid = '';
-        print("Error fetching buvid: $e");
-      }
-    }
-
-    return buvid!;
+    throw UnimplementedError(
+      '哔哩哔哩 buvid 已禁用\n'
+      'Ottohub API 不需要 buvid\n'
+      '调用堆栈:\n${StackTrace.current}'
+    );
   }
 
   static setOptionsHeaders(userInfo, bool status) {
-    if (status) {
-      dio.options.headers['x-bili-mid'] = userInfo.mid.toString();
-      dio.options.headers['x-bili-aurora-eid'] =
-          IdUtils.genAuroraEid(userInfo.mid);
-    }
-    dio.options.headers['env'] = 'prod';
-    dio.options.headers['app-key'] = 'android64';
-    dio.options.headers['x-bili-aurora-zone'] = 'sh001';
-    dio.options.headers['referer'] = 'https://www.bilibili.com/';
-  }
-
-  static Future buvidActivate() async {
-    var html = await Request().get(Api.dynamicSpmPrefix);
-    String spmPrefix = spmPrefixExp.firstMatch(html.data)!.group(1)!;
-    Random rand = Random();
-    String randPngEnd = base64.encode(
-        List<int>.generate(32, (_) => rand.nextInt(256)) +
-            List<int>.filled(4, 0) +
-            [73, 69, 78, 68] +
-            List<int>.generate(4, (_) => rand.nextInt(256)));
-
-    String jsonData = json.encode({
-      '3064': 1,
-      '39c8': '$spmPrefix.fp.risk',
-      '3c43': {
-        'adca': 'Linux',
-        'bfe9': randPngEnd.substring(randPngEnd.length - 50),
-      },
-    });
-
-    await Request().post(Api.activateBuvidApi,
-        data: {'payload': jsonData},
-        options: Options(contentType: 'application/json'));
+    // Ottohub 不需要哔哩哔哩特有的请求头
   }
 
   /*
@@ -212,6 +138,9 @@ class Request {
    * get请求
    */
   get(url, {data, options, cancelToken, extra}) async {
+    // 检查是否是哔哩哔哩 API
+    _checkBilibiliApi(url);
+    
     Response response;
     final Options options = Options();
     ResponseType resType = ResponseType.json;
@@ -247,6 +176,9 @@ class Request {
    * post请求
    */
   post(url, {data, queryParameters, options, cancelToken, extra}) async {
+    // 检查是否是哔哩哔哩 API
+    _checkBilibiliApi(url);
+    
     // print('post-data: $data');
     Response response;
     try {
@@ -269,6 +201,26 @@ class Request {
         requestOptions: RequestOptions(),
       );
       return errResponse;
+    }
+  }
+  
+  // 检查是否是哔哩哔哩 API，如果是则抛出异常
+  void _checkBilibiliApi(String url) {
+    if (url.contains('bilibili.com') || 
+        url.contains('biliapi.com') ||
+        url.startsWith('/x/') ||
+        url.startsWith(HttpString.apiBaseUrl) ||
+        url.startsWith(HttpString.baseUrl) ||
+        url.startsWith(HttpString.tUrl) ||
+        url.startsWith(HttpString.appBaseUrl) ||
+        url.startsWith(HttpString.liveBaseUrl) ||
+        url.startsWith(HttpString.passBaseUrl) ||
+        url.startsWith(HttpString.messageBaseUrl)) {
+      throw UnimplementedError(
+        '哔哩哔哩 API 已禁用: $url\n'
+        '请使用 Ottohub API 替代。\n'
+        '调用堆栈:\n${StackTrace.current}'
+      );
     }
   }
 

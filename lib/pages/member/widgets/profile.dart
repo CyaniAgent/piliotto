@@ -1,4 +1,3 @@
-import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
@@ -19,12 +18,11 @@ class ProfilePanel extends StatelessWidget {
   Widget build(BuildContext context) {
     MemberInfoModel memberInfo = ctr.memberInfo.value;
     final ColorScheme colorScheme = Theme.of(context).colorScheme;
-    
+
     return Builder(
       builder: ((context) {
         return Padding(
-          padding: EdgeInsets.only(
-              top: max(0.0, MediaQuery.of(context).padding.top - 10)),
+          padding: const EdgeInsets.only(top: 1),
           child: Row(
             children: [
               Hero(
@@ -150,8 +148,7 @@ class ProfilePanel extends StatelessWidget {
                         ),
                         Column(
                           children: [
-                            Text(
-                                '-',
+                            Text('-',
                                 style: TextStyle(
                                     fontWeight: FontWeight.bold,
                                     color: colorScheme.onSurface)),
@@ -210,7 +207,8 @@ class ProfilePanel extends StatelessWidget {
                                 );
                               },
                               style: TextButton.styleFrom(
-                                backgroundColor: colorScheme.surfaceContainerHighest,
+                                backgroundColor:
+                                    colorScheme.surfaceContainerHighest,
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(8),
                                 ),

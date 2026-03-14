@@ -70,8 +70,8 @@ Widget picWidget(item, context) {
           origAspectRatio =
               aspectRatio = pictures.first.width / pictures.first.height;
         } catch (_) {}
-        if (aspectRatio < 0.4) {
-          aspectRatio = 0.4;
+        if (aspectRatio <= 0 || aspectRatio.isNaN || aspectRatio.isInfinite) {
+          aspectRatio = 1.0;
         }
         if (origAspectRatio < 0.5 || pictures.first.width < 1920) {
           crossCount = 2;

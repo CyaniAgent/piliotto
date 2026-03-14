@@ -1,17 +1,13 @@
-// ignore_for_file: avoid_print
-
 import 'package:flutter/material.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
 import 'package:hive/hive.dart';
+import 'package:piliotto/api/services/old_api_service.dart';
 import 'package:piliotto/http/dynamics.dart';
-import 'package:piliotto/http/search.dart';
 import 'package:piliotto/models/common/dynamics_type.dart';
 import 'package:piliotto/models/dynamics/result.dart';
 import 'package:piliotto/models/dynamics/up.dart';
-import 'package:piliotto/models/live/item.dart';
 import 'package:piliotto/utils/feed_back.dart';
-import 'package:piliotto/utils/id_utils.dart';
 import 'package:piliotto/utils/responsive_util.dart';
 
 import 'package:piliotto/utils/storage.dart';
@@ -24,7 +20,6 @@ class DynamicsController extends GetxController {
   RxString dynamicsTypeLabel = '全部'.obs;
   final ScrollController scrollController = ScrollController();
   Rx<FollowUpModel> upData = FollowUpModel().obs;
-  // 默认获取全部动态
   RxInt mid = (-1).obs;
   Rx<UpItem> upInfo = UpItem().obs;
   List filterTypeList = [
@@ -58,6 +53,29 @@ class DynamicsController extends GetxController {
   Box setting = GStrorage.setting;
   RxInt crossAxisCount = 1.obs;
 
+  // Ottohub 模式相关
+  RxBool isOttohubMode = true.obs;
+  RxString currentTab = 'latest'.obs; // 'latest' or 'popular'
+
+  // 每个 tab 独立的数据缓存
+  Map<String, List<DynamicItemModel>> _tabDataCache = {
+    'latest': [],
+    'popular': [],
+  };
+  Map<String, int> _tabOffsetCache = {
+    'latest': 0,
+    'popular': 0,
+  };
+  Map<String, bool> _tabHasLoadedCache = {
+    'latest': false,
+    'popular': false,
+  };
+
+  RxBool hasMore = true.obs;
+
+  // 宽屏布局模式: 'center' 居中, 'waterfall' 瀑布流
+  RxString wideScreenLayout = 'center'.obs;
+
   @override
   void onInit() {
     userInfo = userInfoCache.get('userInfoCache');
@@ -66,14 +84,26 @@ class DynamicsController extends GetxController {
     initialValue.value =
         setting.get(SettingBoxKey.defaultDynamicType, defaultValue: 0);
     dynamicsType = DynamicsType.values[initialValue.value].obs;
-    // 初始计算列数
+    wideScreenLayout.value = setting.get(
+      SettingBoxKey.dynamicWideScreenLayout,
+      defaultValue: 'center',
+    );
     updateCrossAxisCount();
+  }
+
+  // 切换宽屏布局模式
+  void toggleWideScreenLayout() {
+    if (wideScreenLayout.value == 'center') {
+      wideScreenLayout.value = 'waterfall';
+    } else {
+      wideScreenLayout.value = 'center';
+    }
+    setting.put(SettingBoxKey.dynamicWideScreenLayout, wideScreenLayout.value);
   }
 
   // 根据屏幕宽度更新列数
   void updateCrossAxisCount() {
     try {
-      // 使用ResponsiveUtil计算列数
       int baseCount = ResponsiveUtil.calculateCrossAxisCount(
         baseCount: 1,
         minCount: 1,
@@ -82,12 +112,17 @@ class DynamicsController extends GetxController {
 
       crossAxisCount.value = baseCount;
     } catch (e) {
-      // 捕获异常，避免在没有 context 时崩溃
       crossAxisCount.value = 1;
     }
   }
 
   Future queryFollowDynamic({type = 'init'}) async {
+    // Ottohub 模式使用旧版 API
+    if (isOttohubMode.value) {
+      return await _queryOttohubDynamic(type: type);
+    }
+
+    // 原始 B站 API
     if (!userLogin.value) {
       return {'status': false, 'msg': '账号未登录', 'code': -101};
     }
@@ -122,6 +157,117 @@ class DynamicsController extends GetxController {
     return res;
   }
 
+  // Ottohub 动态查询
+  Future _queryOttohubDynamic({type = 'init'}) async {
+    final tab = currentTab.value;
+
+    // 刷新时不清空数据，等请求完成后再替换
+    if (type == 'init') {
+      _tabOffsetCache[tab] = 0;
+    }
+
+    isLoadingDynamic.value = true;
+
+    try {
+      Map<String, dynamic> res;
+      if (tab == 'latest') {
+        res = await OldApiService.getNewBlogList(
+          offset: _tabOffsetCache[tab]!,
+          num: 10,
+        );
+      } else {
+        res = await OldApiService.getPopularBlogList(
+          offset: _tabOffsetCache[tab]!,
+          num: 10,
+        );
+      }
+
+      isLoadingDynamic.value = false;
+
+      if (res['status'] == 'success') {
+        final List<dynamic> blogList = res['blog_list'] as List;
+        final items = blogList.map((blog) {
+          return DynamicItemModel.fromJson(blog);
+        }).toList();
+
+        if (type == 'init') {
+          // 刷新时替换数据
+          _tabDataCache[tab] = items;
+          _tabOffsetCache[tab] = 10;
+        } else {
+          // 加载更多时追加数据
+          _tabDataCache[tab]!.addAll(items);
+          _tabOffsetCache[tab] = _tabOffsetCache[tab]! + 10;
+        }
+
+        _tabHasLoadedCache[tab] = true;
+        hasMore.value = items.length >= 10;
+
+        // 更新当前显示的列表
+        dynamicsList.value = List.from(_tabDataCache[tab]!);
+
+        if (items.length < 10) {
+          hasMore.value = false;
+          if (type != 'init') {
+            SmartDialog.showToast('没有更多了');
+          }
+        }
+      } else {
+        SmartDialog.showToast(res['message'] ?? '获取动态失败');
+      }
+    } catch (e) {
+      isLoadingDynamic.value = false;
+      SmartDialog.showToast('请求失败: $e');
+    }
+  }
+
+  // 切换标签
+  void onTabChanged(String tab) {
+    if (currentTab.value == tab) return;
+
+    currentTab.value = tab;
+
+    // 如果该 tab 已经加载过数据，直接显示缓存
+    if (_tabHasLoadedCache[tab] == true && _tabDataCache[tab]!.isNotEmpty) {
+      dynamicsList.value = List.from(_tabDataCache[tab]!);
+      hasMore.value = _tabDataCache[tab]!.length % 10 == 0;
+    } else {
+      // 否则请求数据
+      hasMore.value = true;
+      queryFollowDynamic(type: 'init');
+    }
+  }
+
+  // 获取当前 tab 的数据列表（供 view 使用）
+  List<DynamicItemModel> getTabData(String tab) {
+    return _tabDataCache[tab] ?? [];
+  }
+
+  // 检查 tab 是否已加载
+  bool hasTabLoaded(String tab) {
+    return _tabHasLoadedCache[tab] ?? false;
+  }
+
+  // 切换模式
+  void toggleMode() {
+    isOttohubMode.value = !isOttohubMode.value;
+    _tabDataCache = {
+      'latest': [],
+      'popular': [],
+    };
+    _tabOffsetCache = {
+      'latest': 0,
+      'popular': 0,
+    };
+    _tabHasLoadedCache = {
+      'latest': false,
+      'popular': false,
+    };
+    page = 1;
+    hasMore.value = true;
+    queryFollowDynamic(type: 'init');
+  }
+
   onSelectType(value) async {
     dynamicsType.value = filterTypeList[value]['value'];
     dynamicsList.value = <DynamicItemModel>[];
@@ -141,110 +287,20 @@ class DynamicsController extends GetxController {
       return false;
     }
     switch (item!.type) {
-      /// 转发的动态
-      case 'DYNAMIC_TYPE_FORWARD':
-        Get.toNamed('/dynamicDetail',
-            arguments: {'item': item, 'floor': floor});
-        break;
-
       /// 图文动态查看
       case 'DYNAMIC_TYPE_DRAW':
         Get.toNamed('/dynamicDetail',
             arguments: {'item': item, 'floor': floor});
         break;
-      case 'DYNAMIC_TYPE_AV':
-        String bvid = item.modules.moduleDynamic.major.archive.bvid;
-        String cover = item.modules.moduleDynamic.major.archive.cover;
-        try {
-          int cid = await SearchHttp.ab2c(bvid: bvid);
-          Get.toNamed('/video?bvid=$bvid&cid=$cid',
-              arguments: {'pic': cover, 'heroTag': bvid});
-        } catch (err) {
-          SmartDialog.showToast(err.toString());
-        }
-        break;
-
-      /// 专栏文章查看
-      case 'DYNAMIC_TYPE_ARTICLE':
-        String title = item.modules.moduleDynamic.major.opus.title;
-        String jumpUrl = item.modules.moduleDynamic.major.opus.jumpUrl;
-        String url =
-            jumpUrl.startsWith('//') ? jumpUrl.split('//').last : jumpUrl;
-        if (jumpUrl.contains('opus') || jumpUrl.contains('read')) {
-          RegExp digitRegExp = RegExp(r'\d+');
-          Iterable<Match> matches = digitRegExp.allMatches(jumpUrl);
-          String number = matches.first.group(0)!;
-          if (jumpUrl.contains('read')) {
-            Get.toNamed('/read', parameters: {
-              'title': title,
-              'id': number,
-              'articleType': url.split('/')[1]
-            });
-          } else {
-            Get.toNamed('/opus', parameters: {
-              'title': title,
-              'id': number,
-              'articleType': 'opus'
-            });
-          }
-        } else {
-          Get.toNamed(
-            '/webview',
-            parameters: {
-              'url': 'https:$url',
-              'type': 'note',
-              'pageTitle': title
-            },
-          );
-        }
-
-        break;
-      case 'DYNAMIC_TYPE_PGC':
-        print('番剧');
-        SmartDialog.showToast('暂未支持的类型，请联系开发者');
-        break;
 
       /// 纯文字动态查看
       case 'DYNAMIC_TYPE_WORD':
-        print('纯文本');
         Get.toNamed('/dynamicDetail',
             arguments: {'item': item, 'floor': floor});
         break;
-      case 'DYNAMIC_TYPE_LIVE_RCMD':
-        DynamicLiveModel liveRcmd = item.modules.moduleDynamic.major.liveRcmd;
-        ModuleAuthorModel author = item.modules.moduleAuthor;
-        LiveItemModel liveItem = LiveItemModel.fromJson({
-          'title': liveRcmd.title,
-          'uname': author.name,
-          'cover': liveRcmd.cover,
-          'mid': author.mid,
-          'face': author.face,
-          'roomid': liveRcmd.roomId,
-          'watched_show': liveRcmd.watchedShow,
-        });
-        Get.toNamed('/liveRoom?roomid=${liveItem.roomId}', arguments: {
-          'liveItem': liveItem,
-          'heroTag': liveItem.roomId.toString()
-        });
-        break;
 
-      /// 合集查看
-      case 'DYNAMIC_TYPE_UGC_SEASON':
-        DynamicArchiveModel ugcSeason =
-            item.modules.moduleDynamic.major.ugcSeason;
-        int aid = ugcSeason.aid!;
-        String bvid = IdUtils.av2bv(aid);
-        String cover = ugcSeason.cover!;
-        int cid = await SearchHttp.ab2c(bvid: bvid);
-        Get.toNamed('/video?bvid=$bvid&cid=$cid',
-            arguments: {'pic': cover, 'heroTag': bvid});
-        break;
-
-      /// 番剧查看
-      case 'DYNAMIC_TYPE_PGC_UNION':
-        print('DYNAMIC_TYPE_PGC_UNION 番剧');
-        SmartDialog.showToast('暂不支持番剧观看');
-        break;
+      default:
+        SmartDialog.showToast('暂不支持的动态类型');
     }
   }
 

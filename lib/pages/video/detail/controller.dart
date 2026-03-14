@@ -8,7 +8,6 @@ import 'package:hive/hive.dart';
 import 'package:piliotto/services/ottohub_service.dart';
 
 import 'package:piliotto/models/video/reply/item.dart';
-import 'package:piliotto/models/video/later.dart';
 import 'package:piliotto/models/common/reply_type.dart';
 import 'package:piliotto/pages/video/detail/reply_reply/view.dart';
 import 'package:piliotto/plugin/pl_player/index.dart';
@@ -20,10 +19,7 @@ import 'package:universal_platform/universal_platform.dart';
 
 import '../../../api/models/video.dart';
 import '../../../plugin/pl_player/models/bottom_control_type.dart';
-import 'introduction/controller.dart';
-import 'reply/controller.dart';
 import 'widgets/header_control.dart';
-import 'widgets/watch_later_list.dart';
 
 class VideoDetailController extends GetxController
     with GetSingleTickerProviderStateMixin {
@@ -36,8 +32,6 @@ class VideoDetailController extends GetxController
   late Video videoItem;
   // 视频类型 默认投稿视频
   String videoType = Get.arguments['videoType'] ?? 'video';
-  // 页面来源 稍后再看 收藏夹
-  RxString sourceType = 'normal'.obs;
 
   /// tabs相关配置
   late TabController tabCtr;
@@ -91,9 +85,7 @@ class VideoDetailController extends GetxController
   ].obs;
   RxDouble sheetHeight = 0.0.obs;
   ScrollController? replyScrollController;
-  List<MediaVideoItemModel> mediaList = <MediaVideoItemModel>[];
-  RxBool isWatchLaterVisible = false.obs;
-  RxString watchLaterTitle = ''.obs;
+
 
   @override
   void onInit() {
@@ -134,20 +126,8 @@ class VideoDetailController extends GetxController
       videoType: videoType,
     );
 
-    sourceType.value = argMap['sourceType'] ?? 'normal';
-    isWatchLaterVisible.value =
-        sourceType.value == 'watchLater' || sourceType.value == 'fav';
-    if (sourceType.value == 'watchLater') {
-      watchLaterTitle.value = '稍后再看';
-      fetchMediaList();
-    }
-    if (sourceType.value == 'fav') {
-      watchLaterTitle.value = argMap['favTitle'];
-      queryFavVideoList();
-    }
-    tabCtr.addListener(() {
-      onTabChanged();
-    });
+
+    tabCtr.addListener(() {});
   }
 
   showReplyReplyPanel(oid, fRpid, firstFloor, currentReply, loadMore) {
@@ -560,7 +540,8 @@ class VideoDetailController extends GetxController
                             border: Border.all(
                               color: isSelected
                                   ? theme.colorScheme.primary
-                                  : theme.colorScheme.outline.withValues(alpha: 0.3),
+                                  : theme.colorScheme.outline
+                                      .withValues(alpha: 0.3),
                               width: isSelected ? 3 : 1,
                             ),
                           ),
@@ -628,76 +609,11 @@ class VideoDetailController extends GetxController
     }
   }
 
-  void toggeleWatchLaterVisible(bool val) {
-    if (sourceType.value == 'watchLater' || sourceType.value == 'fav') {
-      isWatchLaterVisible.value = !isWatchLaterVisible.value;
-    }
-  }
 
-  // 获取稍后再看列表
-  Future fetchMediaList() async {
-    // Ottohub API 暂不支持获取稍后再看列表
-    mediaList = [];
-  }
-
-  // 稍后再看面板展开
-  showMediaListPanel() {
-    replyReplyBottomSheetCtr =
-        scaffoldKey.currentState?.showBottomSheet((BuildContext context) {
-      return MediaListPanel(
-        sheetHeight: sheetHeight.value,
-        mediaList: mediaList,
-        changeMediaList: changeMediaList,
-        panelTitle: watchLaterTitle.value,
-        vid: vid,
-        mediaId: Get.arguments['mediaId'],
-        hasMore: mediaList.length != Get.arguments['count'],
-      );
-    });
-    replyReplyBottomSheetCtr?.closed.then((value) {
-      isWatchLaterVisible.value = true;
-    });
-  }
-
-  // 切换稍后再看
-  Future changeMediaList(vidVal, coverVal) async {
-    final VideoIntroController videoIntroCtr =
-        Get.find<VideoIntroController>(tag: heroTag);
-    vid = vidVal;
-    cover.value = coverVal;
-    await getVideoDetail();
-    clearSubtitleContent();
-    await getSubtitle();
-    setSubtitleContent();
-    // 重新请求评论
-    try {
-      /// 未渲染回复组件时可能异常
-      final VideoReplyController videoReplyCtr =
-          Get.find<VideoReplyController>(tag: heroTag);
-      videoReplyCtr.updateVid(vidVal);
-      videoReplyCtr.queryReplyList(type: 'init');
-    } catch (_) {}
-    videoIntroCtr.vid = vidVal;
-    replyReplyBottomSheetCtr!.close();
-    await videoIntroCtr.queryVideoIntro();
-  }
-
-  // 获取收藏夹视频列表
-  Future queryFavVideoList() async {
-    // Ottohub API 暂不支持获取收藏夹视频列表
-    mediaList = [];
-  }
-
-  // 监听tabBarView切换
-  void onTabChanged() {
-    isWatchLaterVisible.value = tabCtr.index == 0;
-  }
 
   @override
   void onClose() {
     super.onClose();
-    // 销毁播放器
     plPlayerController.dispose();
-    tabCtr.removeListener(onTabChanged);
   }
 }

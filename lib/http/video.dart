@@ -1,4 +1,3 @@
-import 'dart:developer';
 import 'package:hive/hive.dart';
 import '../common/constants.dart';
 import '../models/common/reply_type.dart';
@@ -239,22 +238,9 @@ class VideoHttp {
     }
   }
 
-  // 投币
+  // 投币（Ottohub 不支持）
   static Future coinVideo({required String bvid, required int multiply}) async {
-    var res = await Request().post(
-      Api.coinVideo,
-      data: {
-        'bvid': bvid,
-        'multiply': multiply,
-        'select_like': 0,
-        'csrf': await Request.getCsrf(),
-      },
-    );
-    if (res.data['code'] == 0) {
-      return {'status': true, 'data': res.data['data']};
-    } else {
-      return {'status': false, 'data': [], 'msg': res.data['message']};
-    }
+    return {'status': false, 'msg': 'Ottohub API 不支持投币功能'};
   }
 
   // 获取收藏状态
@@ -267,57 +253,20 @@ class VideoHttp {
     }
   }
 
-  // 一键三连
+  // 一键三连（Ottohub 不支持）
   static Future oneThree({required String bvid}) async {
-    var res = await Request().post(
-      Api.oneThree,
-      data: {
-        'bvid': bvid,
-        'csrf': await Request.getCsrf(),
-      },
-    );
-    if (res.data['code'] == 0) {
-      return {'status': true, 'data': res.data['data']};
-    } else {
-      return {'status': false, 'data': [], 'msg': res.data['message']};
-    }
+    return {'status': false, 'msg': 'Ottohub API 不支持一键三连功能'};
   }
 
-  // （取消）点赞
+  // （取消）点赞（Ottohub 不支持）
   static Future likeVideo({required String bvid, required bool type}) async {
-    var res = await Request().post(
-      Api.likeVideo,
-      data: {
-        'bvid': bvid,
-        'like': type ? 1 : 2,
-        'csrf': await Request.getCsrf(),
-      },
-    );
-    if (res.data['code'] == 0) {
-      return {'status': true, 'data': res.data['data']};
-    } else {
-      return {'status': false, 'data': [], 'msg': res.data['message']};
-    }
+    return {'status': false, 'msg': 'Ottohub API 不支持点赞功能'};
   }
 
-  // （取消）收藏
+  // （取消）收藏（Ottohub 不支持）
   static Future favVideo(
       {required int aid, String? addIds, String? delIds}) async {
-    var res = await Request().post(
-      Api.favVideo,
-      data: {
-        'rid': aid,
-        'type': 2,
-        'add_media_ids': addIds ?? '',
-        'del_media_ids': delIds ?? '',
-        'csrf': await Request.getCsrf(),
-      },
-    );
-    if (res.data['code'] == 0) {
-      return {'status': true, 'data': res.data['data']};
-    } else {
-      return {'status': false, 'data': [], 'msg': res.data['message']};
-    }
+    return {'status': false, 'msg': 'Ottohub API 不支持收藏功能'};
   }
 
   // 查看视频被收藏在哪个文件夹
@@ -332,14 +281,7 @@ class VideoHttp {
     }
   }
 
-  // 发表评论 replyAdd
-
-  // type	num	评论区类型代码	必要	类型代码见表
-  // oid	num	目标评论区id	必要
-  // root	num	根评论rpid	非必要	二级评论以上使用
-  // parent	num	父评论rpid	非必要	二级评论同根评论id 大于二级评论为要回复的评论id
-  // message	str	发送评论内容	必要	最大1000字符
-  // plat	num	发送平台标识	非必要	1：web端 2：安卓客户端  3：ios客户端  4：wp客户端
+  // 发表评论（Ottohub 不支持）
   static Future replyAdd({
     required ReplyType type,
     required int oid,
@@ -347,26 +289,7 @@ class VideoHttp {
     int? root,
     int? parent,
   }) async {
-    if (message == '') {
-      return {'status': false, 'data': [], 'msg': '请输入评论内容'};
-    }
-    var res = await Request().post(
-      Api.replyAdd,
-      data: {
-        'type': type.index,
-        'oid': oid,
-        'root': root == null || root == 0 ? '' : root,
-        'parent': parent == null || parent == 0 ? '' : parent,
-        'message': message,
-        'csrf': await Request.getCsrf(),
-      },
-    );
-    log(res.toString());
-    if (res.data['code'] == 0) {
-      return {'status': true, 'data': res.data['data']};
-    } else {
-      return {'status': false, 'data': [], 'msg': res.data['message']};
-    }
+    return {'status': false, 'msg': 'Ottohub API 不支持发表评论功能'};
   }
 
   // 查询是否关注up
@@ -379,49 +302,15 @@ class VideoHttp {
     }
   }
 
-  // 操作用户关系
+  // 操作用户关系（Ottohub 不支持）
   static Future relationMod(
       {required int mid, required int act, required int reSrc}) async {
-    var res = await Request().post(
-      Api.relationMod,
-      data: {
-        'fid': mid,
-        'act': act,
-        're_src': reSrc,
-        'csrf': await Request.getCsrf(),
-      },
-    );
-    if (res.data['code'] == 0) {
-      if (act == 5) {
-        List<int> blackMidsList =
-            setting.get(SettingBoxKey.blackMidsList, defaultValue: [-1]);
-        blackMidsList.add(mid);
-        setting.put(SettingBoxKey.blackMidsList, blackMidsList);
-      }
-      return {'status': true, 'data': res.data['data'], 'msg': '成功'};
-    } else {
-      return {'status': false, 'data': [], 'msg': res.data['message']};
-    }
+    return {'status': false, 'msg': 'Ottohub API 不支持关注功能'};
   }
 
-  // 视频播放进度
+  // 视频播放进度（Ottohub 不支持）
   static Future heartBeat({bvid, cid, progress, realtime}) async {
-    await Request().post(
-      Api.heartBeat,
-      data: {
-        // 'aid': aid,
-        'bvid': bvid,
-        'cid': cid,
-        // 'epid': '',
-        // 'sid': '',
-        // 'mid': '',
-        'played_time': progress,
-        // 'realtime': realtime,
-        // 'type': '',
-        // 'sub_type': '',
-        'csrf': await Request.getCsrf(),
-      },
-    );
+    // 不执行任何操作
   }
 
   // 查看视频同时在看人数

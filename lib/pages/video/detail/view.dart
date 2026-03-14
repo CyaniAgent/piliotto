@@ -171,15 +171,10 @@ class _VideoDetailPageState extends State<VideoDetailPage>
     plPlayerController?.isFullScreen.listen((bool isFullScreen) {
       if (isFullScreen) {
         vdCtr.hiddenReplyReplyPanel();
-        if (vdCtr.videoType == 'video') {
-          videoIntroController.hiddenEpisodeBottomSheet();
-        }
-      } else {
-        if (vdCtr.bottomList.contains(BottomControlType.episode)) {
-          vdCtr.bottomList.removeAt(3);
-        }
       }
-      vdCtr.toggeleWatchLaterVisible(!isFullScreen);
+      if (!isFullScreen && vdCtr.bottomList.contains(BottomControlType.episode)) {
+        vdCtr.bottomList.removeAt(3);
+      }
     });
   }
 
@@ -234,7 +229,6 @@ class _VideoDetailPageState extends State<VideoDetailPage>
     }
     if (plPlayerController != null) {
       vdCtr.defaultST = plPlayerController!.position.value;
-      videoIntroController.isPaused = true;
       plPlayerController!.removeStatusLister(playerListener);
       plPlayerController!.pause();
       vdCtr.clearSubtitleContent();
@@ -262,7 +256,6 @@ class _VideoDetailPageState extends State<VideoDetailPage>
 
     /// 未开启自动播放时，未播放跳转下一页返回/播放后跳转下一页返回
     vdCtr.autoPlay.value = !vdCtr.isShowCover.value;
-    videoIntroController.isPaused = false;
     if (_extendNestCtr.hasClients &&
         _extendNestCtr.position.pixels == 0 &&
         autoplay) {
@@ -314,9 +307,6 @@ class _VideoDetailPageState extends State<VideoDetailPage>
       case 'pause':
         if (autoPiP) {
           vdCtr.hiddenReplyReplyPanel();
-          if (vdCtr.videoType == 'video') {
-            videoIntroController.hiddenEpisodeBottomSheet();
-          }
         }
         break;
     }
@@ -518,9 +508,6 @@ class _VideoDetailPageState extends State<VideoDetailPage>
                 playerController: plPlayerController!,
               ),
               bottomList: vdCtr.bottomList,
-              showEposideCb: () => vdCtr.videoType == 'video'
-                  ? videoIntroController.showEposideHandler()
-                  : null,
               fullScreenCb: (bool status) {
                 if (status) {
                   videoHeight = Get.size.height;
@@ -758,68 +745,7 @@ class _VideoDetailPageState extends State<VideoDetailPage>
               }),
             ),
 
-            /// 稍后再看列表
-            Obx(
-              () => Visibility(
-                visible: vdCtr.sourceType.value == 'watchLater' ||
-                    vdCtr.sourceType.value == 'fav',
-                child: AnimatedPositioned(
-                  duration: const Duration(milliseconds: 400),
-                  curve: Curves.easeInOut,
-                  left: 32,
-                  bottom: vdCtr.isWatchLaterVisible.value
-                      ? MediaQuery.of(context).padding.bottom + 32
-                      : -100,
-                  child: Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      onTap: () {
-                        vdCtr.toggeleWatchLaterVisible(
-                            !vdCtr.isWatchLaterVisible.value);
-                        vdCtr.showMediaListPanel();
-                      },
-                      borderRadius: const BorderRadius.all(Radius.circular(14)),
-                      child: Container(
-                        width: Get.size.width - 64,
-                        height: 54,
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        decoration: BoxDecoration(
-                          color: Theme.of(context)
-                              .colorScheme
-                              .secondaryContainer
-                              .withValues(alpha: 0.95),
-                          borderRadius:
-                              const BorderRadius.all(Radius.circular(14)),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.1),
-                              blurRadius: 10,
-                              offset: const Offset(0, 4),
-                            ),
-                          ],
-                        ),
-                        child: Row(children: [
-                          const Icon(Icons.playlist_play, size: 24),
-                          const SizedBox(width: 10),
-                          Text(
-                            vdCtr.watchLaterTitle.value,
-                            style: TextStyle(
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .onSecondaryContainer,
-                              fontWeight: FontWeight.bold,
-                              letterSpacing: 0.2,
-                            ),
-                          ),
-                          const Spacer(),
-                          const Icon(Icons.keyboard_arrow_up_rounded, size: 26),
-                        ]),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
+
           ],
         ),
       );
@@ -986,68 +912,6 @@ class _VideoDetailPageState extends State<VideoDetailPage>
               }),
             ),
 
-            /// 稍后再看列表
-            Obx(
-              () => Visibility(
-                visible: vdCtr.sourceType.value == 'watchLater' ||
-                    vdCtr.sourceType.value == 'fav',
-                child: AnimatedPositioned(
-                  duration: const Duration(milliseconds: 400),
-                  curve: Curves.easeInOut,
-                  left: 32,
-                  bottom: vdCtr.isWatchLaterVisible.value
-                      ? MediaQuery.of(context).padding.bottom + 32
-                      : -100,
-                  child: Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      onTap: () {
-                        vdCtr.toggeleWatchLaterVisible(
-                            !vdCtr.isWatchLaterVisible.value);
-                        vdCtr.showMediaListPanel();
-                      },
-                      borderRadius: const BorderRadius.all(Radius.circular(14)),
-                      child: Container(
-                        width: (Get.size.width * 2 / 3) - 64,
-                        height: 54,
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        decoration: BoxDecoration(
-                          color: Theme.of(context)
-                              .colorScheme
-                              .secondaryContainer
-                              .withValues(alpha: 0.95),
-                          borderRadius:
-                              const BorderRadius.all(Radius.circular(14)),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.1),
-                              blurRadius: 10,
-                              offset: const Offset(0, 4),
-                            ),
-                          ],
-                        ),
-                        child: Row(children: [
-                          const Icon(Icons.playlist_play, size: 24),
-                          const SizedBox(width: 10),
-                          Text(
-                            vdCtr.watchLaterTitle.value,
-                            style: TextStyle(
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .onSecondaryContainer,
-                              fontWeight: FontWeight.bold,
-                              letterSpacing: 0.2,
-                            ),
-                          ),
-                          const Spacer(),
-                          const Icon(Icons.keyboard_arrow_up_rounded, size: 26),
-                        ]),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
           ],
         ),
       );

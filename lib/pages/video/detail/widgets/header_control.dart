@@ -145,16 +145,6 @@ class _HeaderControlState extends State<HeaderControl> {
                     //   ),
                     // ),
                     ListTile(
-                      onTap: () async {
-                        // Ottohub API 暂不支持添加至稍后再看
-                        SmartDialog.showToast('暂不支持此功能');
-                        Get.back();
-                      },
-                      dense: true,
-                      leading: const Icon(Icons.watch_later_outlined, size: 20),
-                      title: const Text('添加至「稍后再看」', style: titleStyle),
-                    ),
-                    ListTile(
                       onTap: () => {Get.back(), scheduleExit()},
                       dense: true,
                       leading:
@@ -515,23 +505,7 @@ class _HeaderControlState extends State<HeaderControl> {
     );
   }
 
-  /// 选择画质
-  void showSetVideoQa() {
-    // Ottohub API 暂不支持选择画质
-    SmartDialog.showToast('暂不支持此功能');
-  }
 
-  /// 选择音质
-  void showSetAudioQa() {
-    // Ottohub API 暂不支持选择音质
-    SmartDialog.showToast('暂不支持此功能');
-  }
-
-  // 选择解码格式
-  void showSetDecodeFormats() {
-    // Ottohub API 暂不支持选择解码格式
-    SmartDialog.showToast('暂不支持此功能');
-  }
 
   /// 弹幕功能
   void showSetDanmaku() async {
@@ -956,14 +930,6 @@ class _HeaderControlState extends State<HeaderControl> {
                     ),
                   ),
                 ),
-                if (videoIntroController.isShowOnlineTotal)
-                  Text(
-                    '${videoIntroController.total.value}人正在看',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 12,
-                    ),
-                  )
               ],
             )
           ] else ...[

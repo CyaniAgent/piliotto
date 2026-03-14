@@ -140,7 +140,9 @@ class SettingBoxKey {
       dynamicBadgeMode = 'dynamicBadgeMode',
       enableGradientBg = 'enableGradientBg',
       navBarSort = 'navBarSort',
-      actionTypeSort = 'actionTypeSort';
+      actionTypeSort = 'actionTypeSort',
+      // 动态页面宽屏布局模式: 'center' 居中, 'waterfall' 瀑布流
+      dynamicWideScreenLayout = 'dynamicWideScreenLayout';
 }
 
 class LocalCacheKey {

@@ -37,7 +37,7 @@ class MemberDynamicsController extends GetxController {
       if (blogList.isNotEmpty) {
         // 转换数据格式
         for (var blog in blogList) {
-          dynamicsList.add(DynamicItemModel.fromOttohubJson(blog));
+          dynamicsList.add(DynamicItemModel.fromJson(blog));
         }
         offset += blogList.length as int;
         count += blogList.length as int;

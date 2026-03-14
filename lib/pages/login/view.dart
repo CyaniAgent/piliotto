@@ -11,11 +11,20 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  final LoginPageController _loginPageCtr = Get.put(LoginPageController());
+  late String heroTag;
+  late LoginPageController _loginPageCtr;
+  final ScrollController _scrollController = ScrollController();
+
+  @override
+  void initState() {
+    super.initState();
+    heroTag = 'login_${DateTime.now().millisecondsSinceEpoch}';
+    _loginPageCtr = Get.put(LoginPageController(), tag: heroTag);
+  }
 
   @override
   void dispose() {
-    _loginPageCtr.timer?.cancel();
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -41,7 +50,6 @@ class _LoginPageState extends State<LoginPage> {
             return Center(
               child: Row(
                 children: [
-                  // 左侧占位区域，占60%宽度
                   Expanded(
                     flex: 3,
                     child: Container(
@@ -64,7 +72,7 @@ class _LoginPageState extends State<LoginPage> {
                             ),
                             const SizedBox(height: 20),
                             Text(
-                              '欢迎回来',
+                              '阐述你的梦',
                               style: Theme.of(context).textTheme.titleLarge,
                             ),
                           ],
@@ -72,7 +80,6 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                     ),
                   ),
-                  // 右侧登录表单，占40%宽度
                   Expanded(
                     flex: 2,
                     child: Padding(
@@ -183,15 +190,11 @@ class _LoginPageState extends State<LoginPage> {
                               ),
                             ),
                             const SizedBox(height: 15),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                const Text('还没有账号？'),
-                                TextButton(
-                                  onPressed: () => _loginPageCtr.goToRegister(),
-                                  child: const Text('立即注册'),
-                                ),
-                              ],
+                            Center(
+                              child: TextButton(
+                                onPressed: () => _loginPageCtr.goToRegister(),
+                                child: const Text('不是好汉？点我注册'),
+                              ),
                             ),
                           ],
                         ),
@@ -202,7 +205,6 @@ class _LoginPageState extends State<LoginPage> {
               ),
             );
           } else {
-            // 窄屏设备保持原有布局
             return Padding(
               padding: EdgeInsets.only(
                 left: 20,
@@ -283,7 +285,7 @@ class _LoginPageState extends State<LoginPage> {
                             },
                           )),
                     ),
-                    const Spacer(),
+                    const SizedBox(height: 30),
                     SizedBox(
                       width: double.infinity,
                       child: TextButton(
@@ -299,15 +301,11 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                     ),
                     const SizedBox(height: 15),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Text('还没有账号？'),
-                        TextButton(
-                          onPressed: () => _loginPageCtr.goToRegister(),
-                          child: const Text('立即注册'),
-                        ),
-                      ],
+                    Center(
+                      child: TextButton(
+                        onPressed: () => _loginPageCtr.goToRegister(),
+                        child: const Text('不是好汉？点我注册'),
+                      ),
                     ),
                   ],
                 ),

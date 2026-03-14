@@ -16,6 +16,7 @@ import 'package:piliotto/pages/video/detail/introduction/controller.dart';
 
 import 'package:piliotto/utils/feed_back.dart';
 import 'package:piliotto/utils/global_data_cache.dart';
+import 'package:piliotto/services/loggeer.dart';
 import 'package:piliotto/utils/storage.dart';
 import 'package:piliotto/utils/utils.dart';
 import 'widgets/action_item.dart';
@@ -148,7 +149,7 @@ class _VideoInfoState extends State<VideoInfo>
           setState(() {});
         }
       } catch (e) {
-        print('VideoDetailController not found: $e');
+        getLogger().d('VideoDetailController not found: $e');
       }
     });
     sheetHeight = localCache.get('sheetHeight');
@@ -307,17 +308,6 @@ class _VideoInfoState extends State<VideoInfo>
                       color: t.colorScheme.outline,
                     ),
                   ),
-                  const SizedBox(width: 10),
-                  if (videoIntroController.isShowOnlineTotal)
-                    Obx(
-                      () => Text(
-                        '${videoIntroController.total.value}人在看',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: t.colorScheme.outline,
-                        ),
-                      ),
-                    ),
                 ],
               ),
             ),
