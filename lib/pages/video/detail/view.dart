@@ -19,7 +19,7 @@ import 'package:piliotto/pages/video/detail/introduction/index.dart';
 import 'package:piliotto/plugin/pl_player/index.dart';
 import 'package:piliotto/plugin/pl_player/models/play_repeat.dart';
 import 'package:piliotto/utils/storage.dart';
-import 'package:status_bar_control/status_bar_control.dart';
+import 'package:status_bar_control_plus/status_bar_control_plus.dart';
 import 'package:universal_platform/universal_platform.dart';
 
 import '../../../plugin/pl_player/models/bottom_control_type.dart';
@@ -144,8 +144,11 @@ class _VideoDetailPageState extends State<VideoDetailPage>
       } catch (_) {}
     }
     if (Platform.isAndroid) {
-      floating.toggleAutoPip(
-          autoEnter: status == PlayerStatus.playing && autoPiP);
+      if (status == PlayerStatus.playing && autoPiP) {
+        floating.enable(const OnLeavePiP());
+      } else {
+        floating.cancelOnLeavePiP();
+      }
     }
   }
 
@@ -183,7 +186,7 @@ class _VideoDetailPageState extends State<VideoDetailPage>
     // 只在移动平台上使用StatusBarControl
     if (UniversalPlatform.isAndroid || UniversalPlatform.isIOS) {
       try {
-        statusHeight = await StatusBarControl.getHeight;
+        statusHeight = await StatusBarControlPlus.getHeight;
       } catch (e) {
         // 捕获异常，避免初始化失败
         // StatusBarControl 错误: $e
@@ -202,12 +205,8 @@ class _VideoDetailPageState extends State<VideoDetailPage>
       plPlayerController!.removeStatusLister(playerListener);
       plPlayerController!.dispose();
     }
-    if (vdCtr.floating != null) {
-      vdCtr.floating!.dispose();
-    }
     if (Platform.isAndroid) {
-      floating.toggleAutoPip(autoEnter: false);
-      floating.dispose();
+      floating.cancelOnLeavePiP();
     }
     appbarStream.close();
     WidgetsBinding.instance.removeObserver(this);
@@ -279,9 +278,11 @@ class _VideoDetailPageState extends State<VideoDetailPage>
   void autoEnterPip({PlayerStatus? status}) {
     final String routePath = Get.currentRoute;
     if (autoPiP && routePath.startsWith('/video')) {
-      floating.toggleAutoPip(
-        autoEnter: autoPiP && status == PlayerStatus.playing,
-      );
+      if (status == PlayerStatus.playing) {
+        floating.enable(const OnLeavePiP());
+      } else {
+        floating.cancelOnLeavePiP();
+      }
     }
   }
 

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:hive/hive.dart';
-import 'package:ns_danmaku/ns_danmaku.dart';
+import 'package:canvas_danmaku/canvas_danmaku.dart';
 import 'package:piliotto/models/danmaku/dm.pb.dart';
 import 'package:piliotto/pages/danmaku/index.dart';
 import 'package:piliotto/plugin/pl_player/index.dart';
@@ -82,7 +82,7 @@ class _PlDanmakuState extends State<PlDanmaku> {
       _controller!.pause();
     }
     if (status == PlayerStatus.playing) {
-      _controller!.onResume();
+      _controller!.resume();
     }
   }
 
@@ -106,14 +106,13 @@ class _PlDanmakuState extends State<PlDanmaku> {
           ? DmUtils.decimalToColor(16777215)
           : null;
 
-      _controller!.addItems(currentDanmakuList
-          .map((e) => DanmakuItem(
-                e.content,
-                color: defaultColor ?? DmUtils.decimalToColor(e.color),
-                time: e.progress,
-                type: DmUtils.getPosition(e.mode),
-              ))
-          .toList());
+      for (var e in currentDanmakuList) {
+        _controller!.addDanmaku(DanmakuContentItem(
+          e.content,
+          color: defaultColor ?? DmUtils.decimalToColor(e.color),
+          type: DmUtils.getPosition(e.mode),
+        ));
+      }
     }
   }
 
@@ -131,7 +130,7 @@ class _PlDanmakuState extends State<PlDanmaku> {
         () => AnimatedOpacity(
           opacity: playerController.isOpenDanmu.value ? 1 : 0,
           duration: const Duration(milliseconds: 100),
-          child: DanmakuView(
+          child: DanmakuScreen(
             createdController: (DanmakuController e) async {
               playerController.danmakuController = _controller = e;
               widget.createdController?.call(e);
@@ -148,7 +147,6 @@ class _PlDanmakuState extends State<PlDanmaku> {
               // initDuration /
               //     (danmakuSpeedVal * widget.playerController.playbackSpeed),
             ),
-            statusChanged: (isPlaying) {},
           ),
         ),
       );

@@ -197,7 +197,11 @@ class MemberController extends GetxController {
   }
 
   void shareUser() {
-    Share.share('${memberInfo.value.name} - https://space.bilibili.com/$mid');
+    SharePlus.instance.share(
+      ShareParams(
+        text: '${memberInfo.value.name} - https://space.bilibili.com/$mid',
+      ),
+    );
   }
 
   // 跳转查看动态

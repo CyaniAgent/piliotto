@@ -11,7 +11,7 @@ import 'package:piliotto/models/video/reply/item.dart';
 import 'package:piliotto/models/common/reply_type.dart';
 import 'package:piliotto/pages/video/detail/reply_reply/view.dart';
 import 'package:piliotto/plugin/pl_player/index.dart';
-import 'package:ns_danmaku/ns_danmaku.dart';
+import 'package:canvas_danmaku/canvas_danmaku.dart';
 import 'package:piliotto/services/loggeer.dart';
 import 'package:piliotto/utils/storage.dart';
 import 'package:screen_brightness/screen_brightness.dart';
@@ -208,9 +208,9 @@ class VideoDetailController extends GetxController
     /// 设置/恢复 屏幕亮度
     if (UniversalPlatform.isAndroid || UniversalPlatform.isIOS) {
       if (brightness != null) {
-        ScreenBrightness().setScreenBrightness(brightness!);
+        ScreenBrightness().setApplicationScreenBrightness(brightness!);
       } else {
-        ScreenBrightness().resetScreenBrightness();
+        ScreenBrightness().resetApplicationScreenBrightness();
       }
     }
     logger.d('调用 plPlayerController.setDataSource');
@@ -282,14 +282,12 @@ class VideoDetailController extends GetxController
             }
           }
           // 创建弹幕项
-          DanmakuItem item = DanmakuItem(
+          DanmakuContentItem item = DanmakuContentItem(
             danmaku.text,
             color: color,
-            time: (danmaku.time * 1000).toInt(), // 转换为毫秒并转为int
             type: type,
           );
-          // 添加到弹幕控制器
-          plPlayerController.danmakuController!.addItems([item]);
+          plPlayerController.danmakuController!.addDanmaku(item);
         }
         logger.d('弹幕数据已添加到播放器');
       } else {
@@ -351,24 +349,29 @@ class VideoDetailController extends GetxController
           builder: (BuildContext context, StateSetter setState) {
             final theme = Theme.of(context);
             final bottomPadding = MediaQuery.of(context).padding.bottom;
+            final keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
 
-            return Container(
+            return AnimatedPadding(
               padding: EdgeInsets.only(
-                left: 12,
-                right: 12,
-                top: 8,
-                bottom: bottomPadding + 8,
+                bottom: keyboardHeight > 0 ? keyboardHeight + 8 : bottomPadding + 8,
               ),
-              decoration: BoxDecoration(
-                color: theme.colorScheme.surface,
-                border: Border(
-                  top: BorderSide(
-                    color: theme.dividerColor.withValues(alpha: 0.1),
-                    width: 1,
+              duration: const Duration(milliseconds: 100),
+              child: Container(
+                padding: const EdgeInsets.only(
+                  left: 12,
+                  right: 12,
+                  top: 8,
+                ),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.surface,
+                  border: Border(
+                    top: BorderSide(
+                      color: theme.dividerColor.withValues(alpha: 0.1),
+                      width: 1,
+                    ),
                   ),
                 ),
-              ),
-              child: Column(
+                child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -590,6 +593,7 @@ class VideoDetailController extends GetxController
                     }).toList(),
                   ),
                 ],
+              ),
               ),
             );
           },

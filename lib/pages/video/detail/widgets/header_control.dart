@@ -1019,9 +1019,8 @@ class _HeaderControlState extends State<HeaderControl> {
                     canUsePiP = false;
                   }
                   if (canUsePiP && widget.floating != null) {
-                    // Ottohub API 暂不提供视频宽高信息，使用默认宽高比 16:9
-                    const Rational aspectRatio = Rational(16, 9);
-                    await widget.floating!.enable(aspectRatio: aspectRatio);
+                    const Rational aspectRatio = Rational(16, 9);//TODO: 从视频详情中获取视频比例
+                    await widget.floating!.enable(const ImmediatePiP(aspectRatio: aspectRatio));
                   } else {}
                 },
                 icon: const Icon(

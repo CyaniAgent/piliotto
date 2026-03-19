@@ -11,7 +11,7 @@ import 'package:get/get.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:piliotto/utils/download.dart';
 import 'package:share_plus/share_plus.dart';
-import 'package:status_bar_control/status_bar_control.dart';
+import 'package:status_bar_control_plus/status_bar_control_plus.dart';
 import 'custom_dismissible.dart';
 import 'interactive_viewer_boundary.dart';
 
@@ -115,7 +115,7 @@ class _InteractiveviewerGalleryState extends State<InteractiveviewerGallery>
 
   setStatusBar() async {
     if (Platform.isIOS || Platform.isAndroid) {
-      await StatusBarControl.setHidden(true,
+      await StatusBarControlPlus.setHidden(true,
           animation: StatusBarAnimation.FADE);
     }
   }
@@ -126,7 +126,8 @@ class _InteractiveviewerGalleryState extends State<InteractiveviewerGallery>
     _animationController.dispose();
     if (Platform.isIOS || Platform.isAndroid) {
       try {
-        StatusBarControl.setHidden(false, animation: StatusBarAnimation.FADE);
+        StatusBarControlPlus.setHidden(false,
+            animation: StatusBarAnimation.FADE);
       } catch (_) {}
     }
     super.dispose();
@@ -344,7 +345,12 @@ class _InteractiveviewerGalleryState extends State<InteractiveviewerGallery>
         "plpl_pic_${DateTime.now().toString().split('-').join()}.jpg";
     var path = '${temp.path}/$imgName';
     File(path).writeAsBytesSync(response.data);
-    Share.shareXFiles([XFile(path)], subject: imgUrl);
+    SharePlus.instance.share(
+      ShareParams(
+        files: [XFile(path)],
+        subject: imgUrl,
+      ),
+    );
   }
 
   // 复制图片

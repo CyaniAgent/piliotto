@@ -9,7 +9,7 @@ import 'package:get/get.dart';
 import 'package:hive/hive.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
-import 'package:ns_danmaku/ns_danmaku.dart';
+import 'package:canvas_danmaku/canvas_danmaku.dart';
 import 'package:piliotto/http/video.dart';
 import 'package:piliotto/plugin/pl_player/index.dart';
 import 'package:piliotto/plugin/pl_player/models/play_repeat.dart';
@@ -17,7 +17,7 @@ import 'package:piliotto/utils/feed_back.dart';
 import 'package:piliotto/utils/global_data_cache.dart';
 import 'package:piliotto/utils/storage.dart';
 import 'package:screen_brightness/screen_brightness.dart';
-import 'package:status_bar_control/status_bar_control.dart';
+import 'package:status_bar_control_plus/status_bar_control_plus.dart';
 import 'package:universal_platform/universal_platform.dart';
 import '../../services/loggeer.dart';
 import '../../models/video/subTitile/content.dart';
@@ -770,7 +770,7 @@ class PlPlayerController {
     // 只在移动平台上使用ScreenBrightness
     if (UniversalPlatform.isAndroid || UniversalPlatform.isIOS) {
       try {
-        _currentBrightness.value = await ScreenBrightness().current;
+        _currentBrightness.value = await ScreenBrightness().application;
       } catch (e) {
         throw 'Failed to get current brightness';
       }
@@ -782,7 +782,7 @@ class PlPlayerController {
       brightness.value = brightnes;
       // 只在移动平台上使用ScreenBrightness
       if (UniversalPlatform.isAndroid || UniversalPlatform.isIOS) {
-        ScreenBrightness().setScreenBrightness(brightnes);
+        ScreenBrightness().setApplicationScreenBrightness(brightnes);
       }
       // setVideoBrightness();
     } catch (e) {
@@ -794,7 +794,7 @@ class PlPlayerController {
     // 只在移动平台上使用ScreenBrightness
     if (UniversalPlatform.isAndroid || UniversalPlatform.isIOS) {
       try {
-        await ScreenBrightness().resetScreenBrightness();
+        await ScreenBrightness().resetApplicationScreenBrightness();
       } catch (e) {
         throw 'Failed to reset brightness';
       }
@@ -914,7 +914,7 @@ class PlPlayerController {
 
     // 只在移动平台上使用StatusBarControl
     if (UniversalPlatform.isAndroid || UniversalPlatform.isIOS) {
-      await StatusBarControl.setHidden(true,
+      await StatusBarControlPlus.setHidden(true,
           animation: StatusBarAnimation.FADE);
     }
 
@@ -933,7 +933,8 @@ class PlPlayerController {
     } else if (isFullScreen.value && !status) {
       // 只在移动平台上使用StatusBarControl
       if (UniversalPlatform.isAndroid || UniversalPlatform.isIOS) {
-        StatusBarControl.setHidden(false, animation: StatusBarAnimation.FADE);
+        StatusBarControlPlus.setHidden(false,
+            animation: StatusBarAnimation.FADE);
       }
       exitFullScreen();
       await verticalScreen();

@@ -175,9 +175,12 @@ class VideoIntroController extends GetxController {
 
   // 分享视频
   Future actionShareVideo() async {
-    var result = await Share.share(
-            '${videoDetail.value.title} UP主: ${videoDetail.value.username} - https://ottohub.cn/video/$vid')
-        .whenComplete(() {});
+    var result = await SharePlus.instance.share(
+      ShareParams(
+        text:
+            '${videoDetail.value.title} UP主: ${videoDetail.value.username} - https://ottohub.cn/video/$vid',
+      ),
+    );
     return result;
   }
 

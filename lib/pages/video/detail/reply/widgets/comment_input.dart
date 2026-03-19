@@ -96,83 +96,89 @@ class _CommentInputState extends State<CommentInput> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final bottomPadding = MediaQuery.of(context).padding.bottom;
+    final keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
 
-    return Container(
+    return AnimatedPadding(
       padding: EdgeInsets.only(
-        left: 12,
-        right: 12,
-        top: 8,
-        bottom: bottomPadding + 8,
+        bottom: keyboardHeight > 0 ? keyboardHeight + 8 : bottomPadding + 8,
       ),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        border: Border(
-          top: BorderSide(
-            color: theme.dividerColor.withValues(alpha: 0.1),
-            width: 1,
+      duration: const Duration(milliseconds: 100),
+      child: Container(
+        padding: const EdgeInsets.only(
+          left: 12,
+          right: 12,
+          top: 8,
+        ),
+        decoration: BoxDecoration(
+          color: theme.colorScheme.surface,
+          border: Border(
+            top: BorderSide(
+              color: theme.dividerColor.withValues(alpha: 0.1),
+              width: 1,
+            ),
           ),
         ),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Expanded(
-            child: Container(
-              constraints: const BoxConstraints(
-                minHeight: 40,
-                maxHeight: 100,
-              ),
-              decoration: BoxDecoration(
-                color: theme.colorScheme.surfaceContainerHighest,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: TextField(
-                controller: _controller,
-                focusNode: _focusNode,
-                maxLines: 5,
-                minLines: 1,
-                decoration: InputDecoration(
-                  hintText: widget.placeholder ?? '发一条友善的评论喵~',
-                  hintStyle: TextStyle(
-                    fontSize: 14,
-                    color: theme.colorScheme.outline,
-                  ),
-                  border: InputBorder.none,
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 10,
-                  ),
-                  counterText: '',
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Expanded(
+              child: Container(
+                constraints: const BoxConstraints(
+                  minHeight: 40,
+                  maxHeight: 100,
                 ),
-                style: theme.textTheme.bodyMedium,
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: TextField(
+                  controller: _controller,
+                  focusNode: _focusNode,
+                  maxLines: 5,
+                  minLines: 1,
+                  decoration: InputDecoration(
+                    hintText: widget.placeholder ?? '发一条友善的评论喵~',
+                    hintStyle: TextStyle(
+                      fontSize: 14,
+                      color: theme.colorScheme.outline,
+                    ),
+                    border: InputBorder.none,
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 10,
+                    ),
+                    counterText: '',
+                  ),
+                  style: theme.textTheme.bodyMedium,
+                ),
               ),
             ),
-          ),
-          const SizedBox(width: 8),
-          IconButton.filled(
-            onPressed: _isSubmitting ? null : _submitComment,
-            icon: _isSubmitting
-                ? SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: theme.colorScheme.onPrimary,
-                    ),
-                  )
-                : const Icon(Icons.send_rounded, size: 20),
-            style: IconButton.styleFrom(
-              backgroundColor: _hasText
-                  ? theme.colorScheme.primary
-                  : theme.colorScheme.surfaceContainerHigh,
-              foregroundColor: _hasText
-                  ? theme.colorScheme.onPrimary
-                  : theme.colorScheme.outline,
-              disabledBackgroundColor: theme.colorScheme.surfaceContainerHigh,
-              disabledForegroundColor: theme.colorScheme.outline,
+            const SizedBox(width: 8),
+            IconButton.filled(
+              onPressed: _isSubmitting ? null : _submitComment,
+              icon: _isSubmitting
+                  ? SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: theme.colorScheme.onPrimary,
+                      ),
+                    )
+                  : const Icon(Icons.send_rounded, size: 20),
+              style: IconButton.styleFrom(
+                backgroundColor: _hasText
+                    ? theme.colorScheme.primary
+                    : theme.colorScheme.surfaceContainerHigh,
+                foregroundColor: _hasText
+                    ? theme.colorScheme.onPrimary
+                    : theme.colorScheme.outline,
+                disabledBackgroundColor: theme.colorScheme.surfaceContainerHigh,
+                disabledForegroundColor: theme.colorScheme.outline,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

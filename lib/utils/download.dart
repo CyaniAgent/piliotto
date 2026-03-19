@@ -59,10 +59,8 @@ class DownloadUtils {
           "plpl_${imgType}_${DateTime.now().toString().replaceAll(RegExp(r'[- :]'), '').split('.').first}";
       final SaveResult result = await SaverGallery.saveImage(
         Uint8List.fromList(response.data),
-        name: '$picName.$imgSuffix',
-        // 保存到 PiliOtto文件夹
-        androidRelativePath: "Pictures/PiliOtto",
-        androidExistNotSave: false,
+        fileName: '$picName.$imgSuffix',
+        skipIfExists: false,
       );
       SmartDialog.dismiss();
       if (result.isSuccess) {

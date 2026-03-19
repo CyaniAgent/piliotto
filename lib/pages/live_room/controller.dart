@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
 import 'package:hive/hive.dart';
-import 'package:ns_danmaku/ns_danmaku.dart';
+import 'package:canvas_danmaku/canvas_danmaku.dart';
 import 'package:piliotto/models/live/message.dart';
 import 'package:piliotto/models/live/room_info_h5.dart';
 import 'package:piliotto/plugin/pl_player/index.dart';
