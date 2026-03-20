@@ -1,12 +1,8 @@
 import 'package:dio/dio.dart';
 import 'package:get/get.dart';
-
-import '../http/search.dart';
-import 'id_utils.dart';
-import 'utils.dart';
+import 'package:piliotto/utils/id_utils.dart';
 
 class UrlUtils {
-  // 302重定向路由截取
   static Future<String> parseRedirectUrl(String url) async {
     late String redirectUrl;
     final dio = Dio();
@@ -33,7 +29,6 @@ class UrlUtils {
     }
   }
 
-  // 匹配url路由跳转
   static matchUrlPush(
     String pathSegment,
     String title,
@@ -42,15 +37,14 @@ class UrlUtils {
     final Map matchRes = IdUtils.matchAvorBv(input: pathSegment);
     if (matchRes.containsKey('BV')) {
       final String bv = matchRes['BV'];
-      final Map res = await SearchHttp.ab2cWithPic(bvid: bv);
-      final int cid = res['cid'];
-      final String? pic = res['pic'];
-      final String heroTag = Utils.makeHeroTag(bv);
+      // TODO: Ottohub API 使用 vid 而不是 bvid，需要转换
+      // 暂时跳转到 webview
       await Get.toNamed(
-        '/video?bvid=$bv&cid=$cid',
-        arguments: <String, String?>{
-          'pic': pic,
-          'heroTag': heroTag,
+        '/webview',
+        parameters: {
+          'url': 'https://www.bilibili.com/video/$bv',
+          'type': 'url',
+          'pageTitle': title,
         },
       );
     } else {

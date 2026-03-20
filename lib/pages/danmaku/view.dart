@@ -2,22 +2,23 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:hive/hive.dart';
 import 'package:canvas_danmaku/canvas_danmaku.dart';
-import 'package:piliotto/models/danmaku/dm.pb.dart';
+import 'package:piliotto/api/models/danmaku.dart';
 import 'package:piliotto/pages/danmaku/index.dart';
 import 'package:piliotto/plugin/pl_player/index.dart';
 import 'package:piliotto/utils/danmaku.dart';
 import 'package:piliotto/utils/storage.dart';
 
-/// 传入播放器控制器，监听播放进度，加载对应弹幕
 class PlDanmaku extends StatefulWidget {
-  final int cid;
+  final int? vid;
+  final int? cid;
   final PlPlayerController playerController;
   final String type;
   final Function(DanmakuController)? createdController;
 
   const PlDanmaku({
     super.key,
-    required this.cid,
+    this.vid,
+    this.cid,
     required this.playerController,
     this.type = 'video',
     this.createdController,
@@ -31,7 +32,6 @@ class _PlDanmakuState extends State<PlDanmaku> {
   late PlPlayerController playerController;
   late PlDanmakuController _plDanmakuController;
   DanmakuController? _controller;
-  // bool danmuPlayStatus = true;
   Box setting = GStrorage.setting;
   late bool enableShowDanmaku;
   late List blockTypes;
@@ -42,12 +42,14 @@ class _PlDanmakuState extends State<PlDanmaku> {
   late double strokeWidth;
   int latestAddedPosition = -1;
 
+  int get _videoId => widget.vid ?? widget.cid ?? 0;
+
   @override
   void initState() {
     super.initState();
     enableShowDanmaku =
         setting.get(SettingBoxKey.enableShowDanmaku, defaultValue: false);
-    _plDanmakuController = PlDanmakuController(widget.cid, widget.type);
+    _plDanmakuController = PlDanmakuController(_videoId);
     playerController = widget.playerController;
     if (mounted && widget.type == 'video') {
       if (enableShowDanmaku || playerController.isOpenDanmu.value) {
@@ -76,7 +78,6 @@ class _PlDanmakuState extends State<PlDanmaku> {
     danmakuDurationVal = playerController.danmakuDurationVal;
   }
 
-  // 播放器状态监听
   void playerListener(PlayerStatus? status) {
     if (status == PlayerStatus.paused) {
       _controller!.pause();
@@ -91,28 +92,49 @@ class _PlDanmakuState extends State<PlDanmaku> {
       return;
     }
     int currentPosition = position.inMilliseconds;
-    currentPosition -= currentPosition % 100; //取整百的毫秒数
+    currentPosition -= currentPosition % 100;
 
     if (currentPosition == latestAddedPosition) {
       return;
     }
     latestAddedPosition = currentPosition;
 
-    List<DanmakuElem>? currentDanmakuList =
+    List<Danmaku>? currentDanmakuList =
         _plDanmakuController.getCurrentDanmaku(currentPosition);
 
     if (currentDanmakuList != null) {
-      Color? defaultColor = playerController.blockTypes.contains(6)
-          ? DmUtils.decimalToColor(16777215)
-          : null;
-
       for (var e in currentDanmakuList) {
+        Color? defaultColor = playerController.blockTypes.contains(6)
+            ? DmUtils.decimalToColor(16777215)
+            : null;
+
+        DanmakuItemType danmakuType = DanmakuItemType.scroll;
+        if (e.mode == 'top') {
+          danmakuType = DanmakuItemType.top;
+        } else if (e.mode == 'bottom') {
+          danmakuType = DanmakuItemType.bottom;
+        }
+
+        Color danmakuColor = defaultColor ?? _parseColor(e.color);
+
         _controller!.addDanmaku(DanmakuContentItem(
-          e.content,
-          color: defaultColor ?? DmUtils.decimalToColor(e.color),
-          type: DmUtils.getPosition(e.mode),
+          e.text,
+          color: danmakuColor,
+          type: danmakuType,
         ));
       }
+    }
+  }
+
+  Color _parseColor(String colorStr) {
+    try {
+      String hex = colorStr.replaceAll('#', '');
+      if (hex.length == 6) {
+        hex = 'FF$hex';
+      }
+      return Color(int.parse(hex, radix: 16));
+    } catch (e) {
+      return Colors.white;
     }
   }
 
@@ -125,7 +147,6 @@ class _PlDanmakuState extends State<PlDanmaku> {
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(builder: (context, box) {
-      // double initDuration = box.maxWidth / 12;
       return Obx(
         () => AnimatedOpacity(
           opacity: playerController.isOpenDanmu.value ? 1 : 0,
@@ -144,8 +165,6 @@ class _PlDanmakuState extends State<PlDanmaku> {
               hideBottom: blockTypes.contains(4),
               duration: danmakuDurationVal / playerController.playbackSpeed,
               strokeWidth: strokeWidth,
-              // initDuration /
-              //     (danmakuSpeedVal * widget.playerController.playbackSpeed),
             ),
           ),
         ),

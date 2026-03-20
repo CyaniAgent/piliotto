@@ -142,7 +142,9 @@ class SettingBoxKey {
       navBarSort = 'navBarSort',
       actionTypeSort = 'actionTypeSort',
       // 动态页面宽屏布局模式: 'center' 居中, 'waterfall' 瀑布流
-      dynamicWideScreenLayout = 'dynamicWideScreenLayout';
+      dynamicWideScreenLayout = 'dynamicWideScreenLayout',
+      // 窄屏模式下使用侧边栏代替"我的"页面
+      useDrawerForUser = 'useDrawerForUser';
 }
 
 class LocalCacheKey {

@@ -1,7 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:piliotto/http/read.dart';
+// TODO: 迁移到 Ottohub API（如果有专栏/图文功能）
+// import 'package:piliotto/http/read.dart';
 import 'package:piliotto/models/read/opus.dart';
 import 'package:piliotto/plugin/pl_gallery/hero_dialog_route.dart';
 import 'package:piliotto/plugin/pl_gallery/interactiveviewer_gallery.dart';
@@ -28,21 +29,23 @@ class OpusController extends GetxController {
   }
 
   Future fetchOpusData() async {
-    var res = await ReadHttp.parseArticleOpus(id: id);
-    if (res['status']) {
-      List<String> keys = res.keys.toList();
-      if (keys.contains('isCv') && res['isCv']) {
-        Get.offNamed('/read', parameters: {
-          'id': res['cvId'],
-          'title': title.value,
-          'articleType': 'cv',
-        });
-      } else {
-        title.value = res['data'].detail!.basic!.title!;
-        opusData.value = res['data'];
-      }
-    }
-    return res;
+    // TODO: 迁移到 Ottohub API（如果有专栏/图文功能）
+    // var res = await ReadHttp.parseArticleOpus(id: id);
+    // if (res['status']) {
+    //   List<String> keys = res.keys.toList();
+    //   if (keys.contains('isCv') && res['isCv']) {
+    //     Get.offNamed('/read', parameters: {
+    //       'id': res['cvId'],
+    //       'title': title.value,
+    //       'articleType': 'cv',
+    //     });
+    //   } else {
+    //     title.value = res['data'].detail!.basic!.title!;
+    //     opusData.value = res['data'];
+    //   }
+    // }
+    // return res;
+    return {'status': false, 'msg': 'TODO: 迁移到 Ottohub API'};
   }
 
   void _scrollListener() {

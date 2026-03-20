@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:piliotto/http/reply.dart';
+// TODO: 迁移到 Ottohub API
+// import 'package:piliotto/http/reply.dart';
 import 'package:piliotto/models/common/reply_type.dart';
 import 'package:piliotto/models/video/reply/item.dart';
 import 'package:piliotto/utils/feed_back.dart';
@@ -24,28 +25,30 @@ class _ZanButtonState extends State<ZanButton> {
   // 评论点赞
   Future onLikeReply() async {
     feedBack();
+    // TODO: 迁移到 Ottohub API
     // SmartDialog.showLoading(msg: 'piliotto ...');
-    final ReplyItemModel replyItem = widget.replyItem!;
-    final int oid = replyItem.oid!;
-    final int rpid = replyItem.rpid!;
-    // 1 已点赞 2 不喜欢 0 未操作
-    final int action = replyItem.action == 0 ? 1 : 0;
-    final res = await ReplyHttp.likeReply(
-        type: widget.replyType!.index, oid: oid, rpid: rpid, action: action);
-    // SmartDialog.dismiss();
-    if (res['status']) {
-      SmartDialog.showToast(replyItem.action == 0 ? '点赞成功 👍' : '取消赞 💔');
-      if (action == 1) {
-        replyItem.like = replyItem.like! + 1;
-        replyItem.action = 1;
-      } else {
-        replyItem.like = replyItem.like! - 1;
-        replyItem.action = 0;
-      }
-      setState(() {});
-    } else {
-      SmartDialog.showToast(res['msg']);
-    }
+    // final ReplyItemModel replyItem = widget.replyItem!;
+    // final int oid = replyItem.oid!;
+    // final int rpid = replyItem.rpid!;
+    // // 1 已点赞 2 不喜欢 0 未操作
+    // final int action = replyItem.action == 0 ? 1 : 0;
+    // final res = await ReplyHttp.likeReply(
+    //     type: widget.replyType!.index, oid: oid, rpid: rpid, action: action);
+    // // SmartDialog.dismiss();
+    // if (res['status']) {
+    //   SmartDialog.showToast(replyItem.action == 1 ? '点赞成功 👍' : '取消赞 💔');
+    //   if (action == 1) {
+    //     replyItem.like = replyItem.like! + 1;
+    //     replyItem.action = 1;
+    //   } else {
+    //     replyItem.like = replyItem.like! - 1;
+    //     replyItem.action = 0;
+    //   }
+    //   setState(() {});
+    // } else {
+    //   SmartDialog.showToast(res['msg']);
+    // }
+    SmartDialog.showToast('TODO: 迁移到 Ottohub API');
   }
 
   bool isProcessing = false;

@@ -2,12 +2,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
-import 'package:piliotto/http/dynamics.dart';
-import 'package:piliotto/http/video.dart';
 import 'package:piliotto/models/common/reply_type.dart';
-import 'package:piliotto/models/video/reply/emote.dart';
 import 'package:piliotto/models/video/reply/item.dart';
-import 'package:piliotto/pages/emote/index.dart';
 import 'package:piliotto/utils/feed_back.dart';
 
 import 'toolbar_icon_button.dart';
@@ -37,9 +33,8 @@ class _VideoReplyNewDialogState extends State<VideoReplyNewDialog>
   final TextEditingController _replyContentController = TextEditingController();
   final FocusNode replyContentFocusNode = FocusNode();
   final GlobalKey _formKey = GlobalKey<FormState>();
-  late double emoteHeight = 0.0;
-  double keyboardHeight = 0.0; // 键盘高度
-  final _debouncer = Debouncer(milliseconds: 200); // 设置延迟时间
+  double keyboardHeight = 0.0;
+  final _debouncer = Debouncer(milliseconds: 200);
   String toolbarType = 'input';
   RxBool isForward = false.obs;
   RxBool showForward = false.obs;
@@ -48,13 +43,8 @@ class _VideoReplyNewDialogState extends State<VideoReplyNewDialog>
   @override
   void initState() {
     super.initState();
-    // 监听输入框聚焦
-    // replyContentFocusNode.addListener(_onFocus);
-    // 界面观察者 必须
     WidgetsBinding.instance.addObserver(this);
-    // 自动聚焦
     _autoFocus();
-    // 监听聚焦状态
     _focuslistener();
     final String routePath = Get.currentRoute;
     if (routePath.startsWith('/video')) {
@@ -81,48 +71,8 @@ class _VideoReplyNewDialogState extends State<VideoReplyNewDialog>
 
   Future submitReplyAdd() async {
     feedBack();
-    // String message = _replyContentController.text;
-    var result = await VideoHttp.replyAdd(
-      type: widget.replyType ?? ReplyType.video,
-      oid: widget.oid!,
-      root: widget.root!,
-      parent: widget.parent!,
-      message: widget.replyItem != null && widget.replyItem!.root != 0
-          ? ' 回复 @${widget.replyItem!.member!.uname!} : ${message.value}'
-          : message.value,
-    );
-    if (result['status']) {
-      SmartDialog.showToast(result['data']['success_toast']);
-      Get.back(result: {
-        'data': ReplyItemModel.fromJson(result['data']['reply'], ''),
-      });
-
-      /// 投稿、番剧页面
-      if (isForward.value) {
-        await DynamicsHttp.dynamicCreate(
-          mid: 0,
-          rawText: message.value,
-          oid: widget.oid!,
-          scene: 5,
-        );
-      }
-    } else {
-      SmartDialog.showToast(result['msg']);
-    }
-  }
-
-  void onChooseEmote(PackageItem package, Emote emote) {
-    final int cursorPosition = _replyContentController.selection.baseOffset;
-    final String currentText = _replyContentController.text;
-    final String newText = currentText.substring(0, cursorPosition) +
-        emote.text! +
-        currentText.substring(cursorPosition);
-    message.value = newText;
-    _replyContentController.value = TextEditingValue(
-      text: newText,
-      selection:
-          TextSelection.collapsed(offset: cursorPosition + emote.text!.length),
-    );
+    // TODO: 迁移到 Ottohub 评论 API
+    SmartDialog.showToast('TODO: 迁移到 Ottohub 评论 API');
   }
 
   @override
@@ -133,14 +83,13 @@ class _VideoReplyNewDialogState extends State<VideoReplyNewDialog>
         (routePath.startsWith('/video') ||
             routePath.startsWith('/dynamicDetail'))) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        // 键盘高度
         final viewInsets = EdgeInsets.fromViewPadding(
             View.of(context).viewInsets, View.of(context).devicePixelRatio);
         _debouncer.run(() {
           if (mounted) {
-            if (keyboardHeight == 0 && emoteHeight == 0) {
+            if (keyboardHeight == 0) {
               setState(() {
-                emoteHeight = keyboardHeight =
+                keyboardHeight =
                     keyboardHeight == 0.0 ? viewInsets.bottom : keyboardHeight;
               });
             }
@@ -226,30 +175,11 @@ class _VideoReplyNewDialogState extends State<VideoReplyNewDialog>
               children: [
                 ToolbarIconButton(
                   onPressed: () {
-                    if (toolbarType == 'emote') {
-                      setState(() {
-                        toolbarType = 'input';
-                      });
-                    }
                     FocusScope.of(context).requestFocus(replyContentFocusNode);
                   },
                   icon: const Icon(Icons.keyboard, size: 22),
                   toolbarType: toolbarType,
                   selected: toolbarType == 'input',
-                ),
-                const SizedBox(width: 20),
-                ToolbarIconButton(
-                  onPressed: () {
-                    if (toolbarType == 'input') {
-                      setState(() {
-                        toolbarType = 'emote';
-                      });
-                    }
-                    FocusScope.of(context).unfocus();
-                  },
-                  icon: const Icon(Icons.emoji_emotions, size: 22),
-                  toolbarType: toolbarType,
-                  selected: toolbarType == 'emote',
                 ),
                 const SizedBox(width: 6),
                 Obx(
@@ -285,17 +215,6 @@ class _VideoReplyNewDialogState extends State<VideoReplyNewDialog>
                   ),
                 ),
               ],
-            ),
-          ),
-          AnimatedSize(
-            curve: Curves.easeInOut,
-            duration: const Duration(milliseconds: 300),
-            child: SizedBox(
-              width: double.infinity,
-              height: toolbarType == 'input' ? keyboardHeight : emoteHeight,
-              child: EmotePanel(
-                onChoose: (package, emote) => onChooseEmote(package, emote),
-              ),
             ),
           ),
         ],

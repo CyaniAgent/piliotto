@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:hive/hive.dart';
+import 'package:piliotto/common/widgets/user_drawer.dart';
 import 'package:piliotto/models/common/dynamic_badge_mode.dart';
 import 'package:piliotto/pages/dynamics/index.dart';
 import 'package:piliotto/pages/home/index.dart';
@@ -118,7 +119,10 @@ class _MainAppState extends State<MainApp> with SingleTickerProviderStateMixin {
   }
 
   Widget _buildNarrowScreenLayout(BuildContext context) {
+    final useDrawer = _mainController.useDrawerForUser;
     return Scaffold(
+      key: _mainController.scaffoldKey,
+      drawer: useDrawer ? const UserDrawer() : null,
       extendBody: true,
       body: Stack(
         children: [

@@ -9,7 +9,8 @@ import 'package:get/get.dart';
 import 'package:hive/hive.dart';
 import 'package:piliotto/common/widgets/badge.dart';
 import 'package:piliotto/common/widgets/network_img_layer.dart';
-import 'package:piliotto/http/reply.dart';
+// TODO: 迁移到 Ottohub API
+// import 'package:piliotto/http/reply.dart';
 import 'package:piliotto/models/common/reply_type.dart';
 import 'package:piliotto/models/video/reply/item.dart';
 import 'package:piliotto/pages/main/index.dart';
@@ -363,16 +364,18 @@ class _ReplyItemState extends State<ReplyItem> {
             ) ??
             false;
         if (confirmed && context.mounted) {
-          var result = await ReplyHttp.replyDel(
-            type: item.type!,
-            oid: item.oid!,
-            rpid: item.rpid!,
-          );
-          if (result['status']) {
-            SmartDialog.showToast('评论删除成功，需手动刷新');
-          } else {
-            SmartDialog.showToast(result['msg']);
-          }
+          // TODO: 迁移到 Ottohub API
+          // var result = await ReplyHttp.replyDel(
+          //   type: item.type!,
+          //   oid: item.oid!,
+          //   rpid: item.rpid!,
+          // );
+          // if (result['status']) {
+          //   SmartDialog.showToast('评论删除成功，需手动刷新');
+          // } else {
+          //   SmartDialog.showToast(result['msg']);
+          // }
+          SmartDialog.showToast('TODO: 迁移到 Ottohub API');
         }
         break;
     }
@@ -1198,19 +1201,21 @@ class MorePanel extends StatelessWidget {
                 TextButton(
                   onPressed: () async {
                     Navigator.of(ctx).pop();
-                    var result = await ReplyHttp.replyDel(
-                      type: item.type!,
-                      oid: item.oid!,
-                      rpid: item.rpid!,
-                    );
-                    if (result['status']) {
-                      SmartDialog.showToast('评论删除成功，需手动刷新');
-                      if (context.mounted) {
-                        Navigator.of(context).pop();
-                      }
-                    } else {
-                      SmartDialog.showToast(result['msg']);
-                    }
+                    // TODO: 迁移到 Ottohub API
+                    // var result = await ReplyHttp.replyDel(
+                    //   type: item.type!,
+                    //   oid: item.oid!,
+                    //   rpid: item.rpid!,
+                    // );
+                    // if (result['status']) {
+                    //   SmartDialog.showToast('评论删除成功，需手动刷新');
+                    //   if (context.mounted) {
+                    //     Navigator.of(context).pop();
+                    //   }
+                    // } else {
+                    //   SmartDialog.showToast(result['msg']);
+                    // }
+                    SmartDialog.showToast('TODO: 迁移到 Ottohub API');
                   },
                   child: const Text('确定'),
                 ),

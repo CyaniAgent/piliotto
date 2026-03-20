@@ -9,7 +9,8 @@ import '../../api/models/video.dart';
 import '../../services/ottohub_service.dart';
 import 'stat/danmu.dart';
 import 'stat/view.dart';
-import '../../http/dynamics.dart';
+// TODO: 迁移到 Ottohub API
+// import '../../http/dynamics.dart';
 import '../../http/video.dart';
 import '../../utils/id_utils.dart';
 import '../../utils/utils.dart';
@@ -73,16 +74,18 @@ class VideoCardV extends StatelessWidget {
           if (uri.startsWith('http')) {
             String path = Uri.parse(uri).path;
             if (isStringNumeric(path.split('/')[1])) {
+              // TODO: 迁移到 Ottohub OldApiService.getBlogDetail API
               // 请求接口
-              var res =
-                  await DynamicsHttp.dynamicDetail(id: path.split('/')[1]);
-              if (res['status']) {
-                Get.toNamed('/dynamicDetail', arguments: {
-                  'item': res['data'],
-                  'floor': 1,
-                  'action': 'detail'
-                });
-              }
+              // var res =
+              //     await DynamicsHttp.dynamicDetail(id: path.split('/')[1]);
+              // if (res['status']) {
+              //   Get.toNamed('/dynamicDetail', arguments: {
+              //     'item': res['data'],
+              //     'floor': 1,
+              //     'action': 'detail'
+              //   });
+              // }
+              SmartDialog.showToast('TODO: 迁移到 Ottohub API');
               return;
             }
           }

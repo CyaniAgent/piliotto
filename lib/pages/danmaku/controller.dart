@@ -1,62 +1,47 @@
-import 'package:piliotto/http/danmaku.dart';
-import 'package:piliotto/models/danmaku/dm.pb.dart';
+import 'package:piliotto/api/models/danmaku.dart';
+import 'package:piliotto/api/services/danmaku_service.dart';
 
 class PlDanmakuController {
-  PlDanmakuController(this.cid, this.type);
-  final int cid;
-  final String type;
-  Map<int, List<DanmakuElem>> dmSegMap = {};
-  // 已请求的段落标记
-  List<bool> requestedSeg = [];
+  PlDanmakuController(this.vid);
+  final int vid;
+  Map<int, List<Danmaku>> dmSegMap = {};
+  bool _loaded = false;
 
-  bool get initiated => requestedSeg.isNotEmpty;
+  bool get initiated => _loaded;
 
-  static int segmentLength = 60 * 6 * 1000;
-
-  void initiate(int videoDuration, int progress) {
-    if (requestedSeg.isEmpty) {
-      int segCount = (videoDuration / segmentLength).ceil();
-      requestedSeg = List<bool>.generate(segCount, (index) => false);
-    }
-    try {
-      queryDanmaku(calcSegment(progress));
-    } catch (e) {
-      // 错误处理: $e
+  void initiate(int videoDuration, int progress) async {
+    if (!_loaded) {
+      await queryDanmaku();
     }
   }
 
   void dispose() {
     dmSegMap.clear();
-    requestedSeg.clear();
+    _loaded = false;
   }
 
-  int calcSegment(int progress) {
-    return progress ~/ segmentLength;
-  }
-
-  void queryDanmaku(int segmentIndex) async {
-    assert(requestedSeg[segmentIndex] == false);
-    if (requestedSeg.length > segmentIndex) {
-      requestedSeg[segmentIndex] = true;
-      final DmSegMobileReply result = await DanmakaHttp.queryDanmaku(
-          cid: cid, segmentIndex: segmentIndex + 1);
-      if (result.elems.isNotEmpty) {
-        for (var element in result.elems) {
-          int pos = element.progress ~/ 100; //每0.1秒存储一次
-          if (dmSegMap[pos] == null) {
-            dmSegMap[pos] = [];
-          }
-          dmSegMap[pos]!.add(element);
+  Future<void> queryDanmaku() async {
+    try {
+      final List<Danmaku> danmakus = await DanmakuService.getDanmakus(vid);
+      for (var danmaku in danmakus) {
+        int pos = (danmaku.time * 10).toInt();
+        if (dmSegMap[pos] == null) {
+          dmSegMap[pos] = [];
         }
+        dmSegMap[pos]!.add(danmaku);
       }
+      _loaded = true;
+    } catch (e) {
+      // 错误处理
     }
   }
 
-  List<DanmakuElem>? getCurrentDanmaku(int progress) {
-    int segmentIndex = calcSegment(progress);
-    if (!requestedSeg[segmentIndex]) {
-      queryDanmaku(segmentIndex);
+  List<Danmaku>? getCurrentDanmaku(int progress) {
+    if (!_loaded) {
+      queryDanmaku();
+      return null;
     }
-    return dmSegMap[progress ~/ 100];
+    int pos = (progress / 100).toInt();
+    return dmSegMap[pos];
   }
 }

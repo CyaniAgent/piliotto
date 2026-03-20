@@ -1,12 +1,8 @@
 import 'dart:async';
-import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:hive/hive.dart';
 import 'package:piliotto/common/widgets/network_img_layer.dart';
-import 'package:piliotto/models/video/reply/emote.dart';
-import 'package:piliotto/pages/emote/index.dart';
-import 'package:piliotto/pages/video/detail/reply_new/toolbar_icon_button.dart';
 import 'package:piliotto/pages/whisper_detail/controller.dart';
 import 'package:piliotto/utils/feed_back.dart';
 import '../../utils/storage.dart';
@@ -26,9 +22,8 @@ class _WhisperDetailPageState extends State<WhisperDetailPage>
   late Future _futureBuilderFuture;
   late TextEditingController _replyContentController;
   final FocusNode replyContentFocusNode = FocusNode();
-  final _debouncer = Debouncer(milliseconds: 200); // 设置延迟时间
-  late double emoteHeight = 230.0;
-  double keyboardHeight = 0.0; // 键盘高度
+  final _debouncer = Debouncer(milliseconds: 200);
+  double keyboardHeight = 0.0;
   RxString toolbarType = ''.obs;
   Box userInfoCache = GStrorage.userInfo;
 
@@ -55,7 +50,6 @@ class _WhisperDetailPageState extends State<WhisperDetailPage>
     final String routePath = Get.currentRoute;
     if (mounted && routePath.startsWith('/whisperDetail')) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        // 键盘高度
         final viewInsets = EdgeInsets.fromViewPadding(
             View.of(context).viewInsets, View.of(context).devicePixelRatio);
         _debouncer.run(() {
@@ -64,9 +58,6 @@ class _WhisperDetailPageState extends State<WhisperDetailPage>
               setState(() {
                 keyboardHeight =
                     keyboardHeight == 0.0 ? viewInsets.bottom : keyboardHeight;
-                if (keyboardHeight != 0) {
-                  emoteHeight = keyboardHeight;
-                }
               });
             }
           }
@@ -81,23 +72,6 @@ class _WhisperDetailPageState extends State<WhisperDetailPage>
     replyContentFocusNode.removeListener(() {});
     replyContentFocusNode.dispose();
     super.dispose();
-  }
-
-  void onChooseEmote(PackageItem package, Emote emote) {
-    _whisperDetailController.emoteList.add(
-      {'text': emote.text, 'url': emote.url},
-    );
-    final int cursorPosition =
-        max(_replyContentController.selection.baseOffset, 0);
-    final String currentText = _replyContentController.text;
-    final String newText = currentText.substring(0, cursorPosition) +
-        emote.text! +
-        currentText.substring(cursorPosition);
-    _replyContentController.value = TextEditingValue(
-      text: newText,
-      selection:
-          TextSelection.collapsed(offset: cursorPosition + emote.text!.length),
-    );
   }
 
   @override
@@ -213,11 +187,9 @@ class _WhisperDetailPageState extends State<WhisperDetailPage>
                               ),
                       );
                     } else {
-                      // 请求错误
                       return const SizedBox();
                     }
                   } else {
-                    // 骨架屏
                     return const SizedBox();
                   }
                 },
@@ -245,22 +217,6 @@ class _WhisperDetailPageState extends State<WhisperDetailPage>
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  ToolbarIconButton(
-                    onPressed: () {
-                      if (toolbarType.value == '') {
-                        toolbarType.value = 'emote';
-                      } else if (toolbarType.value == 'input') {
-                        FocusScope.of(context).unfocus();
-                        toolbarType.value = 'emote';
-                      } else if (toolbarType.value == 'emote') {
-                        FocusScope.of(context).requestFocus();
-                      }
-                    },
-                    icon: const Icon(Icons.emoji_emotions_outlined, size: 22),
-                    toolbarType: toolbarType.value,
-                    selected: false,
-                  ),
-                  const SizedBox(width: 4),
                   Expanded(
                     child: Container(
                       height: 45,
@@ -277,10 +233,10 @@ class _WhisperDetailPageState extends State<WhisperDetailPage>
                         autofocus: false,
                         focusNode: replyContentFocusNode,
                         decoration: const InputDecoration(
-                          border: InputBorder.none, // 移除默认边框
-                          hintText: '文明发言 ～', // 提示文本
+                          border: InputBorder.none,
+                          hintText: '文明发言 ～',
                           contentPadding: EdgeInsets.symmetric(
-                              horizontal: 16.0, vertical: 12.0), // 内边距
+                              horizontal: 16.0, vertical: 12.0),
                         ),
                       ),
                     ),
@@ -293,23 +249,6 @@ class _WhisperDetailPageState extends State<WhisperDetailPage>
                     ),
                   ),
                 ],
-              ),
-            ),
-          ),
-          Obx(
-            () => AnimatedSize(
-              curve: Curves.linear,
-              duration: const Duration(milliseconds: 200),
-              child: SizedBox(
-                width: double.infinity,
-                height: toolbarType.value == 'input'
-                    ? keyboardHeight
-                    : toolbarType.value == 'emote'
-                        ? emoteHeight
-                        : 0,
-                child: EmotePanel(
-                  onChoose: (package, emote) => onChooseEmote(package, emote),
-                ),
               ),
             ),
           ),

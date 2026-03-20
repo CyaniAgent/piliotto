@@ -1,16 +1,15 @@
-// ignore_for_file: no_leading_underscores_for_local_identifiers
-
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:piliotto/common/constants.dart';
 import 'package:piliotto/common/widgets/network_img_layer.dart';
 import 'package:piliotto/models/common/theme_type.dart';
-import 'package:piliotto/models/user/info.dart';
+import 'package:piliotto/pages/fav/index.dart';
+import 'package:piliotto/pages/history/index.dart';
+import 'package:piliotto/pages/later/index.dart';
 import 'controller.dart';
 
 class MinePage extends StatefulWidget {
-  const MinePage({super.key});
+  final bool showBackButton;
+  const MinePage({super.key, this.showBackButton = false});
 
   @override
   State<MinePage> createState() => _MinePageState();
@@ -18,361 +17,336 @@ class MinePage extends StatefulWidget {
 
 class _MinePageState extends State<MinePage> {
   final MineController mineController = Get.put(MineController());
-  late Future _futureBuilderFuture;
+  final ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
     super.initState();
-    _futureBuilderFuture = mineController.queryUserInfo();
-
     mineController.userLogin.listen((status) {
       if (mounted) {
-        setState(() {
-          _futureBuilderFuture = mineController.queryUserInfo();
-        });
+        setState(() {});
       }
     });
   }
 
   @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Scaffold(
-      appBar: AppBar(
-        automaticallyImplyLeading: false,
-        scrolledUnderElevation: 0,
-        elevation: 0,
-        toolbarHeight: kTextTabBarHeight + 20,
-        backgroundColor: Colors.transparent,
-        centerTitle: false,
-        title: const Text(
-          'PLPL',
-          style: TextStyle(
-            height: 2.8,
-            fontSize: 17,
-            fontWeight: FontWeight.bold,
-            fontFamily: 'Jura-Bold',
-          ),
-        ),
-        actions: [
-          IconButton(
-            onPressed: () => mineController.onChangeTheme(),
-            icon: Icon(
-              mineController.themeType.value == ThemeType.dark
-                  ? CupertinoIcons.sun_max
-                  : CupertinoIcons.moon,
-              size: 22,
+      body: CustomScrollView(
+        controller: _scrollController,
+        slivers: [
+          _buildAppBar(context, theme),
+          SliverToBoxAdapter(
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                _buildBanner(theme),
+                Positioned(
+                  top: 200 - 45,
+                  left: 20,
+                  child: _buildAvatar(theme),
+                ),
+                _buildContent(context, theme),
+              ],
             ),
           ),
-          IconButton(
-            onPressed: () => Get.toNamed('/setting', preventDuplicates: false),
-            icon: const Icon(
-              CupertinoIcons.slider_horizontal_3,
-            ),
-          ),
-          const SizedBox(width: 10),
         ],
-      ),
-      body: LayoutBuilder(
-        builder: (context, constraint) {
-          return SingleChildScrollView(
-            physics: const NeverScrollableScrollPhysics(),
-            child: SizedBox(
-              height: constraint.maxHeight,
-              child: Column(
-                children: [
-                  const SizedBox(height: 10),
-                  FutureBuilder(
-                    future: _futureBuilderFuture,
-                    builder: (context, snapshot) {
-                      if (snapshot.connectionState == ConnectionState.done) {
-                        if (snapshot.data == null) {
-                          return const SizedBox();
-                        }
-                        if (snapshot.data['status']) {
-                          return Obx(
-                              () => userInfoBuild(mineController, context));
-                        } else {
-                          return userInfoBuild(mineController, context);
-                        }
-                      } else {
-                        return userInfoBuild(mineController, context);
-                      }
-                    },
-                  ),
-                ],
-              ),
-            ),
-          );
-        },
       ),
     );
   }
 
-  Widget userInfoBuild(_mineController, context) {
-    return Column(
-      children: [
-        const SizedBox(height: 5),
-        GestureDetector(
-          onTap: () => _mineController.onLogin(),
-          child: ClipOval(
-            child: Container(
-              width: 85,
-              height: 85,
-              color: Theme.of(context).colorScheme.onInverseSurface,
-              child: Center(
-                child: _mineController.userInfo.value.face != null
-                    ? NetworkImgLayer(
-                        src: _mineController.userInfo.value.face,
-                        width: 85,
-                        height: 85)
-                    : Container(
-                        width: 85,
-                        height: 85,
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).colorScheme.onInverseSurface,
-                          shape: BoxShape.circle,
-                        ),
-                        child: Icon(
-                          Icons.person,
-                          size: 50,
-                          color: Theme.of(context).colorScheme.outline,
-                        ),
-                      ),
+  Widget _buildAppBar(BuildContext context, ThemeData theme) {
+    return SliverAppBar(
+      leading: widget.showBackButton
+          ? IconButton(
+              icon: const Icon(Icons.arrow_back),
+              onPressed: () => Get.back(),
+            )
+          : null,
+      automaticallyImplyLeading: false,
+      actions: [
+        IconButton(
+          onPressed: () => mineController.onChangeTheme(),
+          icon: Obx(() => Icon(
+                mineController.themeType.value == ThemeType.dark
+                    ? Icons.light_mode
+                    : Icons.dark_mode,
+                size: 22,
+              )),
+        ),
+        IconButton(
+          onPressed: () => Get.toNamed('/setting', preventDuplicates: false),
+          icon: const Icon(Icons.settings_outlined, size: 22),
+        ),
+        const SizedBox(width: 4),
+      ],
+      floating: true,
+      pinned: true,
+      snap: true,
+    );
+  }
+
+  Widget _buildBanner(ThemeData theme) {
+    return Obx(() {
+      final cover = mineController.userInfo.value.cover;
+      return Container(
+        height: 200,
+        decoration: BoxDecoration(
+          color: theme.colorScheme.secondaryContainer,
+          image: cover != null && cover.isNotEmpty
+              ? DecorationImage(
+                  image: NetworkImage(cover),
+                  fit: BoxFit.cover,
+                )
+              : null,
+        ),
+      );
+    });
+  }
+
+  Widget _buildAvatar(ThemeData theme) {
+    return GestureDetector(
+      onTap: () => mineController.onLogin(),
+      child: Container(
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          border: Border.all(
+            color: theme.colorScheme.surface,
+            width: 3,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: theme.colorScheme.shadow.withAlpha(50),
+              blurRadius: 10,
+              spreadRadius: 2,
+            ),
+          ],
+        ),
+        child: Obx(() {
+          final face = mineController.userInfo.value.face;
+          if (face != null && face.isNotEmpty) {
+            return ClipOval(
+              child: NetworkImgLayer(
+                src: face,
+                width: 90,
+                height: 90,
+                type: 'avatar',
               ),
+            );
+          }
+          return CircleAvatar(
+            radius: 45,
+            backgroundColor: theme.colorScheme.surface,
+            child: Icon(
+              Icons.person,
+              size: 50,
+              color: theme.colorScheme.primary,
             ),
-          ),
-        ),
-        const SizedBox(height: 10),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              _mineController.userInfo.value.uname ?? '点击头像登录',
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            const SizedBox(width: 4),
-            Image.asset(
-              'assets/images/lv/lv${_mineController.userInfo.value.levelInfo != null ? _mineController.userInfo.value.levelInfo!.currentLevel : '0'}.png',
-              height: 10,
-            ),
-          ],
-        ),
-        const SizedBox(height: 5),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text.rich(TextSpan(children: [
-              TextSpan(
-                  text: '硬币: ',
-                  style:
-                      TextStyle(color: Theme.of(context).colorScheme.outline)),
-              TextSpan(
-                  text: (_mineController.userInfo.value.money ?? 'piliotto')
-                      .toString(),
-                  style:
-                      TextStyle(color: Theme.of(context).colorScheme.primary)),
-            ]))
-          ],
-        ),
-        const SizedBox(height: 25),
-        if (_mineController.userInfo.value.levelInfo != null) ...[
-          LayoutBuilder(
-            builder: (context, BoxConstraints box) {
-              LevelInfo levelInfo = _mineController.userInfo.value.levelInfo;
-              return SizedBox(
-                width: box.maxWidth,
-                height: 24,
-                child: Stack(
-                  children: [
-                    Positioned(
-                      top: 0,
-                      right: 0,
-                      bottom: 0,
-                      child: Container(
-                        color: Theme.of(context).colorScheme.primary,
-                        height: 24,
-                        constraints:
-                            const BoxConstraints(minWidth: 100), // 设置最小宽度为100
-                        width: box.maxWidth *
-                            (1 - (levelInfo.currentExp! / levelInfo.nextExp!)),
-                        child: Center(
-                          child: Text(
-                            '${levelInfo.currentExp!}/${levelInfo.nextExp!}',
-                            style: TextStyle(
-                              color: Theme.of(context).colorScheme.onPrimary,
-                              fontSize: 12,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                    Positioned(
-                      top: 23,
-                      left: 0,
-                      bottom: 0,
-                      child: Container(
-                        width: box.maxWidth *
-                            (_mineController
-                                    .userInfo.value.levelInfo!.currentExp! /
-                                _mineController
-                                    .userInfo.value.levelInfo!.nextExp!),
-                        height: 1,
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).colorScheme.primary,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              );
-            },
-          ),
+          );
+        }),
+      ),
+    );
+  }
+
+  Widget _buildContent(BuildContext context, ThemeData theme) {
+    return Container(
+      margin: const EdgeInsets.only(top: 155),
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildUserInfoSection(context, theme),
+          const SizedBox(height: 16),
+          Obx(() => _buildUserStats(theme)),
+          const SizedBox(height: 24),
+          _buildMenuItems(context, theme),
         ],
-        const SizedBox(height: 30),
-        Padding(
-          padding: const EdgeInsets.only(left: 12, right: 12),
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              TextStyle style = TextStyle(
-                  fontSize: Theme.of(context).textTheme.titleMedium!.fontSize,
-                  color: Theme.of(context).colorScheme.primary,
-                  fontWeight: FontWeight.bold);
-              return SizedBox(
-                height: constraints.maxWidth / 3 * 0.6,
-                child: GridView.count(
-                  primary: false,
-                  padding: const EdgeInsets.all(0),
-                  crossAxisCount: 3,
-                  childAspectRatio: 1.67,
-                  children: <Widget>[
-                    InkWell(
-                      onTap: () => _mineController.pushDynamic(),
-                      borderRadius: StyleString.mdRadius,
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          AnimatedSwitcher(
-                            duration: const Duration(milliseconds: 400),
-                            transitionBuilder:
-                                (Widget child, Animation<double> animation) {
-                              return ScaleTransition(
-                                  scale: animation, child: child);
-                            },
-                            child: Text(
-                                (_mineController.userStat.value.dynamicCount ??
-                                        '-')
-                                    .toString(),
-                                key: ValueKey<String>(_mineController
-                                    .userStat.value.dynamicCount
-                                    .toString()),
-                                style: style),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            '动态',
-                            style: Theme.of(context).textTheme.labelMedium,
-                          ),
-                        ],
-                      ),
-                    ),
-                    InkWell(
-                      onTap: () => _mineController.pushFollow(),
-                      borderRadius: StyleString.mdRadius,
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          AnimatedSwitcher(
-                            duration: const Duration(milliseconds: 400),
-                            transitionBuilder:
-                                (Widget child, Animation<double> animation) {
-                              return ScaleTransition(
-                                  scale: animation, child: child);
-                            },
-                            child: Text(
-                                (_mineController.userStat.value.following ??
-                                        '-')
-                                    .toString(),
-                                key: ValueKey<String>(_mineController
-                                    .userStat.value.following
-                                    .toString()),
-                                style: style),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            '关注',
-                            style: Theme.of(context).textTheme.labelMedium,
-                          ),
-                        ],
-                      ),
-                    ),
-                    InkWell(
-                      onTap: () => _mineController.pushFans(),
-                      borderRadius: StyleString.mdRadius,
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          AnimatedSwitcher(
-                            duration: const Duration(milliseconds: 400),
-                            transitionBuilder:
-                                (Widget child, Animation<double> animation) {
-                              return ScaleTransition(
-                                  scale: animation, child: child);
-                            },
-                            child: Text(
-                                (_mineController.userStat.value.follower ?? '-')
-                                    .toString(),
-                                key: ValueKey<String>(_mineController
-                                    .userStat.value.follower
-                                    .toString()),
-                                style: style),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            '粉丝',
-                            style: Theme.of(context).textTheme.labelMedium,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
+      ),
+    );
+  }
+
+  Widget _buildUserInfoSection(BuildContext context, ThemeData theme) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 115, top: 20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Obx(() => Text(
+                mineController.userInfo.value.uname ?? '点击头像登录',
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: theme.colorScheme.onSurface,
+                ),
+              )),
+          const SizedBox(height: 4),
+          Obx(() {
+            if (mineController.userLogin.value) {
+              return Text(
+                'UID: ${mineController.userInfo.value.mid}',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: theme.colorScheme.onSurfaceVariant,
                 ),
               );
-            },
-          ),
+            }
+            return const SizedBox.shrink();
+          }),
+          const SizedBox(height: 12),
+          Obx(() {
+            if (mineController.userLogin.value) {
+              return FilledButton(
+                onPressed: () => Get.toNamed('/member', parameters: {
+                  'mid': mineController.userInfo.value.mid.toString(),
+                }, arguments: {
+                  'heroTag': 'mine',
+                  'face': mineController.userInfo.value.face,
+                }),
+                child: const Text('编辑资料'),
+              );
+            }
+            return FilledButton(
+              onPressed: () => Get.toNamed('/loginPage'),
+              child: const Text('立即登录'),
+            );
+          }),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildUserStats(ThemeData theme) {
+    return Row(
+      children: [
+        _buildStatItem(
+          theme,
+          '关注',
+          mineController.userStat.value.following?.toString() ?? '0',
+          () => mineController.pushFollow(),
+        ),
+        const SizedBox(width: 24),
+        _buildStatItem(
+          theme,
+          '粉丝',
+          mineController.userStat.value.follower?.toString() ?? '0',
+          () => mineController.pushFans(),
+        ),
+        const SizedBox(width: 24),
+        _buildStatItem(
+          theme,
+          '动态',
+          mineController.userStat.value.dynamicCount?.toString() ?? '0',
+          () => mineController.pushDynamic(),
         ),
       ],
     );
   }
-}
 
-class ActionItem extends StatelessWidget {
-  final Icon? icon;
-  final Function? onTap;
-  final String? text;
-
-  const ActionItem({
-    Key? key,
-    this.icon,
-    this.onTap,
-    this.text,
-  }) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: () {},
-      borderRadius: StyleString.mdRadius,
+  Widget _buildStatItem(
+    ThemeData theme,
+    String label,
+    String value,
+    VoidCallback onTap,
+  ) {
+    return GestureDetector(
+      onTap: onTap,
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon!.icon!),
-          const SizedBox(height: 8),
           Text(
-            text!,
-            style: Theme.of(context).textTheme.labelMedium,
+            value,
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: theme.colorScheme.onSurface,
+            ),
+          ),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildMenuItems(BuildContext context, ThemeData theme) {
+    return Column(
+      children: [
+        _buildMenuItem(
+          context,
+          theme,
+          Icons.dynamic_feed_outlined,
+          '我的动态',
+          () => mineController.pushDynamic(),
+        ),
+        _buildMenuItem(
+          context,
+          theme,
+          Icons.play_circle_outlined,
+          '我的投稿',
+          () {},
+        ),
+        _buildMenuItem(
+          context,
+          theme,
+          Icons.favorite_border_outlined,
+          '我的收藏',
+          () => Get.to(const FavPage()),
+        ),
+        _buildMenuItem(
+          context,
+          theme,
+          Icons.history_outlined,
+          '历史记录',
+          () => Get.to(const HistoryPage()),
+        ),
+        _buildMenuItem(
+          context,
+          theme,
+          Icons.watch_later_outlined,
+          '稍后再看',
+          () => Get.to(const LaterPage()),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildMenuItem(
+    BuildContext context,
+    ThemeData theme,
+    IconData icon,
+    String title,
+    VoidCallback onTap,
+  ) {
+    return ListTile(
+      onTap: onTap,
+      leading: Icon(
+        icon,
+        size: 24,
+        color: theme.colorScheme.primary,
+      ),
+      title: Text(
+        title,
+        style: TextStyle(
+          fontSize: 16,
+          color: theme.colorScheme.onSurface,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+      trailing: const Icon(Icons.arrow_forward_outlined, size: 19),
     );
   }
 }

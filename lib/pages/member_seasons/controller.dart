@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:piliotto/http/member.dart';
+// TODO: 迁移到 Ottohub API
+// import 'package:piliotto/http/member.dart';
 import 'package:piliotto/models/member/seasons.dart';
 
 class MemberSeasonsController extends GetxController {
@@ -30,41 +31,45 @@ class MemberSeasonsController extends GetxController {
 
   // 获取专栏详情 0: 专栏 1: 系列
   Future getSeasonDetail(type) async {
-    if (type == 'onRefresh') {
-      pn = 1;
-    }
-    var res = await MemberHttp.getSeasonDetail(
-      mid: mid,
-      seasonId: seasonId!,
-      pn: pn,
-      ps: ps,
-      sortReverse: false,
-    );
-    if (res['status']) {
-      seasonsList.addAll(res['data'].archives);
-      page = res['data'].page;
-      pn += 1;
-    }
-    return res;
+    // TODO: 迁移到 Ottohub API
+    // if (type == 'onRefresh') {
+    //   pn = 1;
+    // }
+    // var res = await MemberHttp.getSeasonDetail(
+    //   mid: mid,
+    //   seasonId: seasonId!,
+    //   pn: pn,
+    //   ps: ps,
+    //   sortReverse: false,
+    // );
+    // if (res['status']) {
+    //   seasonsList.addAll(res['data'].archives);
+    //   page = res['data'].page;
+    //   pn += 1;
+    // }
+    // return res;
+    return {'status': false, 'msg': 'TODO: 迁移到 Ottohub API'};
   }
 
   // 获取系列详情 0: 专栏 1: 系列
   Future getSeriesDetail(type) async {
-    if (type == 'onRefresh') {
-      pn = 1;
-    }
-    var res = await MemberHttp.getSeriesDetail(
-      mid: mid,
-      seriesId: seriesId!,
-      pn: pn,
-      currentMid: 17340771,
-    );
-    if (res['status']) {
-      seasonsList.addAll(res['data'].seriesList);
-      page = res['data'].page;
-      pn += 1;
-    }
-    return res;
+    // TODO: 迁移到 Ottohub API
+    // if (type == 'onRefresh') {
+    //   pn = 1;
+    // }
+    // var res = await MemberHttp.getSeriesDetail(
+    //   mid: mid,
+    //   seriesId: seriesId!,
+    //   pn: pn,
+    //   currentMid: 17340771,
+    // );
+    // if (res['status']) {
+    //   seasonsList.addAll(res['data'].seriesList);
+    //   page = res['data'].page;
+    //   pn += 1;
+    // }
+    // return res;
+    return {'status': false, 'msg': 'TODO: 迁移到 Ottohub API'};
   }
 
   // 上拉加载

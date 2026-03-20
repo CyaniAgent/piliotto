@@ -103,6 +103,13 @@ class _StyleSettingState extends State<StyleSetting> {
             needReboot: true,
           ),
           const SetSwitchItem(
+            title: '窄屏使用侧边栏',
+            subTitle: '窄屏模式下点击头像打开侧边栏，关闭则显示"我的"页面',
+            setKey: SettingBoxKey.useDrawerForUser,
+            defaultVal: true,
+            needReboot: true,
+          ),
+          const SetSwitchItem(
             title: '首页顶部背景渐变',
             setKey: SettingBoxKey.enableGradientBg,
             defaultVal: true,

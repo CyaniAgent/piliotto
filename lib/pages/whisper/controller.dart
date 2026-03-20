@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:piliotto/http/msg.dart';
+// TODO: 迁移到 Ottohub 消息 API（如果有）
+// import 'package:piliotto/http/msg.dart';
 import 'package:piliotto/models/msg/account.dart';
 import 'package:piliotto/models/msg/session.dart';
 
@@ -37,55 +38,60 @@ class WhisperController extends GetxController {
 
   @override
   void onInit() {
-    unread();
+    // TODO: 迁移到 Ottohub 消息 API
+    // unread();
     super.onInit();
   }
 
   Future querySessionList(String? type) async {
-    if (isLoading) return;
-    var res = await MsgHttp.sessionList(
-        endTs: type == 'onLoad' ? sessionList.last.sessionTs : null);
-    if (res['data'].sessionList != null && res['data'].sessionList.isNotEmpty) {
-      await queryAccountList(res['data'].sessionList);
-      // 将 accountList 转换为 Map 结构
-      Map<int, dynamic> accountMap = {};
-      for (var j in accountList) {
-        accountMap[j.mid!] = j;
-      }
-
-      // 遍历 sessionList，通过 mid 查找并赋值 accountInfo
-      for (var i in res['data'].sessionList) {
-        var accountInfo = accountMap[i.talkerId];
-        if (accountInfo != null) {
-          i.accountInfo = accountInfo;
-        }
-        if (i.talkerId == 844424930131966) {
-          i.accountInfo = AccountListModel(
-            name: 'UP主小助手',
-            face:
-                'https://message.biliimg.com/bfs/im/489a63efadfb202366c2f88853d2217b5ddc7a13.png',
-          );
-        }
-      }
-    }
-    if (res['status'] && res['data'].sessionList != null) {
-      if (type == 'onLoad') {
-        sessionList.addAll(res['data'].sessionList);
-      } else {
-        sessionList.value = res['data'].sessionList;
-      }
-    }
-    isLoading = false;
-    return res;
+    // TODO: 迁移到 Ottohub 消息 API（如果有）
+    // if (isLoading) return;
+    // var res = await MsgHttp.sessionList(
+    //     endTs: type == 'onLoad' ? sessionList.last.sessionTs : null);
+    // if (res['data'].sessionList != null && res['data'].sessionList.isNotEmpty) {
+    //   await queryAccountList(res['data'].sessionList);
+    //   // 将 accountList 转换为 Map 结构
+    //   Map<int, dynamic> accountMap = {};
+    //   for (var j in accountList) {
+    //     accountMap[j.mid!] = j;
+    //   }
+    //
+    //   // 遍历 sessionList，通过 mid 查找并赋值 accountInfo
+    //   for (var i in res['data'].sessionList) {
+    //     var accountInfo = accountMap[i.talkerId];
+    //     if (accountInfo != null) {
+    //       i.accountInfo = accountInfo;
+    //     }
+    //     if (i.talkerId == 844424930131966) {
+    //       i.accountInfo = AccountListModel(
+    //         name: 'UP主小助手',
+    //         face:
+    //             'https://message.biliimg.com/bfs/im/489a63efadfb202366c2f88853d2217b5ddc7a13.png',
+    //       );
+    //     }
+    //   }
+    // }
+    // if (res['status'] && res['data'].sessionList != null) {
+    //   if (type == 'onLoad') {
+    //     sessionList.addAll(res['data'].sessionList);
+    //   } else {
+    //     sessionList.value = res['data'].sessionList;
+    //   }
+    // }
+    // isLoading = false;
+    // return res;
+    return {'status': false, 'msg': 'TODO: 迁移到 Ottohub 消息 API'};
   }
 
   Future queryAccountList(sessionList) async {
-    List midsList = sessionList.map((e) => e.talkerId!).toList();
-    var res = await MsgHttp.accountList(midsList.join(','));
-    if (res['status']) {
-      accountList.value = res['data'];
-    }
-    return res;
+    // TODO: 迁移到 Ottohub 消息 API（如果有）
+    // List midsList = sessionList.map((e) => e.talkerId!).toList();
+    // var res = await MsgHttp.accountList(midsList.join(','));
+    // if (res['status']) {
+    //   accountList.value = res['data'];
+    // }
+    // return res;
+    return {'status': false, 'msg': 'TODO: 迁移到 Ottohub 消息 API'};
   }
 
   Future onLoad() async {
@@ -113,13 +119,14 @@ class WhisperController extends GetxController {
 
   // 消息未读数
   void unread() async {
-    var res = await MsgHttp.unread();
-    if (res['status']) {
-      noticesList[0]['count'] = res['data']['reply'];
-      noticesList[1]['count'] = res['data']['at'];
-      noticesList[2]['count'] = res['data']['like'];
-      noticesList[3]['count'] = res['data']['sys_msg'];
-      noticesList.refresh();
-    }
+    // TODO: 迁移到 Ottohub 消息 API（如果有）
+    // var res = await MsgHttp.unread();
+    // if (res['status']) {
+    //   noticesList[0]['count'] = res['data']['reply'];
+    //   noticesList[1]['count'] = res['data']['at'];
+    //   noticesList[2]['count'] = res['data']['like'];
+    //   noticesList[3]['count'] = res['data']['sys_msg'];
+    //   noticesList.refresh();
+    // }
   }
 }

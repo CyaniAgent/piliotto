@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:piliotto/common/widgets/network_img_layer.dart';
+import 'package:piliotto/pages/main/controller.dart';
 import 'package:piliotto/pages/mine/index.dart';
 import 'package:piliotto/utils/feed_back.dart';
 import './controller.dart';
@@ -35,29 +36,36 @@ class _HomePageState extends State<HomePage>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // 屏幕尺寸变化时的防抖处理
     EasyThrottle.throttle(
-        'homePageDidChange', const Duration(milliseconds: 100), () {
-      // 这里可以添加需要在屏幕尺寸变化时执行的逻辑
-    });
+        'homePageDidChange', const Duration(milliseconds: 100), () {});
   }
 
   showUserBottomSheet() {
     feedBack();
-    showModalBottomSheet(
-      context: context,
-      builder: (_) => const SizedBox(
-        height: 450,
-        child: MinePage(),
-      ),
-      clipBehavior: Clip.hardEdge,
-      isScrollControlled: true,
-    );
+    // 不使用侧边栏时，跳转到"我的"页面
+    final mainController = Get.find<MainController>();
+    if (mainController.useDrawerForUser) {
+      // 使用侧边栏时，显示底页
+      showModalBottomSheet(
+        context: context,
+        builder: (_) => const SizedBox(
+          height: 450,
+          child: MinePage(),
+        ),
+        clipBehavior: Clip.hardEdge,
+        isScrollControlled: true,
+      );
+    } else {
+      // 不使用侧边栏时，跳转到"我的"页面
+      Get.toNamed('/mine');
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     super.build(context);
+    final isNarrowScreen = MediaQuery.of(context).size.width < 600;
+
     return Scaffold(
       extendBody: true,
       extendBodyBehindAppBar: true,
@@ -85,6 +93,7 @@ class _HomePageState extends State<HomePage>
                 : StreamController<bool>.broadcast().stream,
             ctr: _homeController,
             callback: showUserBottomSheet,
+            isNarrowScreen: isNarrowScreen,
           ),
           if (_homeController.tabs.length > 1) ...[
             const SizedBox(height: 4),
@@ -133,6 +142,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   final Stream<bool>? stream;
   final HomeController? ctr;
   final Function? callback;
+  final bool isNarrowScreen;
 
   const CustomAppBar({
     super.key,
@@ -140,6 +150,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
     this.stream,
     this.ctr,
     this.callback,
+    this.isNarrowScreen = false,
   });
 
   @override
@@ -167,6 +178,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
               userLogin: isUserLoggedIn,
               userFace: ctr?.userFace.value,
               callback: () => callback!(),
+              isNarrowScreen: isNarrowScreen,
             ),
           ),
         );
@@ -183,6 +195,7 @@ class UserInfoWidget extends StatelessWidget {
     required this.userFace,
     required this.callback,
     required this.ctr,
+    required this.isNarrowScreen,
   }) : super(key: key);
 
   final double top;
@@ -190,6 +203,7 @@ class UserInfoWidget extends StatelessWidget {
   final String? userFace;
   final VoidCallback? callback;
   final HomeController? ctr;
+  final bool isNarrowScreen;
 
   Widget buildLoggedInWidget(context) {
     return Stack(
@@ -204,7 +218,18 @@ class UserInfoWidget extends StatelessWidget {
           child: Material(
             color: Colors.transparent,
             child: InkWell(
-              onTap: () => callback?.call(),
+              onTap: () {
+                if (isNarrowScreen) {
+                  final mainController = Get.find<MainController>();
+                  if (mainController.useDrawerForUser) {
+                    mainController.scaffoldKey.currentState?.openDrawer();
+                  } else {
+                    callback?.call();
+                  }
+                } else {
+                  callback?.call();
+                }
+              },
               splashColor: Theme.of(context)
                   .colorScheme
                   .primaryContainer
@@ -223,30 +248,47 @@ class UserInfoWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        SearchBar(ctr: ctr),
-        if (userLogin.value) ...[
-          const SizedBox(width: 4),
-          ClipRect(
-            child: IconButton(
-              onPressed: () => Get.toNamed('/whisper'),
-              icon: const Icon(Icons.notifications_none),
-            ),
-          )
+        if (isNarrowScreen) ...[
+          Obx(
+            () => userLogin.value
+                ? buildLoggedInWidget(context)
+                : DefaultUser(
+                    callback: () => callback!(),
+                    isNarrowScreen: isNarrowScreen,
+                  ),
+          ),
+          const SizedBox(width: 8),
         ],
-        const SizedBox(width: 8),
-        Obx(
-          () => userLogin.value
-              ? buildLoggedInWidget(context)
-              : DefaultUser(callback: () => callback!()),
-        ),
+        SearchBar(ctr: ctr),
+        if (!isNarrowScreen) ...[
+          if (userLogin.value) ...[
+            const SizedBox(width: 4),
+            ClipRect(
+              child: IconButton(
+                onPressed: () => Get.toNamed('/whisper'),
+                icon: const Icon(Icons.notifications_none),
+              ),
+            ),
+          ],
+          const SizedBox(width: 8),
+          Obx(
+            () => userLogin.value
+                ? buildLoggedInWidget(context)
+                : DefaultUser(
+                    callback: () => callback!(),
+                    isNarrowScreen: isNarrowScreen,
+                  ),
+          ),
+        ],
       ],
     );
   }
 }
 
 class DefaultUser extends StatelessWidget {
-  const DefaultUser({super.key, this.callback});
+  const DefaultUser({super.key, this.callback, this.isNarrowScreen = false});
   final Function? callback;
+  final bool isNarrowScreen;
 
   @override
   Widget build(BuildContext context) {
@@ -263,7 +305,18 @@ class DefaultUser extends StatelessWidget {
                 .withValues(alpha: 0.05);
           }),
         ),
-        onPressed: () => callback?.call(),
+        onPressed: () {
+          if (isNarrowScreen) {
+            final mainController = Get.find<MainController>();
+            if (mainController.useDrawerForUser) {
+              mainController.scaffoldKey.currentState?.openDrawer();
+            } else {
+              callback?.call();
+            }
+          } else {
+            callback?.call();
+          }
+        },
         icon: Icon(
           Icons.person_rounded,
           size: 22,

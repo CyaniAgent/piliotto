@@ -3,7 +3,8 @@ import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
 import 'package:hive/hive.dart';
 import 'package:piliotto/common/widgets/http_error.dart';
-import 'package:piliotto/http/member.dart';
+// TODO: 迁移到 Ottohub API
+// import 'package:piliotto/http/member.dart';
 import 'package:piliotto/models/member/tags.dart';
 import 'package:piliotto/utils/feed_back.dart';
 import 'package:piliotto/utils/storage.dart';
@@ -26,30 +27,38 @@ class _GroupPanelState extends State<GroupPanel> {
   @override
   void initState() {
     super.initState();
-    _futureBuilderFuture = MemberHttp.followUpTags();
+    // TODO: 迁移到 Ottohub API
+    // _futureBuilderFuture = MemberHttp.followUpTags();
+    _futureBuilderFuture = Future.value({
+      'status': false,
+      'msg': 'TODO: 迁移到 Ottohub API',
+      'data': <MemberTagItemModel>[]
+    });
   }
 
   void onSave() async {
     feedBack();
+    // TODO: 迁移到 Ottohub API
     // 是否有选中的 有选中的带id，没选使用默认0
-    final bool anyHasChecked =
-        tagsList.any((MemberTagItemModel e) => e.checked == true);
-    late String tagids;
-    if (anyHasChecked) {
-      final List<MemberTagItemModel> checkedList =
-          tagsList.where((MemberTagItemModel e) => e.checked == true).toList();
-      final List<int> tagidList =
-          checkedList.map<int>((e) => e.tagid!).toList();
-      tagids = tagidList.join(',');
-    } else {
-      tagids = '0';
-    }
-    // 保存
-    final res = await MemberHttp.addUsers(widget.mid, tagids);
-    SmartDialog.showToast(res['msg']);
-    if (res['status']) {
-      Get.back();
-    }
+    // final bool anyHasChecked =
+    //     tagsList.any((MemberTagItemModel e) => e.checked == true);
+    // late String tagids;
+    // if (anyHasChecked) {
+    //   final List<MemberTagItemModel> checkedList =
+    //       tagsList.where((MemberTagItemModel e) => e.checked == true).toList();
+    //   final List<int> tagidList =
+    //       checkedList.map<int>((e) => e.tagid!).toList();
+    //   tagids = tagidList.join(',');
+    // } else {
+    //   tagids = '0';
+    // }
+    // // 保存
+    // final res = await MemberHttp.addUsers(widget.mid, tagids);
+    // SmartDialog.showToast(res['msg']);
+    // if (res['status']) {
+    //   Get.back();
+    // }
+    SmartDialog.showToast('TODO: 迁移到 Ottohub API');
   }
 
   @override

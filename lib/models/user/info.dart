@@ -8,6 +8,7 @@ class UserInfoData {
     this.isLogin,
     this.emailVerified,
     this.face,
+    this.cover,
     this.levelInfo,
     this.mid,
     this.mobileVerified,
@@ -36,6 +37,8 @@ class UserInfoData {
   int? emailVerified;
   @HiveField(2)
   String? face;
+  @HiveField(24)
+  String? cover;
   @HiveField(3)
   LevelInfo? levelInfo;
   @HiveField(4)
@@ -83,6 +86,7 @@ class UserInfoData {
     isLogin = json['isLogin'] ?? false;
     emailVerified = json['email_verified'];
     face = json['face'];
+    cover = json['cover'];
     levelInfo = json['level_info'] != null
         ? LevelInfo.fromJson(json['level_info'])
         : LevelInfo();

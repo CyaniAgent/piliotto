@@ -1,7 +1,4 @@
-import 'package:hive/hive.dart';
-import 'package:piliotto/http/user.dart';
-
-import 'storage.dart';
+// TODO: 迁移到 Ottohub API（如果有历史记录功能）
 
 class Data {
   static Future init() async {
@@ -9,12 +6,6 @@ class Data {
   }
 
   static Future historyStatus() async {
-    Box localCache = GStrorage.localCache;
-    Box userInfoCache = GStrorage.userInfo;
-    if (userInfoCache.get('userInfoCache') == null) {
-      return;
-    }
-    var res = await UserHttp.historyStatus();
-    localCache.put(LocalCacheKey.historyPause, res.data['data']);
+    // Ottohub API 暂不支持历史记录功能
   }
 }

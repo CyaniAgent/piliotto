@@ -22,8 +22,20 @@ class _NavigationbarSetPageState extends State<NavigationBarSetPage> {
   void initState() {
     super.initState();
     defaultNavTabs = defaultNavigationBars;
-    navBarSort = settingStorage
-        .get(SettingBoxKey.navBarSort, defaultValue: [0, 1, 2, 3]);
+    navBarSort =
+        settingStorage.get(SettingBoxKey.navBarSort, defaultValue: [0, 1, 3]);
+
+    // 自动添加新页面到导航栏
+    for (var item in defaultNavigationBars) {
+      if (!navBarSort.contains(item['id'])) {
+        navBarSort.add(item['id']);
+      }
+    }
+
+    // 移除不存在的页面ID
+    navBarSort.removeWhere(
+        (id) => !defaultNavigationBars.any((item) => item['id'] == id));
+
     // 对 tabData 进行排序
     defaultNavTabs.sort((a, b) {
       int indexA = navBarSort.indexOf(a['id']);

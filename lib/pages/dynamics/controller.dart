@@ -3,7 +3,8 @@ import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
 import 'package:hive/hive.dart';
 import 'package:piliotto/api/services/old_api_service.dart';
-import 'package:piliotto/http/dynamics.dart';
+// TODO: 迁移到 Ottohub API
+// import 'package:piliotto/http/dynamics.dart';
 import 'package:piliotto/models/common/dynamics_type.dart';
 import 'package:piliotto/models/dynamics/result.dart';
 import 'package:piliotto/models/dynamics/up.dart';
@@ -122,39 +123,41 @@ class DynamicsController extends GetxController {
       return await _queryOttohubDynamic(type: type);
     }
 
-    // 原始 B站 API
-    if (!userLogin.value) {
-      return {'status': false, 'msg': '账号未登录', 'code': -101};
-    }
-    if (type == 'init') {
-      dynamicsList.clear();
-    }
-    // 下拉刷新数据渲染时会触发onLoad
-    if (type == 'onLoad' && page == 1) {
-      return;
-    }
-    isLoadingDynamic.value = true;
-    var res = await DynamicsHttp.followDynamic(
-      page: type == 'init' ? 1 : page,
-      type: dynamicsType.value.values,
-      offset: offset,
-      mid: mid.value,
-    );
-    isLoadingDynamic.value = false;
-    if (res['status']) {
-      if (type == 'onLoad' && res['data'].items.isEmpty) {
-        SmartDialog.showToast('没有更多了');
-        return;
-      }
-      if (type == 'init') {
-        dynamicsList.value = res['data'].items;
-      } else {
-        dynamicsList.addAll(res['data'].items);
-      }
-      offset = res['data'].offset;
-      page++;
-    }
-    return res;
+    // TODO: 迁移到 Ottohub API
+    // 原始 B站 API 已禁用
+    // if (!userLogin.value) {
+    //   return {'status': false, 'msg': '账号未登录', 'code': -101};
+    // }
+    // if (type == 'init') {
+    //   dynamicsList.clear();
+    // }
+    // // 下拉刷新数据渲染时会触发onLoad
+    // if (type == 'onLoad' && page == 1) {
+    //   return;
+    // }
+    // isLoadingDynamic.value = true;
+    // var res = await DynamicsHttp.followDynamic(
+    //   page: type == 'init' ? 1 : page,
+    //   type: dynamicsType.value.values,
+    //   offset: offset,
+    //   mid: mid.value,
+    // );
+    // isLoadingDynamic.value = false;
+    // if (res['status']) {
+    //   if (type == 'onLoad' && res['data'].items.isEmpty) {
+    //     SmartDialog.showToast('没有更多了');
+    //     return;
+    //   }
+    //   if (type == 'init') {
+    //     dynamicsList.value = res['data'].items;
+    //   } else {
+    //     dynamicsList.addAll(res['data'].items);
+    //   }
+    //   offset = res['data'].offset;
+    //   page++;
+    // }
+    // return res;
+    return {'status': false, 'msg': 'TODO: 迁移到 Ottohub API'};
   }
 
   // Ottohub 动态查询
@@ -305,25 +308,27 @@ class DynamicsController extends GetxController {
   }
 
   Future queryFollowUp({type = 'init'}) async {
-    if (!userLogin.value) {
-      return {'status': false, 'msg': '账号未登录', 'code': -101};
-    }
-    if (type == 'init') {
-      upData.value.upList = <UpItem>[];
-      upData.value.liveList = <LiveUserItem>[];
-    }
-    var res = await DynamicsHttp.followUp();
-    if (res['status']) {
-      upData.value = res['data'];
-      if (upData.value.upList!.isEmpty) {
-        mid.value = -1;
-      }
-      upData.value.upList!.insertAll(0, [
-        UpItem(face: '', uname: '全部动态', mid: -1),
-        UpItem(face: userInfo.face, uname: '我', mid: userInfo.mid),
-      ]);
-    }
-    return res;
+    // TODO: 迁移到 Ottohub FollowingService API
+    // if (!userLogin.value) {
+    //   return {'status': false, 'msg': '账号未登录', 'code': -101};
+    // }
+    // if (type == 'init') {
+    //   upData.value.upList = <UpItem>[];
+    //   upData.value.liveList = <LiveUserItem>[];
+    // }
+    // var res = await DynamicsHttp.followUp();
+    // if (res['status']) {
+    //   upData.value = res['data'];
+    //   if (upData.value.upList!.isEmpty) {
+    //     mid.value = -1;
+    //   }
+    //   upData.value.upList!.insertAll(0, [
+    //     UpItem(face: '', uname: '全部动态', mid: -1),
+    //     UpItem(face: userInfo.face, uname: '我', mid: userInfo.mid),
+    //   ]);
+    // }
+    // return res;
+    return {'status': false, 'msg': 'TODO: 迁移到 Ottohub FollowingService API'};
   }
 
   onSelectUp(mid) async {

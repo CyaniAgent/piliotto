@@ -44,8 +44,8 @@ class _WebviewPageState extends State<WebviewPage> {
             Obx(
               () => _webviewController.type.value == 'login'
                   ? TextButton(
-                      onPressed: () =>
-                          LoginUtils.confirmLogin(null, _webviewController),
+                      onPressed: () => LoginUtils.confirmLogin(
+                          null, _webviewController.controller),
                       child: const Text('刷新登录状态'),
                     )
                   : const SizedBox(),

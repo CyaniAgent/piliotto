@@ -18,11 +18,7 @@ class AuthService {
       },
       requireToken: false,
     );
-    final data = response['data'];
-    if (data == null) {
-      throw ApiException('登录失败：返回数据为空');
-    }
-    final loginResponse = LoginResponse.fromJson(data as Map<String, dynamic>);
+    final loginResponse = LoginResponse.fromJson(response);
     if (loginResponse.token != null) {
       ApiService.setToken(loginResponse.token!);
     }
@@ -46,11 +42,7 @@ class AuthService {
       },
       requireToken: false,
     );
-    final data = response['data'];
-    if (data == null) {
-      throw ApiException('注册失败：返回数据为空');
-    }
-    final loginResponse = LoginResponse.fromJson(data as Map<String, dynamic>);
+    final loginResponse = LoginResponse.fromJson(response);
     if (loginResponse.token != null) {
       ApiService.setToken(loginResponse.token!);
     }

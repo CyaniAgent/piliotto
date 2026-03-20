@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:hive/hive.dart';
-import 'package:piliotto/http/user.dart';
+// TODO: 迁移到 Ottohub API
+// import 'package:piliotto/http/user.dart';
 import 'package:piliotto/models/user/fav_folder.dart';
 import 'package:piliotto/utils/storage.dart';
 
@@ -33,15 +34,17 @@ class MediaController extends GetxController {
   }
 
   Future<dynamic> queryFavFolder() async {
-    if (!userLogin.value) {
-      return {'status': false, 'data': [], 'msg': '未登录'};
-    }
-    var res = await await UserHttp.userfavFolder(
-      pn: 1,
-      ps: 5,
-      mid: mid ?? GStrorage.userInfo.get('userInfoCache').mid,
-    );
-    favFolderData.value = res['data'];
-    return res;
+    // TODO: 迁移到 Ottohub API
+    // if (!userLogin.value) {
+    //   return {'status': false, 'data': [], 'msg': '未登录'};
+    // }
+    // var res = await await UserHttp.userfavFolder(
+    //   pn: 1,
+    //   ps: 5,
+    //   mid: mid ?? GStrorage.userInfo.get('userInfoCache').mid,
+    // );
+    // favFolderData.value = res['data'];
+    // return res;
+    return {'status': false, 'msg': 'TODO: 迁移到 Ottohub API'};
   }
 }

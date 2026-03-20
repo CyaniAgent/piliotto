@@ -5,7 +5,8 @@ import 'package:get/get.dart';
 import 'package:piliotto/utils/feed_back.dart';
 import 'package:piliotto/utils/image_save.dart';
 
-import '../../http/search.dart';
+// TODO: 迁移到 Ottohub API
+// import '../../http/search.dart';
 import '../../http/video.dart';
 import '../../api/models/video.dart';
 import '../../services/ottohub_service.dart';
@@ -192,7 +193,7 @@ class VideoCardH extends StatelessWidget {
             }
             if (showCharge && videoItem?.typeid == 33) {}
             final int cid =
-                videoItem.cid ?? await SearchHttp.ab2c(aid: aid, bvid: bvid);
+                videoItem.cid ?? await VideoHttp.ab2c(aid: aid, bvid: bvid);
             Get.toNamed('/video?bvid=$bvid&cid=$cid',
                 arguments: {'videoItem': videoItem, 'heroTag': heroTag});
           } catch (err) {

@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
-import 'package:piliotto/http/fav.dart';
+// TODO: 迁移到 Ottohub 收藏夹 API（如果有）
+// import 'package:piliotto/http/fav.dart';
 
 class FavEditController extends GetxController {
   final GlobalKey formKey = GlobalKey<FormState>();
@@ -48,30 +49,34 @@ class FavEditController extends GetxController {
   }
 
   Future<void> editFolder() async {
-    var res = await FavHttp.editFolder(
-      title: title,
-      intro: intro,
-      mediaId: mediaId!,
-      cover: cover,
-    );
-    if (res['status']) {
-      SmartDialog.showToast('编辑成功');
-      Get.back(result: {'title': title});
-    } else {
-      SmartDialog.showToast(res['msg']);
-    }
+    // TODO: 迁移到 Ottohub 收藏夹 API（如果有）
+    // var res = await FavHttp.editFolder(
+    //   title: title,
+    //   intro: intro,
+    //   mediaId: mediaId!,
+    //   cover: cover,
+    // );
+    // if (res['status']) {
+    //   SmartDialog.showToast('编辑成功');
+    //   Get.back(result: {'title': title});
+    // } else {
+    //   SmartDialog.showToast(res['msg']);
+    // }
+    SmartDialog.showToast('TODO: 迁移到 Ottohub 收藏夹 API');
   }
 
   Future<void> addFolder() async {
-    var res = await FavHttp.addFolder(
-      title: title,
-      intro: intro,
-    );
-    if (res['status']) {
-      SmartDialog.showToast('新建成功');
-      Get.back();
-    } else {
-      SmartDialog.showToast(res['msg']);
-    }
+    // TODO: 迁移到 Ottohub 收藏夹 API（如果有）
+    // var res = await FavHttp.addFolder(
+    //   title: title,
+    //   intro: intro,
+    // );
+    // if (res['status']) {
+    //   SmartDialog.showToast('新建成功');
+    //   Get.back();
+    // } else {
+    //   SmartDialog.showToast(res['msg']);
+    // }
+    SmartDialog.showToast('TODO: 迁移到 Ottohub 收藏夹 API');
   }
 }

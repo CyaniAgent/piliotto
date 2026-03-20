@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
-import 'package:piliotto/http/member.dart';
 import 'package:piliotto/models/member/article.dart';
 
 class MemberArticleController extends GetxController {
@@ -20,49 +18,12 @@ class MemberArticleController extends GetxController {
     mid = int.parse(Get.parameters['mid']!);
   }
 
-  // 获取wWebid
+  // TODO: 迁移到 Ottohub API（如果有专栏功能）
   Future getWWebid() async {
-    var res = await MemberHttp.getWWebid(mid: mid);
-    if (res['status']) {
-      wWebid = res['data'];
-    } else {
-      wWebid = '-1';
-      SmartDialog.showToast(res['msg']);
-    }
+    wWebid = '-1';
   }
 
   Future getMemberArticle(type) async {
-    if (isLoading.value) {
-      return;
-    }
-    isLoading.value = true;
-    if (wWebid == null) {
-      await getWWebid();
-    }
-    if (type == 'init') {
-      pn = 1;
-      articleList.clear();
-    }
-    var res = await MemberHttp.getMemberArticle(
-      mid: mid,
-      pn: pn,
-      offset: offset,
-      wWebid: wWebid!,
-    );
-    if (res['status']) {
-      offset = res['data'].offset;
-      hasMore = res['data'].hasMore!;
-      if (type == 'init') {
-        articleList.value = res['data'].items;
-      }
-      if (type == 'onLoad') {
-        articleList.addAll(res['data'].items);
-      }
-      pn += 1;
-    } else {
-      SmartDialog.showToast(res['msg']);
-    }
-    isLoading.value = false;
-    return res;
+    return {'status': false, 'msg': 'TODO: 迁移到 Ottohub API'};
   }
 }

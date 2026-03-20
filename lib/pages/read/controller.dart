@@ -1,7 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:piliotto/http/read.dart';
+// TODO: 迁移到 Ottohub API（如果有专栏/图文功能）
+// import 'package:piliotto/http/read.dart';
 import 'package:piliotto/models/read/read.dart';
 import 'package:piliotto/plugin/pl_gallery/hero_dialog_route.dart';
 import 'package:piliotto/plugin/pl_gallery/interactiveviewer_gallery.dart';
@@ -27,12 +28,14 @@ class ReadPageController extends GetxController {
   }
 
   Future fetchCvData() async {
-    var res = await ReadHttp.parseArticleCv(id: id);
-    if (res['status']) {
-      cvData.value = res['data'];
-      title.value = cvData.value.readInfo!.title!;
-    }
-    return res;
+    // TODO: 迁移到 Ottohub API（如果有专栏/图文功能）
+    // var res = await ReadHttp.parseArticleCv(id: id);
+    // if (res['status']) {
+    //   cvData.value = res['data'];
+    //   title.value = cvData.value.readInfo!.title!;
+    // }
+    // return res;
+    return {'status': false, 'msg': 'TODO: 迁移到 Ottohub API'};
   }
 
   void _scrollListener() {
@@ -57,7 +60,8 @@ class ReadPageController extends GetxController {
   }
 
   void fetchViewInfo() {
-    ReadHttp.getViewInfo(id: id);
+    // TODO: 迁移到 Ottohub API（如果有专栏/图文功能）
+    // ReadHttp.getViewInfo(id: id);
   }
 
   // 跳转webview

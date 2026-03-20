@@ -5,7 +5,8 @@ import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
-import 'package:piliotto/http/common.dart';
+// TODO: 迁移到 Ottohub API
+// import 'package:piliotto/http/common.dart';
 import 'package:piliotto/utils/storage.dart';
 import 'package:piliotto/utils/utils.dart';
 import '../../models/common/dynamic_badge_mode.dart';
@@ -27,7 +28,9 @@ class MainController extends GetxController {
   Box userInfoCache = GStrorage.userInfo;
   RxBool userLogin = false.obs;
   late Rx<DynamicBadgeMode> dynamicBadgeType = DynamicBadgeMode.number.obs;
+  final GlobalKey<ScaffoldState> scaffoldKey = GlobalKey<ScaffoldState>();
   late bool enableGradientBg;
+  late bool useDrawerForUser;
   bool imgPreviewStatus = false;
 
   @override
@@ -37,6 +40,8 @@ class MainController extends GetxController {
       Utils.checkUpdata();
     }
     hideTabBar = setting.get(SettingBoxKey.hideTabBar, defaultValue: false);
+    useDrawerForUser =
+        setting.get(SettingBoxKey.useDrawerForUser, defaultValue: true);
 
     var userInfo = userInfoCache.get('userInfoCache');
     userLogin.value = userInfo != null;
@@ -68,18 +73,19 @@ class MainController extends GetxController {
   }
 
   void getUnreadDynamic() async {
-    if (!userLogin.value) {
-      return;
-    }
-    int dynamicItemIndex =
-        navigationBars.indexWhere((item) => item['label'] == "动态");
-    var res = await CommonHttp.unReadDynamic();
-    var data = res['data'];
-    if (dynamicItemIndex != -1) {
-      navigationBars[dynamicItemIndex]['count'] =
-          data == null ? 0 : data.length; // 修改 count 属性为新的值
-    }
-    navigationBars.refresh();
+    // TODO: 迁移到 Ottohub API
+    // if (!userLogin.value) {
+    //   return;
+    // }
+    // int dynamicItemIndex =
+    //     navigationBars.indexWhere((item) => item['label'] == "动态");
+    // var res = await CommonHttp.unReadDynamic();
+    // var data = res['data'];
+    // if (dynamicItemIndex != -1) {
+    //   navigationBars[dynamicItemIndex]['count'] =
+    //       data == null ? 0 : data.length; // 修改 count 属性为新的值
+    // }
+    // navigationBars.refresh();
   }
 
   void clearUnread() async {
@@ -93,8 +99,24 @@ class MainController extends GetxController {
 
   void setNavBarConfig() async {
     defaultNavTabs = [...defaultNavigationBars];
-    navBarSort =
-        setting.get(SettingBoxKey.navBarSort, defaultValue: [0, 1, 2]);
+    navBarSort = setting.get(SettingBoxKey.navBarSort, defaultValue: [0, 1, 3]);
+
+    // 自动添加新页面到导航栏
+    for (var item in defaultNavigationBars) {
+      if (!navBarSort.contains(item['id'])) {
+        navBarSort.add(item['id']);
+      }
+    }
+
+    // 移除不存在的页面ID
+    navBarSort.removeWhere(
+        (id) => !defaultNavigationBars.any((item) => item['id'] == id));
+
+    // 如果使用侧边栏，则移除"我的"页面（id: 3）从底栏
+    if (useDrawerForUser) {
+      navBarSort.remove(3);
+    }
+
     defaultNavTabs.retainWhere((item) => navBarSort.contains(item['id']));
     defaultNavTabs.sort((a, b) =>
         navBarSort.indexOf(a['id']).compareTo(navBarSort.indexOf(b['id'])));
@@ -103,7 +125,6 @@ class MainController extends GetxController {
         setting.get(SettingBoxKey.defaultHomePage, defaultValue: 0) as int;
     int defaultIndex =
         navigationBars.indexWhere((item) => item['id'] == defaultHomePage);
-    // 如果找不到匹配项，默认索引设置为0或其他合适的值
     selectedIndex = defaultIndex != -1 ? defaultIndex : 0;
     pages = navigationBars.map<Widget>((e) => e['page']).toList();
     pagesIds = navigationBars.map<int>((e) => e['id']).toList();

@@ -25,18 +25,18 @@ class WebviewController extends GetxController {
       controller.clearLocalStorage();
       WebViewCookieManager().clearCookies();
     }
+
     webviewInit();
   }
 
   webviewInit() {
     controller
-      ..setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36')
+      ..setUserAgent(
+          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36')
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..setNavigationDelegate(
         NavigationDelegate(
-          // 页面加载
           onProgress: (int progress) {
-            // Update loading bar.
             loadProgress.value = progress;
           },
           onPageStarted: (String url) {
@@ -56,7 +56,6 @@ class WebviewController extends GetxController {
               }
             }
           },
-          // 加载完成
           onUrlChange: (UrlChange urlChange) async {
             loadShow.value = false;
             String url = urlChange.url ?? '';

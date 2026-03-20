@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:piliotto/http/member.dart';
+// TODO: 迁移到 Ottohub API
+// import 'package:piliotto/http/member.dart';
 import 'package:piliotto/models/member/archive.dart';
 
 class MemberArchiveController extends GetxController {
@@ -27,31 +28,33 @@ class MemberArchiveController extends GetxController {
 
   // 获取用户投稿
   Future getMemberArchive(type) async {
-    if (isLoading.value) {
-      return;
-    }
-    isLoading.value = true;
-    if (type == 'init') {
-      pn = 1;
-      archivesList.clear();
-    }
-    var res = await MemberHttp.memberArchive(
-      uid: mid,
-      pn: pn,
-      order: currentOrder['type']!,
-    );
-    if (res['status']) {
-      if (type == 'init') {
-        archivesList.value = res['data'].list.vlist;
-      }
-      if (type == 'onLoad') {
-        archivesList.addAll(res['data'].list.vlist);
-      }
-      count = res['data'].page['count'];
-      pn += 1;
-    }
-    isLoading.value = false;
-    return res;
+    // TODO: 迁移到 Ottohub API
+    // if (isLoading.value) {
+    //   return;
+    // }
+    // isLoading.value = true;
+    // if (type == 'init') {
+    //   pn = 1;
+    //   archivesList.clear();
+    // }
+    // var res = await MemberHttp.memberArchive(
+    //   uid: mid,
+    //   pn: pn,
+    //   order: currentOrder['type']!,
+    // );
+    // if (res['status']) {
+    //   if (type == 'init') {
+    //     archivesList.value = res['data'].list.vlist;
+    //   }
+    //   if (type == 'onLoad') {
+    //     archivesList.addAll(res['data'].list.vlist);
+    //   }
+    //   count = res['data'].page['count'];
+    //   pn += 1;
+    // }
+    // isLoading.value = false;
+    // return res;
+    return {'status': false, 'msg': 'TODO: 迁移到 Ottohub API'};
   }
 
   toggleSort() async {

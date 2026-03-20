@@ -1,5 +1,5 @@
 class LoginResponse {
-  final int uid;
+  final String uid;
   final String? token;
   final String avatarUrl;
   final String coverUrl;
@@ -21,7 +21,7 @@ class LoginResponse {
 
   factory LoginResponse.fromJson(Map<String, dynamic> json) {
     return LoginResponse(
-      uid: json['uid'] ?? 0,
+      uid: json['uid']?.toString() ?? '',
       token: json['token'],
       avatarUrl: json['avatar_url'] ?? '',
       coverUrl: json['cover_url'] ?? '',

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../pages/dynamics/index.dart';
 import '../../pages/home/index.dart';
-import '../../pages/media/index.dart';
+import '../../pages/mine/index.dart';
 
 List defaultNavigationBars = [
   {
@@ -34,17 +34,17 @@ List defaultNavigationBars = [
     'page': const DynamicsPage(),
   },
   {
-    'id': 2,
+    'id': 3,
     'icon': const Icon(
-      Icons.video_collection_outlined,
-      size: 20,
-    ),
-    'selectIcon': const Icon(
-      Icons.video_collection,
+      Icons.person_outline,
       size: 21,
     ),
-    'label': "媒体库",
+    'selectIcon': const Icon(
+      Icons.person,
+      size: 21,
+    ),
+    'label': "我的",
     'count': 0,
-    'page': const MediaPage(),
-  }
+    'page': const MinePage(),
+  },
 ];

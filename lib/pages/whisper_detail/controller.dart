@@ -1,12 +1,8 @@
-import 'dart:async';
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
 import 'package:hive/hive.dart';
-import 'package:piliotto/http/msg.dart';
 import 'package:piliotto/models/msg/session.dart';
-import 'package:piliotto/pages/whisper/index.dart';
 import '../../utils/feed_back.dart';
 import '../../utils/storage.dart';
 
@@ -17,7 +13,6 @@ class WhisperDetailController extends GetxController {
   late String mid;
   late String heroTag;
   RxList<MessageItem> messageList = <MessageItem>[].obs;
-  //表情转换图片规则
   RxList<dynamic> eInfos = [].obs;
   final TextEditingController replyContentController = TextEditingController();
   Box userInfoCache = GStrorage.userInfo;
@@ -38,44 +33,12 @@ class WhisperDetailController extends GetxController {
     heroTag = Get.parameters['heroTag']!;
   }
 
+  // TODO: 迁移到 Ottohub 消息 API（如果有）
   Future querySessionMsg() async {
-    var res = await MsgHttp.sessionMsg(talkerId: talkerId);
-    if (res['status']) {
-      messageList.value = res['data'].messages;
-      // 找出图片
-      try {
-        for (var item in messageList) {
-          if (item.msgType == 2) {
-            picList.add(item.content['url']);
-          }
-        }
-        picList = picList.reversed.toList();
-      } catch (e) {
-        // 错误处理: $e
-      }
-
-      if (messageList.isNotEmpty) {
-        ackSessionMsg();
-        if (res['data'].eInfos != null) {
-          eInfos.value = res['data'].eInfos;
-        }
-      }
-    } else {
-      SmartDialog.showToast(res['msg']);
-    }
-    return res;
+    return {'status': false, 'msg': 'TODO: 迁移到 Ottohub 消息 API'};
   }
 
-  // 消息标记已读
-  Future ackSessionMsg() async {
-    if (messageList.isEmpty) {
-      return;
-    }
-    await MsgHttp.ackSessionMsg(
-      talkerId: talkerId,
-      ackSeqno: messageList.last.msgSeqno,
-    );
-  }
+  Future ackSessionMsg() async {}
 
   Future sendMsg() async {
     feedBack();
@@ -89,35 +52,7 @@ class WhisperDetailController extends GetxController {
       SmartDialog.showToast('请输入内容');
       return;
     }
-    var result = await MsgHttp.sendMsg(
-      senderUid: userInfo.mid,
-      receiverId: int.parse(mid),
-      content: {'content': message},
-      msgType: 1,
-    );
-    if (result['status']) {
-      String content = jsonDecode(result['data']['msg_content'])['content'];
-      messageList.insert(
-        0,
-        MessageItem(
-          msgSeqno: result['data']['msg_key'],
-          senderUid: userInfo.mid,
-          receiverId: int.parse(mid),
-          content: {'content': content},
-          msgType: 1,
-          timestamp: DateTime.now().millisecondsSinceEpoch,
-        ),
-      );
-      eInfos.addAll(emoteList);
-      replyContentController.clear();
-      try {
-        late final WhisperController whisperController =
-            Get.find<WhisperController>();
-        whisperController.refreshLastMsg(talkerId!, message);
-      } catch (_) {}
-    } else {
-      SmartDialog.showToast(result['msg']);
-    }
+    SmartDialog.showToast('TODO: 迁移到 Ottohub 消息 API');
   }
 
   void removeSession(context) {
@@ -138,16 +73,7 @@ class WhisperDetailController extends GetxController {
             ),
             TextButton(
               onPressed: () async {
-                var res = await MsgHttp.removeSession(talkerId: talkerId);
-                if (res['status']) {
-                  SmartDialog.showToast('操作成功');
-                  try {
-                    late final WhisperController whisperController =
-                        Get.find<WhisperController>();
-                    whisperController.removeSessionMsg(talkerId!);
-                    Get.back();
-                  } catch (_) {}
-                }
+                SmartDialog.showToast('TODO: 迁移到 Ottohub 消息 API');
               },
               child: const Text('确认'),
             ),

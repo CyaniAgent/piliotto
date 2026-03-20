@@ -126,7 +126,7 @@ class _LiveRoomPageState extends State<LiveRoomPage>
               },
             ),
             danmuWidget: PlDanmaku(
-              cid: roomId,
+              vid: roomId,
               playerController: plPlayerController,
               type: 'live',
               createdController: (e) {

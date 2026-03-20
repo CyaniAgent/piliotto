@@ -385,4 +385,11 @@ class VideoHttp {
   static Future<Map<String, dynamic>> getSubtitleContent(url) async {
     return {'status': false, 'msg': 'Ottohub API 不支持字幕功能'};
   }
+
+  // 兼容：ab2c 获取 cid（Ottohub 视频详情中包含 cid）
+  static Future<int> ab2c({int? aid, String? bvid}) async {
+    // TODO: 需要从视频详情接口获取 cid
+    // 暂时返回 0，表示需要从视频详情获取
+    return 0;
+  }
 }

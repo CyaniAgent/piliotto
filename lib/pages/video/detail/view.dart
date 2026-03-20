@@ -506,7 +506,7 @@ class _VideoDetailPageState extends State<VideoDetailPage>
               headerControl: vdCtr.headerControl,
               danmuWidget: PlDanmaku(
                 key: Key(vdCtr.vid.toString()),
-                cid: vdCtr.vid,
+                vid: vdCtr.vid,
                 playerController: plPlayerController!,
               ),
               bottomList: vdCtr.bottomList,

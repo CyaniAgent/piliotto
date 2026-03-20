@@ -20,6 +20,7 @@ class UserInfoDataAdapter extends TypeAdapter<UserInfoData> {
       isLogin: fields[0] as bool?,
       emailVerified: fields[1] as int?,
       face: fields[2] as String?,
+      cover: fields[24] as String?,
       levelInfo: fields[3] as LevelInfo?,
       mid: fields[4] as int?,
       mobileVerified: fields[5] as int?,
@@ -47,13 +48,15 @@ class UserInfoDataAdapter extends TypeAdapter<UserInfoData> {
   @override
   void write(BinaryWriter writer, UserInfoData obj) {
     writer
-      ..writeByte(24)
+      ..writeByte(25)
       ..writeByte(0)
       ..write(obj.isLogin)
       ..writeByte(1)
       ..write(obj.emailVerified)
       ..writeByte(2)
       ..write(obj.face)
+      ..writeByte(24)
+      ..write(obj.cover)
       ..writeByte(3)
       ..write(obj.levelInfo)
       ..writeByte(4)
