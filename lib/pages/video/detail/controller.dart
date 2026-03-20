@@ -343,7 +343,6 @@ class VideoDetailController extends GetxController
     showModalBottomSheet(
       context: Get.context!,
       isScrollControlled: true,
-      backgroundColor: Colors.transparent,
       builder: (BuildContext context) {
         return StatefulBuilder(
           builder: (BuildContext context, StateSetter setState) {
@@ -353,47 +352,34 @@ class VideoDetailController extends GetxController
 
             return AnimatedPadding(
               padding: EdgeInsets.only(
-                bottom: keyboardHeight > 0 ? keyboardHeight + 8 : bottomPadding + 8,
+                bottom: keyboardHeight > 0 ? keyboardHeight : bottomPadding,
               ),
               duration: const Duration(milliseconds: 100),
-              child: Container(
-                padding: const EdgeInsets.only(
-                  left: 12,
-                  right: 12,
-                  top: 8,
-                ),
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.surface,
-                  border: Border(
-                    top: BorderSide(
-                      color: theme.dividerColor.withValues(alpha: 0.1),
-                      width: 1,
-                    ),
-                  ),
-                ),
-                child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              child: SingleChildScrollView(
+                child: Container(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        '发送弹幕',
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
+                      const SizedBox(height: 12),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            '发送弹幕',
+                            style: theme.textTheme.titleLarge,
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.close),
+                            onPressed: () => Navigator.pop(context),
+                            style: IconButton.styleFrom(
+                              foregroundColor: theme.colorScheme.outline,
+                            ),
+                          ),
+                        ],
                       ),
-                      IconButton(
-                        icon: const Icon(Icons.close),
-                        onPressed: () => Navigator.pop(context),
-                        style: IconButton.styleFrom(
-                          foregroundColor: theme.colorScheme.outline,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
+                      const SizedBox(height: 8),
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
@@ -594,6 +580,7 @@ class VideoDetailController extends GetxController
                   ),
                 ],
               ),
+                ),
               ),
             );
           },
