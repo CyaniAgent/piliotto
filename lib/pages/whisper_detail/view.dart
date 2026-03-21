@@ -19,7 +19,6 @@ class _WhisperDetailPageState extends State<WhisperDetailPage>
     with WidgetsBindingObserver {
   final WhisperDetailController _whisperDetailController =
       Get.put(WhisperDetailController());
-  late Future _futureBuilderFuture;
   late TextEditingController _replyContentController;
   final FocusNode replyContentFocusNode = FocusNode();
   final _debouncer = Debouncer(milliseconds: 200);
@@ -31,7 +30,6 @@ class _WhisperDetailPageState extends State<WhisperDetailPage>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _futureBuilderFuture = _whisperDetailController.querySessionMsg();
     _replyContentController = _whisperDetailController.replyContentController;
     _focuslistener();
   }
@@ -137,7 +135,7 @@ class _WhisperDetailPageState extends State<WhisperDetailPage>
             itemBuilder: (BuildContext context) => <PopupMenuEntry>[
               PopupMenuItem(
                 onTap: () => _whisperDetailController.removeSession(context),
-                child: const Text('关闭会话'),
+                child: const Text('清空会话'),
               )
             ],
           ),
@@ -152,48 +150,34 @@ class _WhisperDetailPageState extends State<WhisperDetailPage>
                 FocusScope.of(context).unfocus();
                 toolbarType.value = '';
               },
-              child: FutureBuilder(
-                future: _futureBuilderFuture,
-                builder: (BuildContext context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.done) {
-                    if (snapshot.data == null) {
-                      return const SizedBox();
-                    }
-                    final Map data = snapshot.data as Map;
-                    if (data['status']) {
-                      List messageList = _whisperDetailController.messageList;
-                      return Obx(
-                        () => messageList.isEmpty
-                            ? const SizedBox()
-                            : Align(
-                                alignment: Alignment.topCenter,
-                                child: ListView.separated(
-                                  itemCount: messageList.length,
-                                  shrinkWrap: true,
-                                  reverse: true,
-                                  itemBuilder: (_, int i) {
-                                    return ChatItem(
-                                      item: messageList[i],
-                                      eInfos: _whisperDetailController.eInfos,
-                                      ctr: _whisperDetailController,
-                                    );
-                                  },
-                                  separatorBuilder: (_, int i) {
-                                    return i == 0
-                                        ? const SizedBox(height: 20)
-                                        : const SizedBox.shrink();
-                                  },
-                                ),
-                              ),
+              child: Obx(() {
+                final messageList = _whisperDetailController.messageList;
+                if (_whisperDetailController.isLoading && messageList.isEmpty) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                if (messageList.isEmpty) {
+                  return const Center(child: Text('暂无消息'));
+                }
+                return Align(
+                  alignment: Alignment.topCenter,
+                  child: ListView.separated(
+                    itemCount: messageList.length,
+                    shrinkWrap: true,
+                    reverse: true,
+                    itemBuilder: (_, int i) {
+                      return ChatItem(
+                        message: messageList[i],
+                        ctr: _whisperDetailController,
                       );
-                    } else {
-                      return const SizedBox();
-                    }
-                  } else {
-                    return const SizedBox();
-                  }
-                },
-              ),
+                    },
+                    separatorBuilder: (_, int i) {
+                      return i == 0
+                          ? const SizedBox(height: 20)
+                          : const SizedBox.shrink();
+                    },
+                  ),
+                );
+              }),
             ),
           ),
           Obx(
@@ -242,7 +226,7 @@ class _WhisperDetailPageState extends State<WhisperDetailPage>
                     ),
                   ),
                   IconButton(
-                    onPressed: _whisperDetailController.sendMsg,
+                    onPressed: _whisperDetailController.sendMessage,
                     icon: Icon(
                       Icons.send,
                       color: Theme.of(context).colorScheme.outline,
@@ -272,8 +256,6 @@ class Debouncer {
     if (_timer != null) {
       _timer!.cancel();
     }
-    _timer = Timer(Duration(milliseconds: milliseconds!), () {
-      callback();
-    });
+    _timer = Timer(Duration(milliseconds: milliseconds ?? 0), callback);
   }
 }

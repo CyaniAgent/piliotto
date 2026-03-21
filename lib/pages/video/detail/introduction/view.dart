@@ -1,4 +1,3 @@
-import 'package:bottom_sheet/bottom_sheet.dart';
 import 'package:expandable/expandable.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
@@ -6,8 +5,8 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
-import 'package:lottie/lottie.dart';
 import 'package:piliotto/common/constants.dart';
+import 'package:piliotto/common/skeleton/video_intro.dart';
 import 'package:piliotto/pages/video/detail/index.dart';
 import 'package:piliotto/common/widgets/network_img_layer.dart';
 import 'package:piliotto/common/widgets/stat/danmu.dart';
@@ -20,7 +19,6 @@ import 'package:piliotto/services/loggeer.dart';
 import 'package:piliotto/utils/storage.dart';
 import 'package:piliotto/utils/utils.dart';
 import 'widgets/action_item.dart';
-import 'widgets/fav_panel.dart';
 
 class VideoIntroPanel extends StatefulWidget {
   final int vid;
@@ -65,7 +63,6 @@ class _VideoIntroPanelState extends State<VideoIntroPanel>
       future: _futureBuilderFuture,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.done) {
-          // 请求完成
           return Obx(
             () => VideoInfo(
               videoDetail: videoIntroController.videoDetail.value,
@@ -74,16 +71,8 @@ class _VideoIntroPanelState extends State<VideoIntroPanel>
             ),
           );
         } else {
-          return SliverToBoxAdapter(
-            child: SizedBox(
-              height: 100,
-              child: Center(
-                child: Lottie.asset(
-                  'assets/loading.json',
-                  width: 200,
-                ),
-              ),
-            ),
+          return const SliverToBoxAdapter(
+            child: VideoIntroSkeleton(),
           );
         }
       },
@@ -163,46 +152,7 @@ class _VideoInfoState extends State<VideoInfo>
       SmartDialog.showToast('账号未登录');
       return;
     }
-    final bool enableDragQuickFav =
-        setting.get(SettingBoxKey.enableQuickFav, defaultValue: false);
-    // 快速收藏 &
-    // 点按 收藏至默认文件夹
-    // 长按选择文件夹
-    if (enableDragQuickFav) {
-      if (type == 'tap') {
-        if (!videoIntroController.hasFav.value) {
-          videoIntroController.actionFavVideo(type: 'default');
-        } else {
-          _showFavPanel();
-        }
-      } else {
-        _showFavPanel();
-      }
-    } else if (type != 'longPress') {
-      _showFavPanel();
-    }
-  }
-
-  void _showFavPanel() {
-    showFlexibleBottomSheet(
-      bottomSheetBorderRadius: const BorderRadius.only(
-        topLeft: Radius.circular(16),
-        topRight: Radius.circular(16),
-      ),
-      minHeight: 0.6,
-      initHeight: 0.6,
-      maxHeight: 1,
-      context: context,
-      builder: (BuildContext context, ScrollController scrollController,
-          double offset) {
-        return FavPanel(
-          ctr: videoIntroController,
-          scrollController: scrollController,
-        );
-      },
-      anchors: [0.6, 1],
-      isSafeArea: true,
-    );
+    videoIntroController.actionFavVideo();
   }
 
   // 视频介绍

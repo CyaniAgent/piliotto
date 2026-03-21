@@ -12,23 +12,9 @@ Future<void> landScape() async {
     if (kIsWeb) {
       await document.documentElement?.requestFullscreen();
     } else if (Platform.isAndroid || Platform.isIOS) {
-      // await SystemChrome.setEnabledSystemUIMode(
-      //   SystemUiMode.immersiveSticky,
-      //   overlays: [],
-      // );
-      // await SystemChrome.setPreferredOrientations(
-      //   [
-      //     DeviceOrientation.landscapeLeft,
-      //     DeviceOrientation.landscapeRight,
-      //   ],
-      // );
       await AutoOrientation.landscapeAutoMode(forceSensor: true);
-    } else if (Platform.isMacOS || Platform.isWindows || Platform.isLinux) {
-      await const MethodChannel('com.alexmercerind/media_kit_video')
-          .invokeMethod(
-        'Utils.EnterNativeFullscreen',
-      );
     }
+    // 桌面平台不调用原生全屏，由 UI 层控制播放器区域全屏
   } catch (exception, stacktrace) {
     debugPrint(exception.toString());
     debugPrint(stacktrace.toString());
@@ -37,15 +23,31 @@ Future<void> landScape() async {
 
 //竖屏
 Future<void> verticalScreen() async {
-  await SystemChrome.setPreferredOrientations([
-    DeviceOrientation.portraitUp,
-  ]);
+  try {
+    if (Platform.isAndroid || Platform.isIOS) {
+      await SystemChrome.setPreferredOrientations([
+        DeviceOrientation.portraitUp,
+      ]);
+    }
+    // 桌面平台不需要切换方向
+  } catch (exception, stacktrace) {
+    debugPrint(exception.toString());
+    debugPrint(stacktrace.toString());
+  }
 }
 
 Future<void> enterFullScreen() async {
-  await SystemChrome.setEnabledSystemUIMode(
-    SystemUiMode.immersiveSticky,
-  );
+  try {
+    if (Platform.isAndroid || Platform.isIOS) {
+      await SystemChrome.setEnabledSystemUIMode(
+        SystemUiMode.immersiveSticky,
+      );
+    }
+    // 桌面平台不调用系统全屏，由 UI 层控制
+  } catch (exception, stacktrace) {
+    debugPrint(exception.toString());
+    debugPrint(stacktrace.toString());
+  }
 }
 
 //退出全屏显示
@@ -65,12 +67,8 @@ Future<void> exitFullScreen() async {
         overlays: SystemUiOverlay.values,
       );
       await SystemChrome.setPreferredOrientations([]);
-    } else if (Platform.isMacOS || Platform.isWindows || Platform.isLinux) {
-      await const MethodChannel('com.alexmercerind/media_kit_video')
-          .invokeMethod(
-        'Utils.ExitNativeFullscreen',
-      );
     }
+    // 桌面平台不调用原生退出全屏，由 UI 层控制
   } catch (exception, stacktrace) {
     debugPrint(exception.toString());
     debugPrint(stacktrace.toString());

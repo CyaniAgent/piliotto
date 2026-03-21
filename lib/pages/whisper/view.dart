@@ -6,6 +6,7 @@ import 'package:piliotto/common/constants.dart';
 import 'package:piliotto/common/skeleton/skeleton.dart';
 import 'package:piliotto/common/widgets/network_img_layer.dart';
 import 'package:piliotto/utils/utils.dart';
+import 'package:piliotto/api/models/message.dart';
 
 import 'controller.dart';
 
@@ -19,13 +20,11 @@ class WhisperPage extends StatefulWidget {
 class _WhisperPageState extends State<WhisperPage> {
   late final WhisperController _whisperController =
       Get.put(WhisperController());
-  late Future _futureBuilderFuture;
   final ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
     super.initState();
-    _futureBuilderFuture = _whisperController.querySessionList('init');
     _scrollController.addListener(_scrollListener);
   }
 
@@ -35,7 +34,6 @@ class _WhisperPageState extends State<WhisperPage> {
       EasyThrottle.throttle('my-throttler', const Duration(milliseconds: 800),
           () async {
         await _whisperController.onLoad();
-        _whisperController.isLoading = true;
       });
     }
   }
@@ -48,7 +46,6 @@ class _WhisperPageState extends State<WhisperPage> {
       ),
       body: RefreshIndicator(
         onRefresh: () async {
-          _whisperController.unread();
           await _whisperController.onRefresh();
         },
         child: SingleChildScrollView(
@@ -57,7 +54,6 @@ class _WhisperPageState extends State<WhisperPage> {
             children: [
               LayoutBuilder(
                 builder: (BuildContext context, BoxConstraints constraints) {
-                  // 在这里根据父级容器的约束条件构建小部件树
                   return Padding(
                     padding: const EdgeInsets.only(left: 20, right: 20),
                     child: SizedBox(
@@ -117,83 +113,82 @@ class _WhisperPageState extends State<WhisperPage> {
                   );
                 },
               ),
-              FutureBuilder(
-                future: _futureBuilderFuture,
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.done) {
-                    Map? data = snapshot.data;
-                    if (data != null && data['status']) {
-                      RxList sessionList = _whisperController.sessionList;
-                      return Obx(
-                        () => sessionList.isEmpty
-                            ? const SizedBox()
-                            : ListView.separated(
-                                itemCount: sessionList.length,
-                                shrinkWrap: true,
-                                physics: const NeverScrollableScrollPhysics(),
-                                itemBuilder: (_, int i) {
-                                  return SessionItem(
-                                    sessionItem: sessionList[i],
-                                    changeFucCall: () => sessionList.refresh(),
-                                  );
-                                },
-                                separatorBuilder:
-                                    (BuildContext context, int index) {
-                                  return Divider(
-                                    indent: 72,
-                                    endIndent: 20,
-                                    height: 6,
-                                    color: Colors.grey.withValues(alpha: 0.1 * 255),
-                                  );
-                                },
-                              ),
-                      );
-                    } else {
-                      // 请求错误
-                      return Center(
-                        child: Text(data?['msg'] ?? '请求异常'),
-                      );
-                    }
-                  } else {
-                    // 骨架屏
-                    return ListView.builder(
-                      itemCount: 15,
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      itemBuilder: (context, int i) {
-                        return Skeleton(
-                          child: ListTile(
-                            leading: Container(
-                              width: 45,
-                              height: 45,
-                              decoration: BoxDecoration(
-                                color: Theme.of(context)
-                                    .colorScheme
-                                    .onInverseSurface,
-                                borderRadius: BorderRadius.circular(25),
-                              ),
-                            ),
-                            title: Container(
-                              width: 100,
-                              height: 14,
+              Obx(() {
+                final friendList = _whisperController.friendList;
+                if (_whisperController.isLoading && friendList.isEmpty) {
+                  return ListView.builder(
+                    itemCount: 15,
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemBuilder: (context, int i) {
+                      return Skeleton(
+                        child: ListTile(
+                          leading: Container(
+                            width: 45,
+                            height: 45,
+                            decoration: BoxDecoration(
                               color: Theme.of(context)
                                   .colorScheme
                                   .onInverseSurface,
-                            ),
-                            subtitle: Container(
-                              width: 80,
-                              height: 14,
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .onInverseSurface,
+                              borderRadius: BorderRadius.circular(25),
                             ),
                           ),
+                          title: Container(
+                            width: 100,
+                            height: 14,
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onInverseSurface,
+                          ),
+                          subtitle: Container(
+                            width: 80,
+                            height: 14,
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onInverseSurface,
+                          ),
+                        ),
+                      );
+                    },
+                  );
+                }
+                if (friendList.isEmpty) {
+                  return const Padding(
+                    padding: EdgeInsets.all(40),
+                    child: Text('暂无消息'),
+                  );
+                }
+                return ListView.separated(
+                  itemCount: friendList.length,
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemBuilder: (_, int i) {
+                    return FriendItem(
+                      friend: friendList[i],
+                      onTap: () {
+                        Get.toNamed(
+                          '/whisperDetail',
+                          parameters: {
+                            'friendUid': friendList[i].uid.toString(),
+                            'name': friendList[i].username,
+                            'face': friendList[i].avatarUrl ?? '',
+                            'mid': friendList[i].uid.toString(),
+                            'heroTag': Utils.makeHeroTag(friendList[i].uid),
+                          },
                         );
                       },
                     );
-                  }
-                },
-              ),
+                  },
+                  separatorBuilder: (BuildContext context, int index) {
+                    return Divider(
+                      indent: 72,
+                      endIndent: 20,
+                      height: 6,
+                      color: Colors.grey.withValues(alpha: 0.1 * 255),
+                    );
+                  },
+                );
+              }),
             ],
           ),
         ),
@@ -202,41 +197,25 @@ class _WhisperPageState extends State<WhisperPage> {
   }
 }
 
-class SessionItem extends StatelessWidget {
-  final dynamic sessionItem;
-  final Function changeFucCall;
+class FriendItem extends StatelessWidget {
+  final Friend friend;
+  final VoidCallback onTap;
 
-  const SessionItem({
+  const FriendItem({
     super.key,
-    required this.sessionItem,
-    required this.changeFucCall,
+    required this.friend,
+    required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    final String heroTag = Utils.makeHeroTag(sessionItem.accountInfo?.mid ?? 0);
-    final content = sessionItem.lastMsg.content;
-    final msgStatus = sessionItem.lastMsg.msgStatus;
-    final int msgType = sessionItem.lastMsg.msgType;
+    final String heroTag = Utils.makeHeroTag(friend.uid);
 
     return ListTile(
-      onTap: () {
-        sessionItem.unreadCount = 0;
-        changeFucCall.call();
-        Get.toNamed(
-          '/whisperDetail',
-          parameters: {
-            'talkerId': sessionItem.talkerId.toString(),
-            'name': sessionItem.accountInfo.name,
-            'face': sessionItem.accountInfo.face,
-            'mid': (sessionItem.accountInfo?.mid ?? 0).toString(),
-            'heroTag': heroTag,
-          },
-        );
-      },
+      onTap: onTap,
       leading: Badge(
-        isLabelVisible: sessionItem.unreadCount > 0,
-        label: Text(sessionItem.unreadCount.toString()),
+        isLabelVisible: (friend.newMessageNum ?? 0) > 0,
+        label: Text(friend.newMessageNum.toString()),
         alignment: Alignment.topRight,
         child: Hero(
           tag: heroTag,
@@ -244,31 +223,22 @@ class SessionItem extends StatelessWidget {
             width: 45,
             height: 45,
             type: 'avatar',
-            src: sessionItem.accountInfo.face,
+            src: friend.avatarUrl ?? '',
           ),
         ),
       ),
-      title: Text(sessionItem.accountInfo.name),
+      title: Text(friend.username),
       subtitle: Text(
-          msgStatus == 1
-              ? '你撤回了一条消息'
-              : msgType == 2
-                  ? '[图片]'
-                  : content != null && content != ''
-                      ? (content['text'] ??
-                          content['content'] ??
-                          content['title'] ??
-                          content['reply_content'] ??
-                          '不支持的消息类型')
-                      : '不支持的消息类型',
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: Theme.of(context)
-              .textTheme
-              .labelMedium!
-              .copyWith(color: Theme.of(context).colorScheme.outline)),
+        friend.lastMessage ?? '',
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: Theme.of(context)
+            .textTheme
+            .labelMedium!
+            .copyWith(color: Theme.of(context).colorScheme.outline),
+      ),
       trailing: Text(
-        Utils.dateFormat(sessionItem.lastMsg.timestamp),
+        friend.lastTime != null ? Utils.dateFormat(friend.lastTime) : '',
         style: TextStyle(
           fontSize: Theme.of(context).textTheme.labelSmall!.fontSize,
           color: Theme.of(context).colorScheme.outline,

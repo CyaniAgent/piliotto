@@ -357,8 +357,6 @@ class _MemberPageState extends State<MemberPage> {
           _buildStatItem(theme, '关注', info.attention?.toString() ?? '0'),
           const SizedBox(width: 24),
           _buildStatItem(theme, '粉丝', info.fans?.toString() ?? '0'),
-          const SizedBox(width: 24),
-          _buildStatItem(theme, '动态', info.archiveCount?.toString() ?? '0'),
         ],
       );
     });
@@ -393,30 +391,9 @@ class _MemberPageState extends State<MemberPage> {
             _buildMenuItem(
               context,
               theme,
-              Icons.dynamic_feed_outlined,
-              '${_memberController.isOwner.value ? '我' : 'Ta'}的动态',
-              _memberController.pushDynamicsPage,
-            ),
-            _buildMenuItem(
-              context,
-              theme,
-              Icons.play_circle_outlined,
-              '${_memberController.isOwner.value ? '我' : 'Ta'}的投稿',
-              _memberController.pushArchivesPage,
-            ),
-            _buildMenuItem(
-              context,
-              theme,
               Icons.favorite_border_outlined,
               '${_memberController.isOwner.value ? '我' : 'Ta'}的收藏',
               _memberController.pushfavPage,
-            ),
-            _buildMenuItem(
-              context,
-              theme,
-              Icons.article_outlined,
-              '${_memberController.isOwner.value ? '我' : 'Ta'}的专栏',
-              _memberController.pushArticlePage,
             ),
           ],
         ));

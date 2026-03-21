@@ -2,45 +2,60 @@ import 'package:flutter/material.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
 import 'package:hive/hive.dart';
-import 'package:piliotto/models/msg/session.dart';
+import 'package:piliotto/api/models/message.dart';
+import 'package:piliotto/api/services/message_service.dart';
 import '../../utils/feed_back.dart';
 import '../../utils/storage.dart';
 
 class WhisperDetailController extends GetxController {
-  int? talkerId;
+  int? friendUid;
   late String name;
   late String face;
   late String mid;
   late String heroTag;
-  RxList<MessageItem> messageList = <MessageItem>[].obs;
-  RxList<dynamic> eInfos = [].obs;
+  RxList<Message> messageList = <Message>[].obs;
   final TextEditingController replyContentController = TextEditingController();
   Box userInfoCache = GStrorage.userInfo;
-  List emoteList = [];
-  List<String> picList = [];
+  bool isLoading = false;
 
   @override
   void onInit() {
     super.onInit();
-    if (Get.parameters.containsKey('talkerId')) {
-      talkerId = int.parse(Get.parameters['talkerId']!);
+    if (Get.parameters.containsKey('friendUid')) {
+      friendUid = int.parse(Get.parameters['friendUid']!);
     } else {
-      talkerId = int.parse(Get.parameters['mid']!);
+      friendUid = int.parse(Get.parameters['mid']!);
     }
     name = Get.parameters['name']!;
     face = Get.parameters['face']!;
     mid = Get.parameters['mid']!;
     heroTag = Get.parameters['heroTag']!;
+    queryMessages();
   }
 
-  // TODO: 迁移到 Ottohub 消息 API（如果有）
-  Future querySessionMsg() async {
-    return {'status': false, 'msg': 'TODO: 迁移到 Ottohub 消息 API'};
+  Future queryMessages({bool refresh = false}) async {
+    if (isLoading) return;
+    isLoading = true;
+
+    try {
+      final messages = await MessageService.getFriendMessage(
+        friendUid: friendUid!,
+        offset: refresh ? 0 : messageList.length,
+        num: 20,
+      );
+      if (refresh) {
+        messageList.value = messages;
+      } else {
+        messageList.addAll(messages);
+      }
+    } catch (e) {
+      Get.log('获取消息失败: $e');
+    } finally {
+      isLoading = false;
+    }
   }
 
-  Future ackSessionMsg() async {}
-
-  Future sendMsg() async {
+  Future sendMessage() async {
     feedBack();
     String message = replyContentController.text;
     final userInfo = userInfoCache.get('userInfoCache');
@@ -52,7 +67,37 @@ class WhisperDetailController extends GetxController {
       SmartDialog.showToast('请输入内容');
       return;
     }
-    SmartDialog.showToast('TODO: 迁移到 Ottohub 消息 API');
+
+    try {
+      final success = await MessageService.sendMessage(
+        receiver: friendUid!,
+        message: message,
+      );
+      if (success) {
+        replyContentController.clear();
+        await queryMessages(refresh: true);
+        SmartDialog.showToast('发送成功');
+      } else {
+        SmartDialog.showToast('发送失败');
+      }
+    } catch (e) {
+      SmartDialog.showToast('发送失败: $e');
+    }
+  }
+
+  Future deleteMessage(int msgId) async {
+    try {
+      final success = await MessageService.deleteMessage(msgId: msgId);
+      if (success) {
+        messageList.removeWhere((m) => m.msgId == msgId);
+        messageList.refresh();
+        SmartDialog.showToast('删除成功');
+      } else {
+        SmartDialog.showToast('删除失败');
+      }
+    } catch (e) {
+      SmartDialog.showToast('删除失败: $e');
+    }
   }
 
   void removeSession(context) {
@@ -62,7 +107,7 @@ class WhisperDetailController extends GetxController {
         return AlertDialog(
           clipBehavior: Clip.hardEdge,
           title: const Text('提示'),
-          content: const Text('确认清空会话内容并移除会话？'),
+          content: const Text('确认清空会话内容？'),
           actions: [
             TextButton(
               onPressed: Get.back,
@@ -73,7 +118,10 @@ class WhisperDetailController extends GetxController {
             ),
             TextButton(
               onPressed: () async {
-                SmartDialog.showToast('TODO: 迁移到 Ottohub 消息 API');
+                Get.back();
+                messageList.clear();
+                messageList.refresh();
+                SmartDialog.showToast('已清空');
               },
               child: const Text('确认'),
             ),

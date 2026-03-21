@@ -4,7 +4,6 @@ import 'package:piliotto/common/widgets/network_img_layer.dart';
 import 'package:piliotto/models/common/theme_type.dart';
 import 'package:piliotto/pages/fav/index.dart';
 import 'package:piliotto/pages/history/index.dart';
-import 'package:piliotto/pages/later/index.dart';
 import 'controller.dart';
 
 class MinePage extends StatefulWidget {
@@ -232,13 +231,6 @@ class _MinePageState extends State<MinePage> {
           mineController.userStat.value.follower?.toString() ?? '0',
           () => mineController.pushFans(),
         ),
-        const SizedBox(width: 24),
-        _buildStatItem(
-          theme,
-          '动态',
-          mineController.userStat.value.dynamicCount?.toString() ?? '0',
-          () => mineController.pushDynamic(),
-        ),
       ],
     );
   }
@@ -280,20 +272,6 @@ class _MinePageState extends State<MinePage> {
         _buildMenuItem(
           context,
           theme,
-          Icons.dynamic_feed_outlined,
-          '我的动态',
-          () => mineController.pushDynamic(),
-        ),
-        _buildMenuItem(
-          context,
-          theme,
-          Icons.play_circle_outlined,
-          '我的投稿',
-          () {},
-        ),
-        _buildMenuItem(
-          context,
-          theme,
           Icons.favorite_border_outlined,
           '我的收藏',
           () => Get.to(const FavPage()),
@@ -304,13 +282,6 @@ class _MinePageState extends State<MinePage> {
           Icons.history_outlined,
           '历史记录',
           () => Get.to(const HistoryPage()),
-        ),
-        _buildMenuItem(
-          context,
-          theme,
-          Icons.watch_later_outlined,
-          '稍后再看',
-          () => Get.to(const LaterPage()),
         ),
       ],
     );

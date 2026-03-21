@@ -41,20 +41,19 @@ class MemberController extends GetxController {
   Future<Map<String, dynamic>> getInfo() async {
     var res = await OldApiService.getUserDetail(uid: mid);
     if (res['status'] == 'success') {
-      final data = res['data'];
       memberInfo.value = MemberInfoModel(
-        mid: data['uid'],
-        name: data['username'],
-        sign: data['intro'],
-        face: data['avatar_url'],
-        cover: data['cover_url'],
-        sex: data['sex'],
-        fans: data['fans_count'],
-        attention: data['followings_count'],
-        archiveCount: data['video_num'],
-        articleCount: data['blog_num'],
+        mid: int.tryParse(res['uid'].toString()) ?? 0,
+        name: res['username']?.toString() ?? '',
+        sign: res['intro']?.toString() ?? '',
+        face: res['avatar_url']?.toString() ?? '',
+        cover: res['cover_url']?.toString() ?? '',
+        sex: res['sex']?.toString() ?? '',
+        fans: int.tryParse(res['fans_count'].toString()) ?? 0,
+        attention: int.tryParse(res['followings_count'].toString()) ?? 0,
+        archiveCount: int.tryParse(res['video_num'].toString()) ?? 0,
+        articleCount: int.tryParse(res['blog_num'].toString()) ?? 0,
       );
-      face.value = data['avatar_url'];
+      face.value = res['avatar_url']?.toString() ?? '';
     }
     return res;
   }

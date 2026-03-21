@@ -18,7 +18,8 @@ class AuthService {
       },
       requireToken: false,
     );
-    final loginResponse = LoginResponse.fromJson(response);
+    final data = response['data'] ?? response;
+    final loginResponse = LoginResponse.fromJson(data);
     if (loginResponse.token != null) {
       ApiService.setToken(loginResponse.token!);
     }
@@ -42,7 +43,8 @@ class AuthService {
       },
       requireToken: false,
     );
-    final loginResponse = LoginResponse.fromJson(response);
+    final data = response['data'] ?? response;
+    final loginResponse = LoginResponse.fromJson(data);
     if (loginResponse.token != null) {
       ApiService.setToken(loginResponse.token!);
     }

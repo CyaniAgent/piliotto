@@ -1,14 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-// TODO: 迁移到 Ottohub 消息 API（如果有）
-// import 'package:piliotto/http/msg.dart';
-import 'package:piliotto/models/msg/account.dart';
-import 'package:piliotto/models/msg/session.dart';
+import 'package:piliotto/api/services/message_service.dart';
+import 'package:piliotto/api/models/message.dart';
 
 class WhisperController extends GetxController {
-  RxList<SessionList> sessionList = <SessionList>[].obs;
-  RxList<AccountListModel> accountList = <AccountListModel>[].obs;
+  RxList<Friend> friendList = <Friend>[].obs;
+  RxInt unreadCount = 0.obs;
   bool isLoading = false;
+
   RxList noticesList = [
     {
       'icon': Icons.message_outlined,
@@ -38,95 +37,71 @@ class WhisperController extends GetxController {
 
   @override
   void onInit() {
-    // TODO: 迁移到 Ottohub 消息 API
-    // unread();
     super.onInit();
+    queryFriendList();
+    getUnreadCount();
   }
 
-  Future querySessionList(String? type) async {
-    // TODO: 迁移到 Ottohub 消息 API（如果有）
-    // if (isLoading) return;
-    // var res = await MsgHttp.sessionList(
-    //     endTs: type == 'onLoad' ? sessionList.last.sessionTs : null);
-    // if (res['data'].sessionList != null && res['data'].sessionList.isNotEmpty) {
-    //   await queryAccountList(res['data'].sessionList);
-    //   // 将 accountList 转换为 Map 结构
-    //   Map<int, dynamic> accountMap = {};
-    //   for (var j in accountList) {
-    //     accountMap[j.mid!] = j;
-    //   }
-    //
-    //   // 遍历 sessionList，通过 mid 查找并赋值 accountInfo
-    //   for (var i in res['data'].sessionList) {
-    //     var accountInfo = accountMap[i.talkerId];
-    //     if (accountInfo != null) {
-    //       i.accountInfo = accountInfo;
-    //     }
-    //     if (i.talkerId == 844424930131966) {
-    //       i.accountInfo = AccountListModel(
-    //         name: 'UP主小助手',
-    //         face:
-    //             'https://message.biliimg.com/bfs/im/489a63efadfb202366c2f88853d2217b5ddc7a13.png',
-    //       );
-    //     }
-    //   }
-    // }
-    // if (res['status'] && res['data'].sessionList != null) {
-    //   if (type == 'onLoad') {
-    //     sessionList.addAll(res['data'].sessionList);
-    //   } else {
-    //     sessionList.value = res['data'].sessionList;
-    //   }
-    // }
-    // isLoading = false;
-    // return res;
-    return {'status': false, 'msg': 'TODO: 迁移到 Ottohub 消息 API'};
+  Future queryFriendList({bool refresh = false}) async {
+    if (isLoading) return;
+    isLoading = true;
+
+    try {
+      final friends = await MessageService.getFriendList(
+        offset: refresh ? 0 : friendList.length,
+        num: 20,
+      );
+      if (refresh) {
+        friendList.value = friends;
+      } else {
+        friendList.addAll(friends);
+      }
+    } catch (e) {
+      Get.log('获取好友列表失败: $e');
+    } finally {
+      isLoading = false;
+    }
   }
 
-  Future queryAccountList(sessionList) async {
-    // TODO: 迁移到 Ottohub 消息 API（如果有）
-    // List midsList = sessionList.map((e) => e.talkerId!).toList();
-    // var res = await MsgHttp.accountList(midsList.join(','));
-    // if (res['status']) {
-    //   accountList.value = res['data'];
-    // }
-    // return res;
-    return {'status': false, 'msg': 'TODO: 迁移到 Ottohub 消息 API'};
+  Future getUnreadCount() async {
+    try {
+      unreadCount.value = await MessageService.getUnreadMessageNum();
+    } catch (e) {
+      Get.log('获取未读消息数失败: $e');
+    }
   }
 
   Future onLoad() async {
-    querySessionList('onLoad');
+    await queryFriendList();
   }
 
   Future onRefresh() async {
-    querySessionList('onRefresh');
+    await queryFriendList(refresh: true);
+    await getUnreadCount();
   }
 
-  void refreshLastMsg(int talkerId, String content) {
-    final SessionList currentItem =
-        sessionList.where((p0) => p0.talkerId == talkerId).first;
-    currentItem.lastMsg!.content['content'] = content;
-    sessionList.removeWhere((p0) => p0.talkerId == talkerId);
-    sessionList.insert(0, currentItem);
-    sessionList.refresh();
+  void refreshLastMsg(int uid, String content) {
+    final index = friendList.indexWhere((p0) => p0.uid == uid);
+    if (index != -1) {
+      final friend = friendList[index];
+      friendList.removeAt(index);
+      friendList.insert(
+          0,
+          Friend(
+            uid: friend.uid,
+            username: friend.username,
+            intro: friend.intro,
+            avatarUrl: friend.avatarUrl,
+            lastTime: DateTime.now().toString(),
+            lastMessage: content,
+            newMessageNum: (friend.newMessageNum ?? 0) + 1,
+          ));
+      friendList.refresh();
+    }
   }
 
-  // 移除会话
-  void removeSessionMsg(int talkerId) {
-    sessionList.removeWhere((p0) => p0.talkerId == talkerId);
-    sessionList.refresh();
-  }
-
-  // 消息未读数
-  void unread() async {
-    // TODO: 迁移到 Ottohub 消息 API（如果有）
-    // var res = await MsgHttp.unread();
-    // if (res['status']) {
-    //   noticesList[0]['count'] = res['data']['reply'];
-    //   noticesList[1]['count'] = res['data']['at'];
-    //   noticesList[2]['count'] = res['data']['like'];
-    //   noticesList[3]['count'] = res['data']['sys_msg'];
-    //   noticesList.refresh();
-    // }
+  void removeFriend(int uid) {
+    friendList.removeWhere((p0) => p0.uid == uid);
+    friendList.refresh();
   }
 }

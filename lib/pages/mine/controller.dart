@@ -49,15 +49,21 @@ class MineController extends GetxController {
       if (uid == null) return;
 
       final response = await OldApiService.getUserDetail(uid: uid);
-      if (response['status'] == 'success' && response['data'] != null) {
-        final data = response['data'];
-        // 更新封面URL
-        if (data['cover_url'] != null) {
-          userInfo.value.cover = data['cover_url'];
-          userInfo.refresh();
-          // 同时更新缓存
-          userInfoCache.put('userInfoCache', userInfo.value);
+      if (response['status'] == 'success') {
+        // 旧版 API 直接返回数据，没有 data 包装
+        final coverUrl = response['cover_url']?.toString();
+        if (coverUrl != null && coverUrl.isNotEmpty) {
+          userInfo.value.cover = coverUrl;
         }
+        // 更新关注和粉丝数量
+        userStat.value.following =
+            int.tryParse(response['followings_count']?.toString() ?? '0') ?? 0;
+        userStat.value.follower =
+            int.tryParse(response['fans_count']?.toString() ?? '0') ?? 0;
+        userInfo.refresh();
+        userStat.refresh();
+        // 同时更新缓存
+        userInfoCache.put('userInfoCache', userInfo.value);
       }
     } catch (e) {
       // 静默失败，不影响用户体验

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
-import 'package:piliotto/models/common/dynamics_type.dart';
 import 'package:piliotto/models/common/reply_sort_type.dart';
 import 'package:piliotto/pages/setting/widgets/select_dialog.dart';
 import 'package:piliotto/utils/storage.dart';
@@ -17,7 +16,6 @@ class ExtraSetting extends StatefulWidget {
 class _ExtraSettingState extends State<ExtraSetting> {
   Box setting = GStrorage.setting;
   late dynamic defaultReplySort;
-  late dynamic defaultDynamicType;
 
   @override
   void initState() {
@@ -28,8 +26,6 @@ class _ExtraSettingState extends State<ExtraSetting> {
       setting.put(SettingBoxKey.replySortType, 0);
       defaultReplySort = 0;
     }
-    defaultDynamicType =
-        setting.get(SettingBoxKey.defaultDynamicType, defaultValue: 0);
   }
 
   @override
@@ -50,12 +46,6 @@ class _ExtraSettingState extends State<ExtraSetting> {
       ),
       body: ListView(
         children: [
-          const SetSwitchItem(
-            title: '快速收藏',
-            subTitle: '点按收藏至默认，长按选择文件夹',
-            setKey: SettingBoxKey.enableQuickFav,
-            defaultVal: false,
-          ),
           const SetSwitchItem(
             title: '相关视频推荐',
             subTitle: '视频详情页推荐相关视频',
@@ -84,32 +74,6 @@ class _ExtraSettingState extends State<ExtraSetting> {
               if (result != null) {
                 defaultReplySort = result;
                 setting.put(SettingBoxKey.replySortType, result);
-                setState(() {});
-              }
-            },
-          ),
-          ListTile(
-            dense: false,
-            title: Text('动态展示', style: titleStyle),
-            subtitle: Text(
-              '当前优先展示「${DynamicsType.values[defaultDynamicType].labels}」',
-              style: subTitleStyle,
-            ),
-            onTap: () async {
-              int? result = await showDialog(
-                context: context,
-                builder: (context) {
-                  return SelectDialog<int>(
-                      title: '动态展示',
-                      value: defaultDynamicType,
-                      values: DynamicsType.values.map((e) {
-                        return {'title': e.labels, 'value': e.index};
-                      }).toList());
-                },
-              );
-              if (result != null) {
-                defaultDynamicType = result;
-                setting.put(SettingBoxKey.defaultDynamicType, result);
                 setState(() {});
               }
             },
