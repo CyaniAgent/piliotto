@@ -66,7 +66,7 @@ class GlobalDataCache {
         defaultValue: ['like', 'coin', 'collect', 'watchLater', 'share']);
 
     isOpenDanmu =
-        await setting.get(SettingBoxKey.enableShowDanmaku, defaultValue: false);
+        await setting.get(SettingBoxKey.enableShowDanmaku, defaultValue: true);
     blockTypes =
         await localCache.get(LocalCacheKey.danmakuBlockType, defaultValue: []);
     showArea =

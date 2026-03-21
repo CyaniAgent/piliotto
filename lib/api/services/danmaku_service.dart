@@ -25,6 +25,7 @@ class DanmakuService {
     await ApiService.request(
       baseEndpoint,
       method: 'POST',
+      requireToken: true,
       body: {
         'vid': vid,
         'text': text,
@@ -44,6 +45,7 @@ class DanmakuService {
     await ApiService.request(
       '$baseEndpoint/$danmakuId',
       method: 'DELETE',
+      requireToken: true,
     );
   }
 }

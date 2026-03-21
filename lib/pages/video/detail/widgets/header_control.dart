@@ -498,6 +498,29 @@ class _HeaderControlState extends State<HeaderControl> {
     );
   }
 
+  void _updateDanmakuOption() {
+    if (widget.controller?.danmakuController != null) {
+      final currentOption = widget.controller!.danmakuController!.option;
+      final newOption = currentOption.copyWith(
+        duration: widget.controller!.danmakuDurationVal /
+            widget.controller!.playbackSpeed,
+        opacity: widget.controller!.opacityVal,
+        fontSize: 15 * widget.controller!.fontSizeVal,
+        area: widget.controller!.showArea,
+        strokeWidth: widget.controller!.strokeWidth,
+        hideTop: widget.controller!.blockTypes.contains(5),
+        hideScroll: widget.controller!.blockTypes.contains(2),
+        hideBottom: widget.controller!.blockTypes.contains(4),
+      );
+      widget.controller!.danmakuController!.updateOption(newOption);
+    }
+  }
+
+  void _saveDanmakuStatus() {
+    final setting = GStrorage.setting;
+    setting.put(SettingBoxKey.enableShowDanmaku, widget.controller!.isOpenDanmu.value);
+  }
+
   /// 弹幕功能
   void showSetDanmaku() async {
     if (widget.controller == null) {
@@ -572,6 +595,7 @@ class _HeaderControlState extends State<HeaderControl> {
                                 blockTypes.add(i['value']);
                               }
                               widget.controller!.blockTypes = blockTypes;
+                              _updateDanmakuOption();
                               setState(() {});
                             },
                             text: i['label'],
@@ -592,6 +616,7 @@ class _HeaderControlState extends State<HeaderControl> {
                             onTap: () {
                               showArea = i['value'];
                               widget.controller!.showArea = showArea;
+                              _updateDanmakuOption();
                               setState(() {});
                             },
                             text: i['label'],
@@ -628,6 +653,7 @@ class _HeaderControlState extends State<HeaderControl> {
                         onChanged: (double val) {
                           opacityVal = val;
                           widget.controller!.opacityVal = opacityVal;
+                          _updateDanmakuOption();
                           setState(() {});
                         },
                       ),
@@ -659,6 +685,7 @@ class _HeaderControlState extends State<HeaderControl> {
                         onChanged: (double val) {
                           strokeWidth = val;
                           widget.controller!.strokeWidth = val;
+                          _updateDanmakuOption();
                           setState(() {});
                         },
                       ),
@@ -690,12 +717,13 @@ class _HeaderControlState extends State<HeaderControl> {
                         onChanged: (double val) {
                           fontSizeVal = val;
                           widget.controller!.fontSizeVal = fontSizeVal;
+                          _updateDanmakuOption();
                           setState(() {});
                         },
                       ),
                     ),
                   ),
-                  Text('弹幕时长 ${danmakuDurationVal.toString()} 秒'),
+                  Text('弹幕时长 ${danmakuDurationVal.toStringAsFixed(1)} 秒'),
                   Padding(
                     padding: const EdgeInsets.only(
                       top: 0,
@@ -717,11 +745,12 @@ class _HeaderControlState extends State<HeaderControl> {
                         max: 16,
                         value: danmakuDurationVal,
                         divisions: 28,
-                        label: danmakuDurationVal.toString(),
+                        label: '${danmakuDurationVal.toStringAsFixed(1)}秒',
                         onChanged: (double val) {
                           danmakuDurationVal = val;
                           widget.controller!.danmakuDurationVal =
                               danmakuDurationVal;
+                          _updateDanmakuOption();
                           setState(() {});
                         },
                       ),
@@ -989,6 +1018,7 @@ class _HeaderControlState extends State<HeaderControl> {
                   ),
                   onPressed: () {
                     _.isOpenDanmu.value = !_.isOpenDanmu.value;
+                    _saveDanmakuStatus();
                   },
                   icon: Icon(
                     _.isOpenDanmu.value

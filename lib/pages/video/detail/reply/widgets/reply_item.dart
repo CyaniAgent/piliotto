@@ -243,33 +243,38 @@ class _ReplyItemState extends State<ReplyItem> {
           ),
         ),
         // title
-        Container(
-          margin: const EdgeInsets.only(top: 10, left: 45, right: 6, bottom: 4),
-          child: SelectionArea(
-            child: Text.rich(
-              style: const TextStyle(height: 1.75),
-              maxLines: widget.replyItem!.content?.isText == true &&
-                      widget.replyLevel == '1' &&
-                      !_isExpanded
-                  ? 6
-                  : 999,
-              overflow: TextOverflow.ellipsis,
-              TextSpan(
-                children: [
-                  if (widget.replyItem!.isTop == true)
-                    const WidgetSpan(
-                      alignment: PlaceholderAlignment.top,
-                      child: PBadge(
-                        text: 'TOP',
-                        size: 'small',
-                        stack: 'normal',
-                        type: 'line',
-                        fs: 9,
+        AnimatedSize(
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeInOutCubic,
+          alignment: Alignment.topLeft,
+          child: Container(
+            margin: const EdgeInsets.only(top: 10, left: 45, right: 6, bottom: 4),
+            child: SelectionArea(
+              child: Text.rich(
+                style: const TextStyle(height: 1.75),
+                maxLines: widget.replyItem!.content?.isText == true &&
+                        widget.replyLevel == '1' &&
+                        !_isExpanded
+                    ? 6
+                    : 999,
+                overflow: TextOverflow.ellipsis,
+                TextSpan(
+                  children: [
+                    if (widget.replyItem!.isTop == true)
+                      const WidgetSpan(
+                        alignment: PlaceholderAlignment.top,
+                        child: PBadge(
+                          text: 'TOP',
+                          size: 'small',
+                          stack: 'normal',
+                          type: 'line',
+                          fs: 9,
+                        ),
                       ),
-                    ),
-                  buildContent(
-                      context, widget.replyItem!, widget.replyReply, null),
-                ],
+                    buildContent(
+                        context, widget.replyItem!, widget.replyReply, null),
+                  ],
+                ),
               ),
             ),
           ),

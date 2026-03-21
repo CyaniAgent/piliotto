@@ -5,7 +5,6 @@ import 'package:canvas_danmaku/canvas_danmaku.dart';
 import 'package:piliotto/api/models/danmaku.dart';
 import 'package:piliotto/pages/danmaku/index.dart';
 import 'package:piliotto/plugin/pl_player/index.dart';
-import 'package:piliotto/utils/danmaku.dart';
 import 'package:piliotto/utils/storage.dart';
 
 class PlDanmaku extends StatefulWidget {
@@ -79,6 +78,7 @@ class _PlDanmakuState extends State<PlDanmaku> {
   }
 
   void playerListener(PlayerStatus? status) {
+    if (_controller == null) return;
     if (status == PlayerStatus.paused) {
       _controller!.pause();
     }
@@ -88,7 +88,7 @@ class _PlDanmakuState extends State<PlDanmaku> {
   }
 
   void videoPositionListen(Duration position) {
-    if (!playerController.isOpenDanmu.value) {
+    if (!playerController.isOpenDanmu.value || _controller == null) {
       return;
     }
     int currentPosition = position.inMilliseconds;
@@ -102,20 +102,14 @@ class _PlDanmakuState extends State<PlDanmaku> {
     List<Danmaku>? currentDanmakuList =
         _plDanmakuController.getCurrentDanmaku(currentPosition);
 
-    if (currentDanmakuList != null) {
+    if (currentDanmakuList != null && currentDanmakuList.isNotEmpty) {
       for (var e in currentDanmakuList) {
-        Color? defaultColor = playerController.blockTypes.contains(6)
-            ? DmUtils.decimalToColor(16777215)
-            : null;
-
-        DanmakuItemType danmakuType = DanmakuItemType.scroll;
-        if (e.mode == 'top') {
-          danmakuType = DanmakuItemType.top;
-        } else if (e.mode == 'bottom') {
-          danmakuType = DanmakuItemType.bottom;
+        if (_shouldBlockDanmaku(e)) {
+          continue;
         }
 
-        Color danmakuColor = defaultColor ?? _parseColor(e.color);
+        DanmakuItemType danmakuType = _parseDanmakuType(e.mode);
+        Color danmakuColor = _parseColor(e.color);
 
         _controller!.addDanmaku(DanmakuContentItem(
           e.text,
@@ -126,13 +120,37 @@ class _PlDanmakuState extends State<PlDanmaku> {
     }
   }
 
+  bool _shouldBlockDanmaku(Danmaku danmaku) {
+    if (playerController.blockTypes.contains(6) && danmaku.color != '#ffffff') {
+      return true;
+    }
+    return false;
+  }
+
+  DanmakuItemType _parseDanmakuType(String mode) {
+    switch (mode.toLowerCase()) {
+      case 'top':
+        return DanmakuItemType.top;
+      case 'bottom':
+        return DanmakuItemType.bottom;
+      default:
+        return DanmakuItemType.scroll;
+    }
+  }
+
   Color _parseColor(String colorStr) {
+    if (colorStr.isEmpty) {
+      return Colors.white;
+    }
     try {
       String hex = colorStr.replaceAll('#', '');
       if (hex.length == 6) {
         hex = 'FF$hex';
       }
-      return Color(int.parse(hex, radix: 16));
+      if (hex.length == 8) {
+        return Color(int.parse(hex, radix: 16));
+      }
+      return Colors.white;
     } catch (e) {
       return Colors.white;
     }
@@ -155,16 +173,21 @@ class _PlDanmakuState extends State<PlDanmaku> {
             createdController: (DanmakuController e) async {
               playerController.danmakuController = _controller = e;
               widget.createdController?.call(e);
+              if (!_plDanmakuController.initiated) {
+                _plDanmakuController.initiate(
+                    playerController.duration.value.inMilliseconds,
+                    playerController.position.value.inMilliseconds);
+              }
             },
             option: DanmakuOption(
-              fontSize: 15 * fontSizeVal,
-              area: showArea,
-              opacity: opacityVal,
-              hideTop: blockTypes.contains(5),
-              hideScroll: blockTypes.contains(2),
-              hideBottom: blockTypes.contains(4),
-              duration: danmakuDurationVal / playerController.playbackSpeed,
-              strokeWidth: strokeWidth,
+              fontSize: 15 * playerController.fontSizeVal,
+              area: playerController.showArea,
+              opacity: playerController.opacityVal,
+              hideTop: playerController.blockTypes.contains(5),
+              hideScroll: playerController.blockTypes.contains(2),
+              hideBottom: playerController.blockTypes.contains(4),
+              duration: playerController.danmakuDurationVal / playerController.playbackSpeed,
+              strokeWidth: playerController.strokeWidth,
             ),
           ),
         ),

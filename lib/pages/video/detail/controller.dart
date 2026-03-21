@@ -89,6 +89,10 @@ class VideoDetailController extends GetxController
   RxDouble sheetHeight = 0.0.obs;
   ScrollController? replyScrollController;
 
+  // 弹幕数量
+  final RxInt _danmakuCount = 0.obs;
+  int get danmakuCount => _danmakuCount.value;
+
   @override
   void onInit() {
     super.onInit();
@@ -233,9 +237,6 @@ class VideoDetailController extends GetxController
 
     plPlayerController.subtitles.value = subtitles;
     logger.d('设置字幕');
-    // 获取弹幕
-    logger.d('调用 getDanmaku 获取弹幕');
-    await getDanmaku(subtitles);
   }
 
   // mob端全屏状态关闭二级回复
@@ -258,30 +259,18 @@ class VideoDetailController extends GetxController
       final logger = getLogger();
       logger.d('开始获取弹幕，vid: $vid');
       final danmakus = await OttohubService.getDanmakus(vid);
+      _danmakuCount.value = danmakus.length;
       logger.d('获取弹幕成功，数量: ${danmakus.length}');
-      // 处理弹幕数据，转换为播放器需要的格式
       if (plPlayerController.danmakuController != null) {
-        // 清空现有弹幕
         plPlayerController.danmakuController!.clear();
-        // 添加新弹幕
         for (var danmaku in danmakus) {
-          // 转换弹幕模式
-          DanmakuItemType type = DanmakuItemType.scroll; // 默认滚动弹幕
+          DanmakuItemType type = DanmakuItemType.scroll;
           if (danmaku.mode == 'top') {
             type = DanmakuItemType.top;
           } else if (danmaku.mode == 'bottom') {
             type = DanmakuItemType.bottom;
           }
-          // 转换颜色
-          Color color = Colors.white;
-          if (danmaku.color.isNotEmpty) {
-            try {
-              color = Color(int.parse(danmaku.color, radix: 16) | 0xFF000000);
-            } catch (e) {
-              // 颜色转换失败，使用默认白色
-            }
-          }
-          // 创建弹幕项
+          Color color = _parseDanmakuColor(danmaku.color);
           DanmakuContentItem item = DanmakuContentItem(
             danmaku.text,
             color: color,
@@ -296,6 +285,24 @@ class VideoDetailController extends GetxController
     } catch (e) {
       final logger = getLogger();
       logger.e('获取弹幕失败：${e.toString()}');
+    }
+  }
+
+  Color _parseDanmakuColor(String colorStr) {
+    if (colorStr.isEmpty) {
+      return Colors.white;
+    }
+    try {
+      String hex = colorStr.replaceAll('#', '');
+      if (hex.length == 6) {
+        hex = 'FF$hex';
+      }
+      if (hex.length == 8) {
+        return Color(int.parse(hex, radix: 16));
+      }
+      return Colors.white;
+    } catch (e) {
+      return Colors.white;
     }
   }
 

@@ -11,6 +11,7 @@ class FollowingService {
     final response = await ApiService.request(
       '$baseEndpoint/follow/$followingUid',
       method: 'POST',
+      requireToken: true,
     );
     return FollowResponse.fromJson(response);
   }
@@ -21,6 +22,7 @@ class FollowingService {
   }) async {
     final response = await ApiService.request(
       '$baseEndpoint/status/$followingUid',
+      requireToken: true,
     );
     return FollowStatusResponse.fromJson(response);
   }
@@ -72,6 +74,7 @@ class FollowingService {
         'offset': offset,
         'num': num,
       },
+      requireToken: true,
     );
     return TimelineResponse.fromJson(response['data']);
   }
@@ -88,7 +91,6 @@ class FollowingService {
         'offset': offset,
         'num': num,
       },
-      requireToken: false,
     );
     return TimelineResponse.fromJson(response['data']);
   }
@@ -105,7 +107,6 @@ class FollowingService {
         'offset': offset,
         'num': num,
       },
-      requireToken: false,
     );
     return ActiveUserListResponse.fromJson(response['data']);
   }

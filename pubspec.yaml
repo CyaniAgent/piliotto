@@ -174,7 +174,7 @@ flutter_launcher_icons:
   image_path: assets/images/logo/logo.png
   image_path_android: assets/images/logo/logo.png
   image_path_ios: assets/images/logo/logo.png
-  adaptive_icon_background: "#ffffff"
+  adaptive_icon_background: "#E4DFFF"
   adaptive_icon_foreground: assets/images/logo/logo.png
   adaptive_icon_monochrome: assets/images/logo/logo.png
   macos:

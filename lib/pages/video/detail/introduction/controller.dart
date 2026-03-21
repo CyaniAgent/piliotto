@@ -80,6 +80,17 @@ class VideoIntroController extends GetxController {
     }
   }
 
+  // 获取弹幕数量
+  int get danmakuCount {
+    try {
+      final VideoDetailController videoDetailCtr =
+          Get.find<VideoDetailController>(tag: heroTag);
+      return videoDetailCtr.danmakuCount;
+    } catch (e) {
+      return 0;
+    }
+  }
+
   // 获取up主粉丝数
   Future queryUserStat() async {
     // Ottohub API 暂不支持获取用户粉丝数
@@ -186,12 +197,16 @@ class VideoIntroController extends GetxController {
 
   // 查询关注状态
   Future queryFollowStatus() async {
+    if (!userLogin || userInfo == null) {
+      followStatus.value = false;
+      return;
+    }
     try {
       var result = await OttohubService.getFollowStatus(
           followingUid: videoDetail.value.uid);
       followStatus.value = result.followStatus == 1;
     } catch (e) {
-      SmartDialog.showToast('获取关注状态失败：${e.toString()}');
+      followStatus.value = false;
     }
   }
 

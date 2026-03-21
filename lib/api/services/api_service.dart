@@ -37,8 +37,8 @@ class ApiService {
     Map<String, String>? headers,
     Map<String, dynamic>? queryParams,
     bool requireToken = false,
+    bool skipToken = false,
   }) async {
-    final uri = _buildUri(endpoint, queryParams);
     final logger = getLogger();
 
     final defaultHeaders = {
@@ -46,15 +46,27 @@ class ApiService {
       'Accept': 'application/json',
     };
 
-    if (requireToken) {
-      final token = getToken();
-      if (token != null) {
-        if (queryParams != null) {
-          queryParams['token'] = token;
-        } else {
-          queryParams = {'token': token};
-        }
+    final token = getToken();
+    if (requireToken && token == null) {
+      throw ApiException('Token required');
+    }
+
+    // 对于 GET 请求，token 放在 query parameters 中
+    // 对于 POST/PUT/DELETE 请求，token 放在 body 中
+    Map<String, dynamic> finalBody = body != null ? Map.from(body) : {};
+    Uri uri;
+
+    if (!skipToken && token != null) {
+      if (method == 'GET') {
+        queryParams ??= {};
+        queryParams['token'] = token;
+        uri = _buildUri(endpoint, queryParams);
+      } else {
+        finalBody['token'] = token;
+        uri = _buildUri(endpoint, queryParams);
       }
+    } else {
+      uri = _buildUri(endpoint, queryParams);
     }
 
     final requestHeaders = {...defaultHeaders, ...?headers};
@@ -68,19 +80,19 @@ class ApiService {
         response = await http.post(
           uri,
           headers: requestHeaders,
-          body: body != null ? jsonEncode(body) : null,
+          body: finalBody.isNotEmpty ? jsonEncode(finalBody) : null,
         );
       } else if (method == 'PUT') {
         response = await http.put(
           uri,
           headers: requestHeaders,
-          body: body != null ? jsonEncode(body) : null,
+          body: finalBody.isNotEmpty ? jsonEncode(finalBody) : null,
         );
       } else if (method == 'DELETE') {
         response = await http.delete(
           uri,
           headers: requestHeaders,
-          body: body != null ? jsonEncode(body) : null,
+          body: finalBody.isNotEmpty ? jsonEncode(finalBody) : null,
         );
       } else {
         throw Exception('Unsupported HTTP method: $method');

@@ -385,32 +385,40 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
       color: Colors.white,
       fontSize: 12,
     );
-    return Stack(
-      fit: StackFit.passthrough,
-      children: <Widget>[
-        Obx(
-          () {
-            // 直接从controller获取最新的videoController，避免使用旧的实例
-            final currentVideoController = widget.controller.videoController;
-            if (currentVideoController == null) {
-              return const SizedBox.shrink();
-            }
-            return Video(
-              key: ValueKey(
-                  '${_.videoFit.value}_${currentVideoController.hashCode}'),
-              controller: currentVideoController,
-              controls: NoVideoControls,
-              alignment: widget.alignment!,
-              pauseUponEnteringBackgroundMode: !enableBackgroundPlay,
-              resumeUponEnteringForegroundMode: true,
-              subtitleViewConfiguration: const SubtitleViewConfiguration(
-                style: subTitleStyle,
-                padding: EdgeInsets.all(24.0),
-              ),
-              fit: _.videoFit.value,
-            );
-          },
-        ),
+    return MouseRegion(
+      onEnter: (event) {
+        _.controls = true;
+      },
+      onExit: (event) {
+        if (!_.isSliderMoving.value) {
+          _.controls = false;
+        }
+      },
+      child: Stack(
+        fit: StackFit.passthrough,
+        children: <Widget>[
+          Obx(
+            () {
+              final currentVideoController = widget.controller.videoController;
+              if (currentVideoController == null) {
+                return const SizedBox.shrink();
+              }
+              return Video(
+                key: ValueKey(
+                    '${_.videoFit.value}_${currentVideoController.hashCode}'),
+                controller: currentVideoController,
+                controls: NoVideoControls,
+                alignment: widget.alignment!,
+                pauseUponEnteringBackgroundMode: !enableBackgroundPlay,
+                resumeUponEnteringForegroundMode: true,
+                subtitleViewConfiguration: const SubtitleViewConfiguration(
+                  style: subTitleStyle,
+                  padding: EdgeInsets.all(24.0),
+                ),
+                fit: _.videoFit.value,
+              );
+            },
+          ),
 
         /// 长按倍速 toast
         Obx(
@@ -964,6 +972,7 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
           ),
         ),
       ],
+    ),
     );
   }
 }
