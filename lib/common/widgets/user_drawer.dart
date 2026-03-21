@@ -112,44 +112,23 @@ class UserDrawer extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           Obx(() {
-            if (mineController.userLogin.value) {
+            if (!mineController.userLogin.value) {
               return SizedBox(
                 width: double.infinity,
-                child: OutlinedButton(
+                child: FilledButton(
                   onPressed: () {
                     Navigator.of(context).pop();
-                    Get.toNamed('/member', parameters: {
-                      'mid': mineController.userInfo.value.mid.toString(),
-                    }, arguments: {
-                      'heroTag': 'mine',
-                      'face': mineController.userInfo.value.face,
-                    });
+                    Get.toNamed('/loginPage');
                   },
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: theme.colorScheme.onSecondaryContainer,
-                    side: BorderSide(
-                      color:
-                          theme.colorScheme.onSecondaryContainer.withAlpha(100),
-                    ),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: theme.colorScheme.onSecondaryContainer,
+                    foregroundColor: theme.colorScheme.secondaryContainer,
                   ),
-                  child: const Text('编辑资料'),
+                  child: const Text('立即登录'),
                 ),
               );
             }
-            return SizedBox(
-              width: double.infinity,
-              child: FilledButton(
-                onPressed: () {
-                  Navigator.of(context).pop();
-                  Get.toNamed('/loginPage');
-                },
-                style: FilledButton.styleFrom(
-                  backgroundColor: theme.colorScheme.onSecondaryContainer,
-                  foregroundColor: theme.colorScheme.secondaryContainer,
-                ),
-                child: const Text('立即登录'),
-              ),
-            );
+            return const SizedBox.shrink();
           }),
         ],
       ),

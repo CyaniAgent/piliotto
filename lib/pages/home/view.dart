@@ -224,10 +224,10 @@ class UserInfoWidget extends StatelessWidget {
                   if (mainController.useDrawerForUser) {
                     mainController.scaffoldKey.currentState?.openDrawer();
                   } else {
-                    callback?.call();
+                    Get.toNamed('/mine');
                   }
                 } else {
-                  callback?.call();
+                  Get.toNamed('/mine');
                 }
               },
               splashColor: Theme.of(context)

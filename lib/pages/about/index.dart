@@ -30,7 +30,7 @@ class _AboutPageState extends State<AboutPage> {
         child: Column(
           children: [
             Image.asset(
-              'assets/images/logo/logo_android_2.png',
+              'assets/images/logo/logo.png',
               width: 150,
             ),
             Text(
@@ -130,7 +130,8 @@ class AboutController extends GetxController {
   Future getRemoteApp() async {
     try {
       var dio = Dio();
-      var result = await dio.get('https://api.github.com/repos/CyaniAgent/piliotto/releases/latest');
+      var result = await dio.get(
+          'https://api.github.com/repos/CyaniAgent/piliotto/releases/latest');
       isLoading.value = false;
       if (result.data == null || result.data.isEmpty) {
         SmartDialog.showToast('获取远程版本失败，请检查网络');

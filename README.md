@@ -1,5 +1,5 @@
 <div align="center">
-    <img width="200" height="200" src="https://github.com/CyaniAgent/piliotto/blob/main/assets/images/logo/logo_android.png">
+    <img width="200" height="200" src="https://github.com/CyaniAgent/piliotto/blob/main/assets/images/logo/logo.png">
 </div>
 
 <div align="center">

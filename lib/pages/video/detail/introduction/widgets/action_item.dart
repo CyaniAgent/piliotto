@@ -43,24 +43,15 @@ class ActionItem extends StatelessWidget {
               transitionBuilder: (Widget child, Animation<double> animation) {
                 return ScaleTransition(scale: animation, child: child);
               },
-              child: icon is Icon
-                  ? Icon(
-                      selectStatus
-                          ? selectIcon!.icon ?? icon!.icon
-                          : icon!.icon,
-                      color: selectStatus
-                          ? Theme.of(context).colorScheme.primary
-                          : Theme.of(context).colorScheme.outline,
-                      size: 20,
-                    )
-                  : Image.asset(
-                      key: ValueKey<bool>(selectStatus),
-                      'assets/images/coin.png',
-                      width: const IconThemeData.fallback().size,
-                      color: selectStatus
-                          ? Theme.of(context).colorScheme.primary
-                          : Theme.of(context).colorScheme.outline,
-                    ),
+              child: Icon(
+                selectStatus
+                    ? selectIcon?.icon ?? (icon is Icon ? icon.icon : null)
+                    : (icon is Icon ? icon.icon : null),
+                color: selectStatus
+                    ? Theme.of(context).colorScheme.primary
+                    : Theme.of(context).colorScheme.outline,
+                size: 20,
+              ),
             ),
             const SizedBox(height: 6),
             Text(

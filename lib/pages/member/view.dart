@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:piliotto/common/widgets/network_img_layer.dart';
 import 'package:piliotto/pages/member/index.dart';
 import 'package:piliotto/utils/utils.dart';
 
@@ -43,6 +44,9 @@ class _MemberPageState extends State<MemberPage> {
         future: _futureBuilderFuture,
         builder: (context, snapshot) {
           final isLoading = snapshot.connectionState != ConnectionState.done;
+          final hasError = snapshot.hasError ||
+              (snapshot.data != null &&
+                  (snapshot.data as Map?)?['status'] != 'success');
           final hasData = snapshot.data != null &&
               (snapshot.data as Map?)?['status'] == 'success';
 
@@ -59,17 +63,62 @@ class _MemberPageState extends State<MemberPage> {
                       Positioned(
                         top: 200 - 45,
                         left: 20,
-                        child: _buildAvatar(theme, isLoading),
+                        child: _buildAvatar(theme),
                       ),
                       _buildContent(context, theme, isLoading, hasData),
                     ],
-                    if (!hasData && !isLoading) _buildLoggedOutHeader(theme),
+                    if (hasError && !isLoading) _buildErrorContent(theme),
                   ],
                 ),
               ),
             ],
           );
         },
+      ),
+    );
+  }
+
+  Widget _buildErrorContent(ThemeData theme) {
+    return Container(
+      margin: const EdgeInsets.only(top: 200),
+      padding: const EdgeInsets.all(20),
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.error_outline,
+              size: 64,
+              color: theme.colorScheme.error,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              '加载失败',
+              style: TextStyle(
+                fontSize: 18,
+                color: theme.colorScheme.onSurface,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              '无法获取用户信息',
+              style: TextStyle(
+                fontSize: 14,
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: 24),
+            FilledButton.icon(
+              onPressed: () {
+                setState(() {
+                  _futureBuilderFuture = _memberController.getInfo();
+                });
+              },
+              icon: const Icon(Icons.refresh),
+              label: const Text('重试'),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -135,42 +184,19 @@ class _MemberPageState extends State<MemberPage> {
       return Container(
         height: 200,
         decoration: BoxDecoration(
-          color: theme.colorScheme.primary,
+          color: theme.colorScheme.secondaryContainer,
           image: cover != null && cover.isNotEmpty
               ? DecorationImage(
                   image: NetworkImage(cover),
                   fit: BoxFit.cover,
                 )
               : null,
-          gradient: cover == null || cover.isEmpty
-              ? LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    theme.colorScheme.primaryContainer,
-                    theme.colorScheme.primary,
-                  ],
-                )
-              : null,
-        ),
-        child: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [
-                Colors.transparent,
-                theme.colorScheme.surface.withAlpha(100),
-              ],
-              stops: const [0.6, 1.0],
-            ),
-          ),
         ),
       );
     });
   }
 
-  Widget _buildAvatar(ThemeData theme, bool isLoading) {
+  Widget _buildAvatar(ThemeData theme) {
     return GestureDetector(
       onTap: () {},
       child: Container(
@@ -190,17 +216,24 @@ class _MemberPageState extends State<MemberPage> {
         ),
         child: Obx(() {
           final face = _memberController.face.value;
+          if (face.isNotEmpty) {
+            return ClipOval(
+              child: NetworkImgLayer(
+                src: face,
+                width: 90,
+                height: 90,
+                type: 'avatar',
+              ),
+            );
+          }
           return CircleAvatar(
             radius: 45,
             backgroundColor: theme.colorScheme.surface,
-            backgroundImage: face.isNotEmpty ? NetworkImage(face) : null,
-            child: face.isEmpty
-                ? Icon(
-                    Icons.person,
-                    size: 50,
-                    color: theme.colorScheme.primary,
-                  )
-                : null,
+            child: Icon(
+              Icons.person,
+              size: 50,
+              color: theme.colorScheme.primary,
+            ),
           );
         }),
       ),
@@ -214,6 +247,7 @@ class _MemberPageState extends State<MemberPage> {
     bool hasData,
   ) {
     return Container(
+      margin: const EdgeInsets.only(top: 155),
       padding: const EdgeInsets.all(20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -236,87 +270,81 @@ class _MemberPageState extends State<MemberPage> {
     bool isLoading,
     bool hasData,
   ) {
-    return Transform.translate(
-      offset: const Offset(0, -20),
-      child: Padding(
-        padding: const EdgeInsets.only(left: 115),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (isLoading)
-              Container(
-                width: 150,
-                height: 24,
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.surfaceContainerHighest,
-                  borderRadius: BorderRadius.circular(4),
-                ),
-              )
-            else
-              Obx(() => Text(
-                    _memberController.memberInfo.value.name ?? '',
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: theme.colorScheme.onSurface,
-                    ),
-                  )),
-            const SizedBox(height: 4),
-            if (isLoading)
-              Container(
-                width: 100,
-                height: 14,
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.surfaceContainerHighest,
-                  borderRadius: BorderRadius.circular(4),
-                ),
-              )
-            else
-              Text(
-                'UID: $mid',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
+    return Padding(
+      padding: const EdgeInsets.only(left: 115, top: 20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (isLoading)
+            Container(
+              width: 150,
+              height: 24,
+              decoration: BoxDecoration(
+                color: theme.colorScheme.surfaceContainerHighest,
+                borderRadius: BorderRadius.circular(4),
               ),
-            const SizedBox(height: 12),
-            if (hasData)
-              Obx(() {
-                if (_memberController.isOwner.value) {
-                  return FilledButton(
-                    onPressed: () {},
-                    child: const Text('编辑资料'),
-                  );
-                }
-                return Row(
-                  children: [
-                    FilledButton(
-                      onPressed: _memberController.actionRelationMod,
-                      child: Obx(
-                          () => Text(_memberController.attributeText.value)),
-                    ),
-                    const SizedBox(width: 8),
-                    OutlinedButton(
-                      onPressed: () {
-                        Get.toNamed(
-                          '/whisperDetail',
-                          parameters: {
-                            'name':
-                                _memberController.memberInfo.value.name ?? '',
-                            'face': _memberController.face.value,
-                            'mid': mid.toString(),
-                            'heroTag': heroTag,
-                          },
-                        );
-                      },
-                      child: const Text('发消息'),
-                    ),
-                  ],
-                );
-              }),
-          ],
-        ),
+            )
+          else
+            Obx(() => Text(
+                  _memberController.memberInfo.value.name ?? '',
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: theme.colorScheme.onSurface,
+                  ),
+                )),
+          const SizedBox(height: 4),
+          if (isLoading)
+            Container(
+              width: 100,
+              height: 14,
+              decoration: BoxDecoration(
+                color: theme.colorScheme.surfaceContainerHighest,
+                borderRadius: BorderRadius.circular(4),
+              ),
+            )
+          else
+            Text(
+              'UID: $mid',
+              style: TextStyle(
+                fontSize: 14,
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          const SizedBox(height: 12),
+          if (hasData)
+            Obx(() {
+              if (_memberController.isOwner.value) {
+                return const SizedBox.shrink();
+              }
+              return Row(
+                children: [
+                  FilledButton(
+                    onPressed: _memberController.actionRelationMod,
+                    child: Obx(
+                        () => Text(_memberController.attributeText.value)),
+                  ),
+                  const SizedBox(width: 8),
+                  OutlinedButton(
+                    onPressed: () {
+                      Get.toNamed(
+                        '/whisperDetail',
+                        parameters: {
+                          'name':
+                              _memberController.memberInfo.value.name ?? '',
+                          'face': _memberController.face.value,
+                          'mid': mid.toString(),
+                          'heroTag': heroTag,
+                        },
+                      );
+                    },
+                    child: const Text('发消息'),
+                  ),
+                ],
+              );
+            }),
+        ],
       ),
     );
   }
@@ -417,64 +445,6 @@ class _MemberPageState extends State<MemberPage> {
         ),
       ),
       trailing: const Icon(Icons.arrow_forward_outlined, size: 19),
-    );
-  }
-
-  Widget _buildLoggedOutHeader(ThemeData theme) {
-    return Positioned(
-      bottom: 40,
-      left: 20,
-      right: 20,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            '欢迎来到 Ottohub',
-            style: TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.bold,
-              color: theme.colorScheme.onPrimary,
-              shadows: [
-                Shadow(
-                  blurRadius: 4,
-                  color: theme.colorScheme.shadow.withValues(alpha: 0.2),
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            '登录以体验完整功能',
-            style: TextStyle(
-              fontSize: 14,
-              color: theme.colorScheme.onPrimary.withValues(alpha: 0.9),
-              shadows: [
-                Shadow(
-                  blurRadius: 2,
-                  color: theme.colorScheme.shadow.withAlpha(51),
-                  offset: const Offset(0, 1),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 24),
-          ElevatedButton.icon(
-            onPressed: () => Get.toNamed('/login'),
-            icon: const Icon(Icons.login),
-            label: const Text('立即登录'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: theme.colorScheme.surface,
-              foregroundColor: theme.colorScheme.primary,
-              elevation: 0,
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-            ),
-          ),
-        ],
-      ),
     );
   }
 }

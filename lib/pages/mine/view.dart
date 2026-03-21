@@ -203,21 +203,13 @@ class _MinePageState extends State<MinePage> {
           }),
           const SizedBox(height: 12),
           Obx(() {
-            if (mineController.userLogin.value) {
+            if (!mineController.userLogin.value) {
               return FilledButton(
-                onPressed: () => Get.toNamed('/member', parameters: {
-                  'mid': mineController.userInfo.value.mid.toString(),
-                }, arguments: {
-                  'heroTag': 'mine',
-                  'face': mineController.userInfo.value.face,
-                }),
-                child: const Text('编辑资料'),
+                onPressed: () => Get.toNamed('/loginPage'),
+                child: const Text('立即登录'),
               );
             }
-            return FilledButton(
-              onPressed: () => Get.toNamed('/loginPage'),
-              child: const Text('立即登录'),
-            );
+            return const SizedBox.shrink();
           }),
         ],
       ),

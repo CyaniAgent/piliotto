@@ -1,6 +1,5 @@
 // 操作类型的枚举值：点赞 不喜欢 收藏 投币 稍后再看 下载封面 后台播放 听视频 分享 下载视频
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
 
 enum ActionType {
   like,
@@ -52,11 +51,7 @@ List<Map> actionMenuConfig = [
     'value': ActionType.like,
   },
   {
-    'icon': Image.asset(
-      'assets/images/coin.png',
-      width: 26,
-      color: IconTheme.of(Get.context!).color!.withValues(alpha: 0.65),
-    ),
+    'icon': const Icon(Icons.monetization_on_outlined),
     'label': '投币',
     'value': ActionType.coin,
   },

@@ -15,12 +15,10 @@ class OldApiService {
   static const String baseUrl = 'https://api.ottohub.cn';
   static const String _tokenKey = 'ottohub_token';
 
-  // 获取token
   static String? getToken() {
     return GStrorage.setting.get(_tokenKey);
   }
 
-  // 检查是否登录
   static void requireLogin() {
     final token = getToken();
     if (token == null || token.isEmpty) {
@@ -34,12 +32,10 @@ class OldApiService {
     Map<String, dynamic> params, {
     bool requireAuth = false,
   }) async {
-    // 如果需要认证，检查是否登录
     if (requireAuth) {
       requireLogin();
     }
 
-    // 如果需要token，添加到参数中
     if (params.containsKey('token') && params['token'] == null) {
       final token = getToken();
       if (token != null) {
@@ -47,7 +43,6 @@ class OldApiService {
       }
     }
 
-    // 构建请求URL
     final uri = Uri.parse(baseUrl).replace(
       queryParameters: {
         'module': module,
@@ -75,14 +70,12 @@ class OldApiService {
     }
   }
 
-  // 获取视频评论列表
   static Future<Map<String, dynamic>> getVideoComments({
     required int vid,
     int parentVcid = 0,
     int offset = 0,
     int num = 12,
   }) async {
-    // 确保num参数不超过12
     if (num > 12) {
       final logger = getLogger();
       logger.w('警告: num参数超过12，自动调整为12');
@@ -100,7 +93,6 @@ class OldApiService {
     );
   }
 
-  // 获取用户详情
   static Future<Map<String, dynamic>> getUserDetail({required int uid}) async {
     return request(
       'user',
@@ -111,16 +103,14 @@ class OldApiService {
     );
   }
 
-  // 获取关注状态（需要登录）
   static Future<Map<String, dynamic>> getFollowStatus(
       {required int followingUid}) async {
-    // 如果没有登录，返回默认的未关注状态
     final token = getToken();
     if (token == null || token.isEmpty) {
       return {
         'status': 'success',
         'data': {
-          'follow_status': 1, // 互相未关注
+          'follow_status': 1,
         },
       };
     }
@@ -135,7 +125,6 @@ class OldApiService {
     );
   }
 
-  // 关注/取关用户（需要登录）
   static Future<Map<String, dynamic>> followUser(
       {required int followingUid}) async {
     return request(
@@ -143,13 +132,12 @@ class OldApiService {
       'follow',
       {
         'following_uid': followingUid.toString(),
-        'token': null, // 自动添加token
+        'token': null,
       },
       requireAuth: true,
     );
   }
 
-  // 评论视频（需要登录）
   static Future<Map<String, dynamic>> commentVideo({
     required int vid,
     int parentVcid = 0,
@@ -168,7 +156,6 @@ class OldApiService {
     );
   }
 
-  // 删除视频评论（需要登录）
   static Future<Map<String, dynamic>> deleteVideoComment({
     required int vcid,
   }) async {
@@ -183,7 +170,6 @@ class OldApiService {
     );
   }
 
-  // 获取用户动态列表
   static Future<Map<String, dynamic>> getUserBlogList({
     required int uid,
     int offset = 0,
@@ -200,7 +186,6 @@ class OldApiService {
     );
   }
 
-  // 获取最新动态列表
   static Future<Map<String, dynamic>> getNewBlogList({
     int offset = 0,
     int num = 10,
@@ -215,7 +200,6 @@ class OldApiService {
     );
   }
 
-  // 获取热门动态列表
   static Future<Map<String, dynamic>> getPopularBlogList({
     int timeLimit = 7,
     int offset = 0,
@@ -232,7 +216,6 @@ class OldApiService {
     );
   }
 
-  // 获取动态详情
   static Future<Map<String, dynamic>> getBlogDetail({
     required int bid,
   }) async {
@@ -247,7 +230,6 @@ class OldApiService {
     );
   }
 
-  // 获取相关动态列表
   static Future<Map<String, dynamic>> getRelatedBlogList({
     required int bid,
     int offset = 0,
@@ -264,7 +246,6 @@ class OldApiService {
     );
   }
 
-  // 点赞动态（需要登录）
   static Future<Map<String, dynamic>> likeBlog({
     required int bid,
   }) async {
@@ -279,7 +260,6 @@ class OldApiService {
     );
   }
 
-  // 收藏动态（需要登录）
   static Future<Map<String, dynamic>> favoriteBlog({
     required int bid,
   }) async {
@@ -294,7 +274,6 @@ class OldApiService {
     );
   }
 
-  // 获取动态评论列表
   static Future<Map<String, dynamic>> getBlogCommentList({
     required int bid,
     int parentBcid = 0,
@@ -315,7 +294,6 @@ class OldApiService {
     );
   }
 
-  // 评论动态（需要登录）
   static Future<Map<String, dynamic>> commentBlog({
     required int bid,
     int parentBcid = 0,
@@ -334,7 +312,6 @@ class OldApiService {
     );
   }
 
-  // 获取视频历史记录
   static Future<Map<String, dynamic>> getVideoHistory() async {
     return request(
       'profile',
@@ -346,7 +323,6 @@ class OldApiService {
     );
   }
 
-  // 获取收藏视频列表
   static Future<Map<String, dynamic>> getFavoriteVideoList({
     int offset = 0,
     int num = 20,
@@ -363,7 +339,6 @@ class OldApiService {
     );
   }
 
-  // 获取收藏动态列表
   static Future<Map<String, dynamic>> getFavoriteBlogList({
     int offset = 0,
     int num = 20,
@@ -374,6 +349,17 @@ class OldApiService {
       {
         'offset': offset.toString(),
         'num': num.toString(),
+        'token': null,
+      },
+      requireAuth: true,
+    );
+  }
+
+  static Future<Map<String, dynamic>> getUserProfile() async {
+    return request(
+      'profile',
+      'user_profile',
+      {
         'token': null,
       },
       requireAuth: true,

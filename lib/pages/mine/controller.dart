@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
 import 'package:hive/hive.dart';
+import 'package:piliotto/api/services/old_api_service.dart';
 import 'package:piliotto/models/common/theme_type.dart';
 import 'package:piliotto/models/user/info.dart';
 import 'package:piliotto/models/user/stat.dart';
@@ -32,8 +33,34 @@ class MineController extends GetxController {
       } else {
         themeType.value = ThemeType.system;
       }
+
+      // 如果已登录，刷新用户信息获取最新的封面URL
+      if (userLogin.value) {
+        _refreshUserInfo();
+      }
     } catch (e) {
       SmartDialog.showToast('MineController初始化错误: ${e.toString()}');
+    }
+  }
+
+  Future _refreshUserInfo() async {
+    try {
+      final uid = userInfo.value.mid;
+      if (uid == null) return;
+
+      final response = await OldApiService.getUserDetail(uid: uid);
+      if (response['status'] == 'success' && response['data'] != null) {
+        final data = response['data'];
+        // 更新封面URL
+        if (data['cover_url'] != null) {
+          userInfo.value.cover = data['cover_url'];
+          userInfo.refresh();
+          // 同时更新缓存
+          userInfoCache.put('userInfoCache', userInfo.value);
+        }
+      }
+    } catch (e) {
+      // 静默失败，不影响用户体验
     }
   }
 

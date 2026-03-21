@@ -5,8 +5,6 @@ import 'package:get/get.dart';
 import 'package:piliotto/utils/feed_back.dart';
 import 'package:piliotto/utils/image_save.dart';
 
-// TODO: 迁移到 Ottohub API
-// import '../../http/search.dart';
 import '../../http/video.dart';
 import '../../api/models/video.dart';
 import '../../services/ottohub_service.dart';
@@ -179,22 +177,12 @@ class VideoCardH extends StatelessWidget {
     } else {
       final int aid = videoItem.aid;
       final String bvid = videoItem.bvid;
-      String type = 'video';
-      try {
-        type = videoItem.type;
-      } catch (_) {}
       final String heroTag = Utils.makeHeroTag(aid);
       return InkWell(
         onTap: () async {
           try {
-            if (type == 'ketang') {
-              SmartDialog.showToast('课堂视频暂不支持播放');
-              return;
-            }
             if (showCharge && videoItem?.typeid == 33) {}
-            final int cid =
-                videoItem.cid ?? await VideoHttp.ab2c(aid: aid, bvid: bvid);
-            Get.toNamed('/video?bvid=$bvid&cid=$cid',
+            Get.toNamed('/video?bvid=$bvid',
                 arguments: {'videoItem': videoItem, 'heroTag': heroTag});
           } catch (err) {
             SmartDialog.showToast(err.toString());
@@ -245,13 +233,6 @@ class VideoCardH extends StatelessWidget {
                                   right: 6.0,
                                   bottom: 6.0,
                                   type: 'gray',
-                                ),
-                              if (type != 'video')
-                                PBadge(
-                                  text: type,
-                                  left: 6.0,
-                                  bottom: 6.0,
-                                  type: 'primary',
                                 ),
                               if (showCharge && videoItem?.isChargingSrc)
                                 const PBadge(

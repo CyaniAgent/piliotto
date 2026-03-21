@@ -112,8 +112,17 @@ class MainController extends GetxController {
     navBarSort.removeWhere(
         (id) => !defaultNavigationBars.any((item) => item['id'] == id));
 
-    // 如果使用侧边栏，则移除"我的"页面（id: 3）从底栏
-    if (useDrawerForUser) {
+    // 只有窄屏且启用侧边栏时，才移除"我的"页面（id: 3）从底栏
+    // 宽屏始终显示"我的"
+    final isNarrowScreen = WidgetsBinding
+                .instance.platformDispatcher.implicitView?.physicalSize.width !=
+            null &&
+        (WidgetsBinding.instance.platformDispatcher.implicitView!.physicalSize
+                    .width /
+                WidgetsBinding.instance.platformDispatcher.implicitView!
+                    .devicePixelRatio) <
+            600;
+    if (isNarrowScreen && useDrawerForUser) {
       navBarSort.remove(3);
     }
 

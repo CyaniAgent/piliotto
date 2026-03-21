@@ -159,10 +159,6 @@ dev_dependencies:
   # rules and activating additional ones.
   flutter_lints: ^2.0.0
   flutter_launcher_icons: ^0.13.1
-  # flutter_launcher_icons:
-  #   git:
-  #     url: https://github.com/nvi9/flutter_launcher_icons.git
-  #     ref: e045d40
   hive_generator: ^2.0.0
   build_runner: ^2.4.8
 
@@ -170,32 +166,26 @@ dependency_overrides:
   flutter_mailer: ^3.0.1
   fluttertoast: ^9.0.0
   web_socket_channel: ^3.0.3
-  # media_kit:
-  #   git:
-  #     url: https://github.com/media-kit/media-kit
-  #     path: media_kit
-  # media_kit_video:
-  #   git:
-  #     url: https://github.com/media-kit/media-kit
-  #     path: media_kit_video
-  # media_kit_libs_video:
-  #   git:
-  #     url: https://github.com/media-kit/media-kit
-  #     path: libs/universal/media_kit_libs_video
 
 flutter_launcher_icons:
   android: true
   ios: true
   remove_alpha_ios: true
-  image_path: assets/images/logo/logo_android_2.png
-  image_path_android: assets/images/logo/logo_android_2.png
-  image_path_ios: assets/images/logo/logo_ios.png
+  image_path: assets/images/logo/logo.png
+  image_path_android: assets/images/logo/logo.png
+  image_path_ios: assets/images/logo/logo.png
   adaptive_icon_background: "#ffffff"
-  adaptive_icon_foreground: assets/images/logo/logo_android_2.png
-  adaptive_icon_monochrome: assets/images/logo/logo_android_2.png
+  adaptive_icon_foreground: assets/images/logo/logo.png
+  adaptive_icon_monochrome: assets/images/logo/logo.png
   macos:
     generate: true
-    image_path: assets/images/logo/logo_ios.png
+    image_path: assets/images/logo/logo.png
+  windows:
+    generate: true
+    image_path: assets/images/logo/logo.png
+  linux:
+    generate: true
+    image_path: assets/images/logo/logo.png
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -233,9 +223,6 @@ flutter:
     - family: Jura-Bold
       fonts:
         - asset: assets/fonts/Jura-Bold.ttf
-    # - family: HarmonyOS
-    #   fonts:
-    #     - asset: assets/fonts/HarmonyOS_Sans_SC_Regular.ttf
 
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/custom-fonts/#from-packages

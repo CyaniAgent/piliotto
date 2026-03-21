@@ -53,14 +53,16 @@ class _ContentState extends State<Content> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         if (desc != null && desc.text != null && desc.text!.isNotEmpty)
-          Text(
-            desc.text!,
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: colorScheme.onSurfaceVariant,
-              height: 1.5,
+          SelectionArea(
+            child: Text(
+              desc.text!,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+                height: 1.5,
+              ),
+              maxLines: widget.source == 'detail' ? null : 4,
+              overflow: TextOverflow.ellipsis,
             ),
-            maxLines: widget.source == 'detail' ? null : 4,
-            overflow: TextOverflow.ellipsis,
           ),
         if (hasPics) ...[
           const SizedBox(height: 12),
