@@ -3,7 +3,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:hive/hive.dart';
-import 'package:piliotto/pages/fav_edit/index.dart';
 import 'package:piliotto/pages/member_article/index.dart';
 import 'package:piliotto/pages/message/at/index.dart';
 import 'package:piliotto/pages/message/like/index.dart';
@@ -24,7 +23,6 @@ import '../pages/follow/index.dart';
 import '../pages/history/index.dart';
 import '../pages/home/index.dart';
 import '../pages/hot/index.dart';
-import '../pages/html/index.dart';
 
 import '../pages/login/index.dart';
 import '../pages/media/index.dart';
@@ -119,8 +117,6 @@ class Routes {
         name: '/displayModeSetting', page: () => const SetDiaplayMode()),
     // 关于
     CustomGetPage(name: '/about', page: () => const AboutPage()),
-    //
-    CustomGetPage(name: '/htmlRender', page: () => const HtmlRenderPage()),
 
     CustomGetPage(name: '/playSpeedSet', page: () => const PlaySpeedPage()),
     // 消息页面
@@ -164,8 +160,6 @@ class Routes {
     // 系统通知
     CustomGetPage(
         name: '/messageSystem', page: () => const MessageSystemPage()),
-    // 收藏夹编辑
-    CustomGetPage(name: '/favEdit', page: () => const FavEditPage()),
 
     // 专栏
     CustomGetPage(name: '/opus', page: () => const OpusPage()),

@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:hive/hive.dart';
-// TODO: 迁移到 Ottohub API
-// import 'package:piliotto/http/user.dart';
+import 'package:piliotto/api/services/old_api_service.dart';
 import 'package:piliotto/models/user/fav_folder.dart';
 import 'package:piliotto/utils/storage.dart';
 
@@ -34,17 +33,18 @@ class MediaController extends GetxController {
   }
 
   Future<dynamic> queryFavFolder() async {
-    // TODO: 迁移到 Ottohub API
-    // if (!userLogin.value) {
-    //   return {'status': false, 'data': [], 'msg': '未登录'};
-    // }
-    // var res = await await UserHttp.userfavFolder(
-    //   pn: 1,
-    //   ps: 5,
-    //   mid: mid ?? GStrorage.userInfo.get('userInfoCache').mid,
-    // );
-    // favFolderData.value = res['data'];
-    // return res;
-    return {'status': false, 'msg': 'TODO: 迁移到 Ottohub API'};
+    if (!userLogin.value) {
+      return {'status': false, 'data': [], 'msg': '未登录'};
+    }
+    try {
+      final res = await OldApiService.getFavoriteVideoList(offset: 0, num: 5);
+      if (res['status'] == 'success') {
+        return {'status': true, 'data': res};
+      } else {
+        return {'status': false, 'msg': res['message'] ?? '获取收藏失败'};
+      }
+    } catch (e) {
+      return {'status': false, 'msg': e.toString()};
+    }
   }
 }

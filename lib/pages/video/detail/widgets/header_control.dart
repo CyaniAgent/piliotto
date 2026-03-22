@@ -518,7 +518,8 @@ class _HeaderControlState extends State<HeaderControl> {
 
   void _saveDanmakuStatus() {
     final setting = GStrorage.setting;
-    setting.put(SettingBoxKey.enableShowDanmaku, widget.controller!.isOpenDanmu.value);
+    setting.put(
+        SettingBoxKey.enableShowDanmaku, widget.controller!.isOpenDanmu.value);
   }
 
   /// 弹幕功能
@@ -1049,8 +1050,10 @@ class _HeaderControlState extends State<HeaderControl> {
                     canUsePiP = false;
                   }
                   if (canUsePiP && widget.floating != null) {
-                    const Rational aspectRatio = Rational(16, 9);//TODO: 从视频详情中获取视频比例
-                    await widget.floating!.enable(const ImmediatePiP(aspectRatio: aspectRatio));
+                    const Rational aspectRatio =
+                        Rational(16, 9); //TODO: 从视频详情中获取视频比例
+                    await widget.floating!
+                        .enable(const ImmediatePiP(aspectRatio: aspectRatio));
                   } else {}
                 },
                 icon: const Icon(

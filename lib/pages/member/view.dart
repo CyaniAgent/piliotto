@@ -322,8 +322,8 @@ class _MemberPageState extends State<MemberPage> {
                 children: [
                   FilledButton(
                     onPressed: _memberController.actionRelationMod,
-                    child: Obx(
-                        () => Text(_memberController.attributeText.value)),
+                    child:
+                        Obx(() => Text(_memberController.attributeText.value)),
                   ),
                   const SizedBox(width: 8),
                   OutlinedButton(
@@ -331,8 +331,7 @@ class _MemberPageState extends State<MemberPage> {
                       Get.toNamed(
                         '/whisperDetail',
                         parameters: {
-                          'name':
-                              _memberController.memberInfo.value.name ?? '',
+                          'name': _memberController.memberInfo.value.name ?? '',
                           'face': _memberController.face.value,
                           'mid': mid.toString(),
                           'heroTag': heroTag,

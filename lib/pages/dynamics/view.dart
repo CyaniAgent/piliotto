@@ -28,7 +28,7 @@ class _DynamicsPageState extends State<DynamicsPage>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: 3, vsync: this);
     _tabController.addListener(_onTabChanged);
     _dynamicsController.queryFollowDynamic();
   }
@@ -50,7 +50,8 @@ class _DynamicsPageState extends State<DynamicsPage>
 
   void _onTabChanged() {
     if (_tabController.indexIsChanging) return;
-    final tab = _tabController.index == 0 ? 'latest' : 'popular';
+    final tabs = ['following', 'latest', 'popular'];
+    final tab = tabs[_tabController.index];
     _dynamicsController.onTabChanged(tab);
   }
 
@@ -59,7 +60,6 @@ class _DynamicsPageState extends State<DynamicsPage>
     super.build(context);
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    // 宽屏包括大屏幕和超大屏幕
     final isWideScreen = ResponsiveUtil.isLg || ResponsiveUtil.isXl;
     final top = MediaQuery.of(context).padding.top;
 
@@ -77,6 +77,7 @@ class _DynamicsPageState extends State<DynamicsPage>
               child: TabBar(
                 controller: _tabController,
                 tabs: const [
+                  Tab(text: '关注'),
                   Tab(text: '最新'),
                   Tab(text: '热门'),
                 ],
@@ -87,8 +88,8 @@ class _DynamicsPageState extends State<DynamicsPage>
                 tabAlignment: TabAlignment.center,
                 onTap: (value) {
                   feedBack();
-                  _dynamicsController
-                      .onTabChanged(value == 0 ? 'latest' : 'popular');
+                  final tabs = ['following', 'latest', 'popular'];
+                  _dynamicsController.onTabChanged(tabs[value]);
                 },
               ),
             ),
@@ -97,6 +98,10 @@ class _DynamicsPageState extends State<DynamicsPage>
             child: TabBarView(
               controller: _tabController,
               children: [
+                _TabPage(
+                  tab: 'following',
+                  dynamicsController: _dynamicsController,
+                ),
                 _TabPage(
                   tab: 'latest',
                   dynamicsController: _dynamicsController,
@@ -198,7 +203,6 @@ class _TabPageState extends State<_TabPage> with AutomaticKeepAliveClientMixin {
   Widget build(BuildContext context) {
     super.build(context);
     final colorScheme = Theme.of(context).colorScheme;
-    // 宽屏包括大屏幕和超大屏幕
     final isWideScreen = ResponsiveUtil.isLg || ResponsiveUtil.isXl;
     final screenWidth = MediaQuery.of(context).size.width;
 
@@ -206,12 +210,10 @@ class _TabPageState extends State<_TabPage> with AutomaticKeepAliveClientMixin {
       final currentTab = widget.dynamicsController.currentTab.value;
       final isCurrentTab = currentTab == widget.tab;
 
-      // 获取当前 tab 的缓存数据
       final cachedList = widget.dynamicsController.getTabData(widget.tab);
       final hasLoaded = widget.dynamicsController.hasTabLoaded(widget.tab);
       final wideScreenLayout = widget.dynamicsController.wideScreenLayout.value;
 
-      // 如果是当前 tab 且缓存为空且未加载，显示骨架屏
       if (cachedList.isEmpty && !hasLoaded) {
         if (widget.dynamicsController.isLoadingDynamic.value && isCurrentTab) {
           return _buildSkeletonList(
@@ -241,12 +243,10 @@ class _TabPageState extends State<_TabPage> with AutomaticKeepAliveClientMixin {
     double screenWidth,
     String wideScreenLayout,
   ) {
-    // 宽屏 + 瀑布流模式
     if (isWideScreen && wideScreenLayout == 'waterfall') {
       return _buildWaterfallList(cachedList, colorScheme, screenWidth);
     }
 
-    // 居中模式（默认）
     return _buildCenteredList(
         cachedList, colorScheme, isWideScreen, screenWidth);
   }
@@ -290,7 +290,6 @@ class _TabPageState extends State<_TabPage> with AutomaticKeepAliveClientMixin {
     ColorScheme colorScheme,
     double screenWidth,
   ) {
-    // 根据屏幕宽度自适应列数
     int crossAxisCount;
     if (screenWidth >= 1200) {
       crossAxisCount = 4;
@@ -323,12 +322,10 @@ class _TabPageState extends State<_TabPage> with AutomaticKeepAliveClientMixin {
 
   Widget _buildSkeletonList(
       bool isWideScreen, double screenWidth, String wideScreenLayout) {
-    // 宽屏 + 瀑布流模式
     if (isWideScreen && wideScreenLayout == 'waterfall') {
       return _buildWaterfallSkeletonList(screenWidth);
     }
 
-    // 居中模式（默认）
     return _buildCenteredSkeletonList(isWideScreen, screenWidth);
   }
 

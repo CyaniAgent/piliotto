@@ -1,4 +1,3 @@
-import 'package:expandable/expandable.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -8,6 +7,7 @@ import 'package:hive/hive.dart';
 import 'package:piliotto/common/constants.dart';
 import 'package:piliotto/common/skeleton/video_intro.dart';
 import 'package:piliotto/pages/video/detail/index.dart';
+import 'package:piliotto/common/widgets/markdown_text.dart';
 import 'package:piliotto/common/widgets/network_img_layer.dart';
 import 'package:piliotto/common/widgets/stat/danmu.dart';
 import 'package:piliotto/common/widgets/stat/view.dart';
@@ -97,7 +97,7 @@ class VideoInfo extends StatefulWidget {
 }
 
 class _VideoInfoState extends State<VideoInfo>
-    with TickerProviderStateMixin, AutomaticKeepAliveClientMixin {
+    with AutomaticKeepAliveClientMixin {
   late String heroTag;
   late final VideoIntroController videoIntroController;
   VideoDetailController? videoDetailCtr;
@@ -108,8 +108,6 @@ class _VideoInfoState extends State<VideoInfo>
   late String memberHeroTag;
 
   bool isProcessing = false;
-  RxBool isExpand = false.obs;
-  late ExpandableController _expandableCtr;
 
   @override
   bool get wantKeepAlive => true;
@@ -130,7 +128,6 @@ class _VideoInfoState extends State<VideoInfo>
     heroTag = widget.heroTag!;
     videoIntroController =
         Get.put(VideoIntroController(vid: widget.vid), tag: heroTag);
-    // 延迟获取 VideoDetailController，确保它已经被创建
     WidgetsBinding.instance.addPostFrameCallback((_) {
       try {
         videoDetailCtr = Get.find<VideoDetailController>(tag: heroTag);
@@ -142,8 +139,6 @@ class _VideoInfoState extends State<VideoInfo>
       }
     });
     sheetHeight = localCache.get('sheetHeight');
-
-    _expandableCtr = ExpandableController(initialExpanded: true);
   }
 
   // 收藏
@@ -153,13 +148,6 @@ class _VideoInfoState extends State<VideoInfo>
       return;
     }
     videoIntroController.actionFavVideo();
-  }
-
-  // 视频介绍
-  showIntroDetail() {
-    feedBack();
-    isExpand.value = !(isExpand.value);
-    _expandableCtr.toggle();
   }
 
   // 用户主页
@@ -172,12 +160,6 @@ class _VideoInfoState extends State<VideoInfo>
       Get.toNamed('/member?mid=$mid',
           arguments: {'face': face, 'heroTag': memberHeroTag});
     }
-  }
-
-  @override
-  void dispose() {
-    _expandableCtr.dispose();
-    super.dispose();
   }
 
   @override
@@ -197,102 +179,71 @@ class _VideoInfoState extends State<VideoInfo>
         children: [
           GestureDetector(
             behavior: HitTestBehavior.translucent,
-            onTap: () => showIntroDetail(),
             onLongPress: () async {
               feedBack();
               await Clipboard.setData(
                   ClipboardData(text: widget.videoDetail.title!));
               SmartDialog.showToast('标题已复制');
             },
-            child: ExpandablePanel(
-              controller: _expandableCtr,
-              collapsed: Text(
-                widget.videoDetail.title!,
-                softWrap: true,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              expanded: Text(
-                widget.videoDetail.title!,
-                softWrap: true,
-                maxLines: 10,
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              theme: const ExpandableThemeData(
-                animationDuration: Duration(milliseconds: 300),
-                scrollAnimationDuration: Duration(milliseconds: 300),
-                crossFadePoint: 0,
-                fadeCurve: Curves.ease,
-                sizeCurve: Curves.linear,
+            child: Text(
+              widget.videoDetail.title!,
+              softWrap: true,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
               ),
             ),
           ),
-          GestureDetector(
-            behavior: HitTestBehavior.translucent,
-            onTap: () => showIntroDetail(),
-            child: Padding(
-              padding: const EdgeInsets.only(top: 7, bottom: 6),
-              child: Row(
-                children: [
-                  StatView(
-                    view: widget.videoDetail.viewCount ?? 0,
+          Padding(
+            padding: const EdgeInsets.only(top: 7, bottom: 6),
+            child: Row(
+              children: [
+                StatView(
+                  view: widget.videoDetail.viewCount ?? 0,
+                  size: 'medium',
+                ),
+                const SizedBox(width: 10),
+                Obx(
+                  () => StatDanMu(
+                    danmu: videoIntroController.danmakuCount,
                     size: 'medium',
                   ),
-                  const SizedBox(width: 10),
-                  const StatDanMu(
-                    danmu: 0,
-                    size: 'medium',
+                ),
+                const SizedBox(width: 10),
+                Text(
+                  widget.videoDetail.time ?? '',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: t.colorScheme.outline,
                   ),
-                  const SizedBox(width: 10),
-                  Text(
-                    widget.videoDetail.time ?? '',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: t.colorScheme.outline,
-                    ),
+                ),
+                const SizedBox(width: 10),
+                SelectableText(
+                  'OV${widget.vid}',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: t.colorScheme.outline,
                   ),
-                  const SizedBox(width: 10),
-                  SelectableText(
-                    'OV${widget.vid}',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: t.colorScheme.outline,
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
 
           /// 视频简介
-          ExpandablePanel(
-            controller: _expandableCtr,
-            collapsed: const SizedBox(height: 0),
-            expanded: Padding(
+          if (widget.videoDetail.intro != null &&
+              widget.videoDetail.intro!.isNotEmpty)
+            Padding(
               padding: const EdgeInsets.symmetric(vertical: 8),
-              child: Text(
-                widget.videoDetail.intro ?? '',
+              child: MarkdownText(
+                text: widget.videoDetail.intro ?? '',
                 style: TextStyle(
                   fontSize: 14,
                   color: t.colorScheme.onSurface,
                 ),
               ),
             ),
-            theme: const ExpandableThemeData(
-              animationDuration: Duration(milliseconds: 300),
-              scrollAnimationDuration: Duration(milliseconds: 300),
-              crossFadePoint: 0,
-              fadeCurve: Curves.ease,
-              sizeCurve: Curves.linear,
-            ),
-          ),
 
           /// 点赞收藏转发
           Material(child: actionGrid(context, videoIntroController)),
@@ -351,7 +302,7 @@ class _VideoInfoState extends State<VideoInfo>
                                 isFollowed ? outline : t.colorScheme.onPrimary,
                             backgroundColor: isFollowed
                                 ? t.colorScheme.onInverseSurface
-                                : t.colorScheme.primary, // 设置按钮背景色
+                                : t.colorScheme.primary,
                           ),
                           child: Text(
                             isFollowed ? '已关注' : '关注',

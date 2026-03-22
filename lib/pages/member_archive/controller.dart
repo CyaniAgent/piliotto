@@ -1,20 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
-// TODO: 迁移到 Ottohub API
-// import 'package:piliotto/http/member.dart';
+import 'package:piliotto/api/services/old_api_service.dart';
 import 'package:piliotto/models/member/archive.dart';
 
 class MemberArchiveController extends GetxController {
   final ScrollController scrollController = ScrollController();
   late int mid;
-  int pn = 1;
+  int offset = 0;
   int count = 0;
   RxMap<String, String> currentOrder = <String, String>{}.obs;
   RxList<Map<String, String>> orderList = [
     {'type': 'pubdate', 'label': '最新发布'},
     {'type': 'click', 'label': '最多播放'},
     {'type': 'stow', 'label': '最多收藏'},
-    {'type': 'charge', 'label': '充电专属'},
   ].obs;
   RxList<VListItemModel> archivesList = <VListItemModel>[].obs;
   RxBool isLoading = false.obs;
@@ -26,35 +25,40 @@ class MemberArchiveController extends GetxController {
     currentOrder.value = orderList.first;
   }
 
-  // 获取用户投稿
   Future getMemberArchive(type) async {
-    // TODO: 迁移到 Ottohub API
-    // if (isLoading.value) {
-    //   return;
-    // }
-    // isLoading.value = true;
-    // if (type == 'init') {
-    //   pn = 1;
-    //   archivesList.clear();
-    // }
-    // var res = await MemberHttp.memberArchive(
-    //   uid: mid,
-    //   pn: pn,
-    //   order: currentOrder['type']!,
-    // );
-    // if (res['status']) {
-    //   if (type == 'init') {
-    //     archivesList.value = res['data'].list.vlist;
-    //   }
-    //   if (type == 'onLoad') {
-    //     archivesList.addAll(res['data'].list.vlist);
-    //   }
-    //   count = res['data'].page['count'];
-    //   pn += 1;
-    // }
-    // isLoading.value = false;
-    // return res;
-    return {'status': false, 'msg': 'TODO: 迁移到 Ottohub API'};
+    if (isLoading.value) {
+      return;
+    }
+    isLoading.value = true;
+    if (type == 'init') {
+      offset = 0;
+      archivesList.clear();
+    }
+    try {
+      final res = await OldApiService.getUserVideoList(
+        uid: mid,
+        offset: offset,
+        num: 20,
+      );
+      if (res['status'] == 'success') {
+        final List<dynamic> videoList = res['video_list'] as List;
+        final items = videoList.map((video) {
+          return VListItemModel.fromJson(video);
+        }).toList();
+        if (type == 'init') {
+          archivesList.value = items;
+        } else {
+          archivesList.addAll(items);
+        }
+        offset += 20;
+        count = res['total_count'] ?? items.length;
+      } else {
+        SmartDialog.showToast(res['message'] ?? '获取投稿失败');
+      }
+    } catch (e) {
+      SmartDialog.showToast('请求失败: $e');
+    }
+    isLoading.value = false;
   }
 
   toggleSort() async {
@@ -68,7 +72,6 @@ class MemberArchiveController extends GetxController {
     getMemberArchive('init');
   }
 
-  // 上拉加载
   Future onLoad() async {
     getMemberArchive('onLoad');
   }

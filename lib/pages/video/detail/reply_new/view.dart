@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
+import 'package:piliotto/api/services/old_api_service.dart';
 import 'package:piliotto/models/common/reply_type.dart';
 import 'package:piliotto/models/video/reply/item.dart';
 import 'package:piliotto/utils/feed_back.dart';
@@ -71,8 +72,25 @@ class _VideoReplyNewDialogState extends State<VideoReplyNewDialog>
 
   Future submitReplyAdd() async {
     feedBack();
-    // TODO: 迁移到 Ottohub 评论 API
-    SmartDialog.showToast('TODO: 迁移到 Ottohub 评论 API');
+    if (_replyContentController.text.isEmpty) {
+      SmartDialog.showToast('请输入评论内容');
+      return;
+    }
+    try {
+      final res = await OldApiService.commentVideo(
+        vid: widget.oid!,
+        parentVcid: widget.parent ?? 0,
+        content: _replyContentController.text,
+      );
+      if (res['status'] == 'success') {
+        SmartDialog.showToast('评论成功');
+        Get.back(result: true);
+      } else {
+        SmartDialog.showToast(res['message'] ?? '评论失败');
+      }
+    } catch (e) {
+      SmartDialog.showToast('评论失败: $e');
+    }
   }
 
   @override

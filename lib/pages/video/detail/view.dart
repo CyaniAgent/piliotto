@@ -494,12 +494,14 @@ class _VideoDetailPageState extends State<VideoDetailPage>
     final bool isWideScreen = Get.size.width > 768;
 
     Widget buildLoadingWidget() {
-      return const Center(
+      return Center(
         child: SizedBox(
           width: 120,
           child: LinearProgressIndicator(
             minHeight: 4,
-            borderRadius: BorderRadius.all(Radius.circular(2)),
+            borderRadius: const BorderRadius.all(Radius.circular(2)),
+            color: Theme.of(context).colorScheme.primary,
+            backgroundColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.24),
           ),
         ),
       );

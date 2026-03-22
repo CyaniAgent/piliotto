@@ -67,6 +67,8 @@ class VideoIntroController extends GetxController {
           Get.find<VideoDetailController>(tag: heroTag);
       videoDetailCtr.tabs.value = ['简介', '评论'];
       videoDetailCtr.cover.value = videoDetail.value.coverUrl;
+      // 获取UP主粉丝数
+      queryUserStat();
     } catch (e) {
       SmartDialog.showToast('获取视频详情失败：${e.toString()}');
     }
@@ -93,8 +95,17 @@ class VideoIntroController extends GetxController {
 
   // 获取up主粉丝数
   Future queryUserStat() async {
-    // Ottohub API 暂不支持获取用户粉丝数
-    follower.value = 0;
+    if (videoDetail.value.uid == 0) return;
+    try {
+      final response =
+          await OttohubService.getUserDetail(uid: videoDetail.value.uid);
+      if (response['status'] == 'success') {
+        follower.value =
+            int.tryParse(response['fans_count']?.toString() ?? '0') ?? 0;
+      }
+    } catch (e) {
+      // 静默失败
+    }
   }
 
   // 获取点赞状态

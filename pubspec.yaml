@@ -73,6 +73,8 @@ dependencies:
   pull_to_refresh_notification: ^3.0.1
   # 图标
   font_awesome_flutter: ^10.4.0
+  # markdown渲染
+  flutter_markdown_plus: ^1.0.7
   # toast
   flutter_smart_dialog: ^5.1.0
   # 下滑关闭

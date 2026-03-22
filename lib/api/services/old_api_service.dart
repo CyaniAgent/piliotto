@@ -365,4 +365,78 @@ class OldApiService {
       requireAuth: true,
     );
   }
+
+  static Future<Map<String, dynamic>> likeVideo({
+    required int vid,
+  }) async {
+    return request(
+      'engagement',
+      'like_video',
+      {
+        'vid': vid.toString(),
+        'token': null,
+      },
+      requireAuth: true,
+    );
+  }
+
+  static Future<Map<String, dynamic>> favoriteVideo({
+    required int vid,
+  }) async {
+    return request(
+      'engagement',
+      'favorite_video',
+      {
+        'vid': vid.toString(),
+        'token': null,
+      },
+      requireAuth: true,
+    );
+  }
+
+  static Future<Map<String, dynamic>> getUserVideoList({
+    required int uid,
+    int offset = 0,
+    int num = 20,
+  }) async {
+    return request(
+      'video',
+      'user_video_list',
+      {
+        'uid': uid.toString(),
+        'offset': offset.toString(),
+        'num': num.toString(),
+      },
+    );
+  }
+
+  static Future<Map<String, dynamic>> getManageVideoList({
+    int offset = 0,
+    int num = 20,
+  }) async {
+    return request(
+      'profile',
+      'manage_video_list',
+      {
+        'offset': offset.toString(),
+        'num': num.toString(),
+        'token': null,
+      },
+      requireAuth: true,
+    );
+  }
+
+  static Future<Map<String, dynamic>> deleteVideo({
+    required int vid,
+  }) async {
+    return request(
+      'manage',
+      'delete_video',
+      {
+        'vid': vid.toString(),
+        'token': null,
+      },
+      requireAuth: true,
+    );
+  }
 }

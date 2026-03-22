@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
 import 'package:hive/hive.dart';
+import 'package:piliotto/api/services/following_service.dart';
 import 'package:piliotto/api/services/old_api_service.dart';
-// TODO: 迁移到 Ottohub API
-// import 'package:piliotto/http/dynamics.dart';
+import 'package:piliotto/api/services/api_service.dart';
 import 'package:piliotto/models/common/dynamics_type.dart';
 import 'package:piliotto/models/dynamics/result.dart';
 import 'package:piliotto/models/dynamics/up.dart';
@@ -54,27 +54,23 @@ class DynamicsController extends GetxController {
   Box setting = GStrorage.setting;
   RxInt crossAxisCount = 1.obs;
 
-  // Ottohub 模式相关
-  RxBool isOttohubMode = true.obs;
-  RxString currentTab = 'latest'.obs; // 'latest' or 'popular'
-
-  // 每个 tab 独立的数据缓存
-  Map<String, List<DynamicItemModel>> _tabDataCache = {
+  RxString currentTab = 'following'.obs;
+  final Map<String, List<DynamicItemModel>> _tabDataCache = {
+    'following': [],
     'latest': [],
     'popular': [],
   };
-  Map<String, int> _tabOffsetCache = {
+  final Map<String, int> _tabOffsetCache = {
+    'following': 0,
     'latest': 0,
     'popular': 0,
   };
-  Map<String, bool> _tabHasLoadedCache = {
+  final Map<String, bool> _tabHasLoadedCache = {
+    'following': false,
     'latest': false,
     'popular': false,
   };
-
   RxBool hasMore = true.obs;
-
-  // 宽屏布局模式: 'center' 居中, 'waterfall' 瀑布流
   RxString wideScreenLayout = 'center'.obs;
 
   @override
@@ -92,7 +88,6 @@ class DynamicsController extends GetxController {
     updateCrossAxisCount();
   }
 
-  // 切换宽屏布局模式
   void toggleWideScreenLayout() {
     if (wideScreenLayout.value == 'center') {
       wideScreenLayout.value = 'waterfall';
@@ -102,7 +97,6 @@ class DynamicsController extends GetxController {
     setting.put(SettingBoxKey.dynamicWideScreenLayout, wideScreenLayout.value);
   }
 
-  // 根据屏幕宽度更新列数
   void updateCrossAxisCount() {
     try {
       int baseCount = ResponsiveUtil.calculateCrossAxisCount(
@@ -110,7 +104,6 @@ class DynamicsController extends GetxController {
         minCount: 1,
         maxCount: 2,
       );
-
       crossAxisCount.value = baseCount;
     } catch (e) {
       crossAxisCount.value = 1;
@@ -118,53 +111,8 @@ class DynamicsController extends GetxController {
   }
 
   Future queryFollowDynamic({type = 'init'}) async {
-    // Ottohub 模式使用旧版 API
-    if (isOttohubMode.value) {
-      return await _queryOttohubDynamic(type: type);
-    }
-
-    // TODO: 迁移到 Ottohub API
-    // 原始 B站 API 已禁用
-    // if (!userLogin.value) {
-    //   return {'status': false, 'msg': '账号未登录', 'code': -101};
-    // }
-    // if (type == 'init') {
-    //   dynamicsList.clear();
-    // }
-    // // 下拉刷新数据渲染时会触发onLoad
-    // if (type == 'onLoad' && page == 1) {
-    //   return;
-    // }
-    // isLoadingDynamic.value = true;
-    // var res = await DynamicsHttp.followDynamic(
-    //   page: type == 'init' ? 1 : page,
-    //   type: dynamicsType.value.values,
-    //   offset: offset,
-    //   mid: mid.value,
-    // );
-    // isLoadingDynamic.value = false;
-    // if (res['status']) {
-    //   if (type == 'onLoad' && res['data'].items.isEmpty) {
-    //     SmartDialog.showToast('没有更多了');
-    //     return;
-    //   }
-    //   if (type == 'init') {
-    //     dynamicsList.value = res['data'].items;
-    //   } else {
-    //     dynamicsList.addAll(res['data'].items);
-    //   }
-    //   offset = res['data'].offset;
-    //   page++;
-    // }
-    // return res;
-    return {'status': false, 'msg': 'TODO: 迁移到 Ottohub API'};
-  }
-
-  // Ottohub 动态查询
-  Future _queryOttohubDynamic({type = 'init'}) async {
     final tab = currentTab.value;
 
-    // 刷新时不清空数据，等请求完成后再替换
     if (type == 'init') {
       _tabOffsetCache[tab] = 0;
     }
@@ -172,51 +120,42 @@ class DynamicsController extends GetxController {
     isLoadingDynamic.value = true;
 
     try {
-      Map<String, dynamic> res;
-      if (tab == 'latest') {
-        res = await OldApiService.getNewBlogList(
-          offset: _tabOffsetCache[tab]!,
-          num: 10,
-        );
+      List<DynamicItemModel> items;
+
+      if (tab == 'following') {
+        items = await _queryFollowingTimeline(type: type);
+      } else if (tab == 'latest') {
+        items = await _queryLatestBlogs(type: type);
       } else {
-        res = await OldApiService.getPopularBlogList(
-          offset: _tabOffsetCache[tab]!,
-          num: 10,
-        );
+        items = await _queryPopularBlogs(type: type);
       }
 
       isLoadingDynamic.value = false;
 
-      if (res['status'] == 'success') {
-        final List<dynamic> blogList = res['blog_list'] as List;
-        final items = blogList.map((blog) {
-          return DynamicItemModel.fromJson(blog);
-        }).toList();
-
-        if (type == 'init') {
-          // 刷新时替换数据
-          _tabDataCache[tab] = items;
-          _tabOffsetCache[tab] = 10;
-        } else {
-          // 加载更多时追加数据
-          _tabDataCache[tab]!.addAll(items);
-          _tabOffsetCache[tab] = _tabOffsetCache[tab]! + 10;
-        }
-
-        _tabHasLoadedCache[tab] = true;
-        hasMore.value = items.length >= 10;
-
-        // 更新当前显示的列表
-        dynamicsList.value = List.from(_tabDataCache[tab]!);
-
-        if (items.length < 10) {
-          hasMore.value = false;
-          if (type != 'init') {
-            SmartDialog.showToast('没有更多了');
-          }
-        }
+      if (type == 'init') {
+        _tabDataCache[tab] = items;
+        _tabOffsetCache[tab] = 10;
       } else {
-        SmartDialog.showToast(res['message'] ?? '获取动态失败');
+        _tabDataCache[tab]!.addAll(items);
+        _tabOffsetCache[tab] = _tabOffsetCache[tab]! + 10;
+      }
+
+      _tabHasLoadedCache[tab] = true;
+      hasMore.value = items.length >= 10;
+      dynamicsList.value = List.from(_tabDataCache[tab]!);
+
+      if (items.length < 10) {
+        hasMore.value = false;
+        if (type != 'init') {
+          SmartDialog.showToast('没有更多了');
+        }
+      }
+    } on ApiException catch (e) {
+      isLoadingDynamic.value = false;
+      if (e.message == 'Token required') {
+        SmartDialog.showToast('请先登录查看关注动态');
+      } else {
+        SmartDialog.showToast('请求失败: ${e.message}');
       }
     } catch (e) {
       isLoadingDynamic.value = false;
@@ -224,51 +163,67 @@ class DynamicsController extends GetxController {
     }
   }
 
-  // 切换标签
+  Future<List<DynamicItemModel>> _queryFollowingTimeline(
+      {type = 'init'}) async {
+    final response = await FollowingService.getFollowingTimeline(
+      offset: _tabOffsetCache['following']!,
+      num: 10,
+    );
+    return response.timelineList.map((timelineItem) {
+      return DynamicItemModel.fromTimelineItem(timelineItem);
+    }).toList();
+  }
+
+  Future<List<DynamicItemModel>> _queryLatestBlogs({type = 'init'}) async {
+    final res = await OldApiService.getNewBlogList(
+      offset: _tabOffsetCache['latest']!,
+      num: 10,
+    );
+
+    if (res['status'] == 'success') {
+      final List<dynamic> blogList = res['blog_list'] as List;
+      return blogList.map((blog) {
+        return DynamicItemModel.fromJson(blog);
+      }).toList();
+    } else {
+      throw Exception(res['message'] ?? '获取最新动态失败');
+    }
+  }
+
+  Future<List<DynamicItemModel>> _queryPopularBlogs({type = 'init'}) async {
+    final res = await OldApiService.getPopularBlogList(
+      offset: _tabOffsetCache['popular']!,
+      num: 10,
+    );
+
+    if (res['status'] == 'success') {
+      final List<dynamic> blogList = res['blog_list'] as List;
+      return blogList.map((blog) {
+        return DynamicItemModel.fromJson(blog);
+      }).toList();
+    } else {
+      throw Exception(res['message'] ?? '获取热门动态失败');
+    }
+  }
+
   void onTabChanged(String tab) {
     if (currentTab.value == tab) return;
-
     currentTab.value = tab;
-
-    // 如果该 tab 已经加载过数据，直接显示缓存
     if (_tabHasLoadedCache[tab] == true && _tabDataCache[tab]!.isNotEmpty) {
       dynamicsList.value = List.from(_tabDataCache[tab]!);
       hasMore.value = _tabDataCache[tab]!.length % 10 == 0;
     } else {
-      // 否则请求数据
       hasMore.value = true;
       queryFollowDynamic(type: 'init');
     }
   }
 
-  // 获取当前 tab 的数据列表（供 view 使用）
   List<DynamicItemModel> getTabData(String tab) {
     return _tabDataCache[tab] ?? [];
   }
 
-  // 检查 tab 是否已加载
   bool hasTabLoaded(String tab) {
     return _tabHasLoadedCache[tab] ?? false;
-  }
-
-  // 切换模式
-  void toggleMode() {
-    isOttohubMode.value = !isOttohubMode.value;
-    _tabDataCache = {
-      'latest': [],
-      'popular': [],
-    };
-    _tabOffsetCache = {
-      'latest': 0,
-      'popular': 0,
-    };
-    _tabHasLoadedCache = {
-      'latest': false,
-      'popular': false,
-    };
-    page = 1;
-    hasMore.value = true;
-    queryFollowDynamic(type: 'init');
   }
 
   onSelectType(value) async {
@@ -282,53 +237,60 @@ class DynamicsController extends GetxController {
 
   pushDetail(item, floor, {action = 'all'}) async {
     feedBack();
-
-    /// 点击评论action 直接查看评论
     if (action == 'comment') {
       Get.toNamed('/dynamicDetail',
           arguments: {'item': item, 'floor': floor, 'action': action});
       return false;
     }
     switch (item!.type) {
-      /// 图文动态查看
       case 'DYNAMIC_TYPE_DRAW':
         Get.toNamed('/dynamicDetail',
             arguments: {'item': item, 'floor': floor});
         break;
-
-      /// 纯文字动态查看
       case 'DYNAMIC_TYPE_WORD':
         Get.toNamed('/dynamicDetail',
             arguments: {'item': item, 'floor': floor});
         break;
-
       default:
         SmartDialog.showToast('暂不支持的动态类型');
     }
   }
 
   Future queryFollowUp({type = 'init'}) async {
-    // TODO: 迁移到 Ottohub FollowingService API
-    // if (!userLogin.value) {
-    //   return {'status': false, 'msg': '账号未登录', 'code': -101};
-    // }
-    // if (type == 'init') {
-    //   upData.value.upList = <UpItem>[];
-    //   upData.value.liveList = <LiveUserItem>[];
-    // }
-    // var res = await DynamicsHttp.followUp();
-    // if (res['status']) {
-    //   upData.value = res['data'];
-    //   if (upData.value.upList!.isEmpty) {
-    //     mid.value = -1;
-    //   }
-    //   upData.value.upList!.insertAll(0, [
-    //     UpItem(face: '', uname: '全部动态', mid: -1),
-    //     UpItem(face: userInfo.face, uname: '我', mid: userInfo.mid),
-    //   ]);
-    // }
-    // return res;
-    return {'status': false, 'msg': 'TODO: 迁移到 Ottohub FollowingService API'};
+    if (!userLogin.value || userInfo == null) {
+      return {'status': false, 'msg': '账号未登录'};
+    }
+    if (type == 'init') {
+      upData.value.upList = <UpItem>[];
+    }
+    try {
+      final uid = userInfo.mid as int;
+      final response = await FollowingService.getFollowingList(
+        uid: uid,
+        offset: 0,
+        num: 20,
+      );
+      final upList = response.userList.map((user) {
+        return UpItem(
+          face: user.avatarUrl,
+          uname: user.username,
+          mid: user.uid,
+        );
+      }).toList();
+      upData.value.upList = upList;
+      if (upList.isEmpty) {
+        mid.value = -1;
+      }
+      upData.value.upList!.insertAll(0, [
+        UpItem(face: '', uname: '全部动态', mid: -1),
+        UpItem(face: userInfo.face, uname: '我', mid: userInfo.mid),
+      ]);
+      return {'status': true};
+    } on ApiException catch (e) {
+      return {'status': false, 'msg': e.message};
+    } catch (e) {
+      return {'status': false, 'msg': e.toString()};
+    }
   }
 
   onSelectUp(mid) async {
@@ -344,7 +306,6 @@ class DynamicsController extends GetxController {
     await queryFollowDynamic();
   }
 
-  // 返回顶部并刷新
   void animateToTop() async {
     if (scrollController.offset >=
         MediaQuery.of(Get.context!).size.height * 5) {
@@ -355,7 +316,6 @@ class DynamicsController extends GetxController {
     }
   }
 
-  // 重置搜索
   void resetSearch() {
     mid.value = -1;
     dynamicsType.value = DynamicsType.values[0];
@@ -365,7 +325,6 @@ class DynamicsController extends GetxController {
     queryFollowDynamic();
   }
 
-  // 点击up主
   void onTapUp(data) {
     mid.value = data.mid;
     upInfo.value = data;

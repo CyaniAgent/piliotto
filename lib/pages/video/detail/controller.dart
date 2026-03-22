@@ -387,206 +387,208 @@ class VideoDetailController extends GetxController
                         ],
                       ),
                       const SizedBox(height: 8),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      Expanded(
-                        child: Container(
-                          constraints: const BoxConstraints(
-                            minHeight: 40,
-                            maxHeight: 100,
-                          ),
-                          decoration: BoxDecoration(
-                            color: theme.colorScheme.surfaceContainerHighest,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: TextField(
-                            controller: textController,
-                            maxLines: 3,
-                            minLines: 1,
-                            autofocus: true,
-                            decoration: InputDecoration(
-                              hintText: '发一条弹幕喵~',
-                              hintStyle: TextStyle(
-                                fontSize: 14,
-                                color: theme.colorScheme.outline,
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Expanded(
+                            child: Container(
+                              constraints: const BoxConstraints(
+                                minHeight: 40,
+                                maxHeight: 100,
                               ),
-                              border: InputBorder.none,
-                              contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 10,
+                              decoration: BoxDecoration(
+                                color:
+                                    theme.colorScheme.surfaceContainerHighest,
+                                borderRadius: BorderRadius.circular(12),
                               ),
-                              counterText: '',
+                              child: TextField(
+                                controller: textController,
+                                maxLines: 3,
+                                minLines: 1,
+                                autofocus: true,
+                                decoration: InputDecoration(
+                                  hintText: '发一条弹幕喵~',
+                                  hintStyle: TextStyle(
+                                    fontSize: 14,
+                                    color: theme.colorScheme.outline,
+                                  ),
+                                  border: InputBorder.none,
+                                  contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 10,
+                                  ),
+                                  counterText: '',
+                                ),
+                                style: theme.textTheme.bodyMedium,
+                              ),
                             ),
-                            style: theme.textTheme.bodyMedium,
                           ),
+                          const SizedBox(width: 8),
+                          IconButton.filled(
+                            onPressed: isSending
+                                ? null
+                                : () async {
+                                    final String msg = textController.text;
+                                    if (msg.isEmpty) {
+                                      SmartDialog.showToast('弹幕内容不能为空');
+                                      return;
+                                    } else if (msg.length > 100) {
+                                      SmartDialog.showToast('弹幕内容不能超过100个字符');
+                                      return;
+                                    }
+                                    setState(() {
+                                      isSending = true;
+                                    });
+                                    try {
+                                      await OttohubService.sendDanmaku(
+                                        vid: vid,
+                                        text: msg,
+                                        time: plPlayerController
+                                            .position.value.inSeconds,
+                                        mode: danmakuMode,
+                                        color: danmakuColor,
+                                        fontSize: danmakuFontSize,
+                                        render: '',
+                                      );
+                                      SmartDialog.showToast('发送成功');
+                                      if (context.mounted) {
+                                        Navigator.pop(context);
+                                      }
+                                    } catch (e) {
+                                      SmartDialog.showToast(
+                                          '发送失败：${e.toString()}');
+                                    } finally {
+                                      setState(() {
+                                        isSending = false;
+                                      });
+                                    }
+                                  },
+                            icon: isSending
+                                ? SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: theme.colorScheme.onPrimary,
+                                    ),
+                                  )
+                                : const Icon(Icons.send_rounded, size: 20),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        '弹幕类型',
+                        style: theme.textTheme.labelMedium?.copyWith(
+                          color: theme.colorScheme.outline,
                         ),
                       ),
-                      const SizedBox(width: 8),
-                      IconButton.filled(
-                        onPressed: isSending
-                            ? null
-                            : () async {
-                                final String msg = textController.text;
-                                if (msg.isEmpty) {
-                                  SmartDialog.showToast('弹幕内容不能为空');
-                                  return;
-                                } else if (msg.length > 100) {
-                                  SmartDialog.showToast('弹幕内容不能超过100个字符');
-                                  return;
-                                }
-                                setState(() {
-                                  isSending = true;
-                                });
-                                try {
-                                  await OttohubService.sendDanmaku(
-                                    vid: vid,
-                                    text: msg,
-                                    time: plPlayerController
-                                        .position.value.inSeconds,
-                                    mode: danmakuMode,
-                                    color: danmakuColor,
-                                    fontSize: danmakuFontSize,
-                                    render: '',
-                                  );
-                                  SmartDialog.showToast('发送成功');
-                                  if (context.mounted) {
-                                    Navigator.pop(context);
-                                  }
-                                } catch (e) {
-                                  SmartDialog.showToast('发送失败：${e.toString()}');
-                                } finally {
+                      const SizedBox(height: 4),
+                      Row(
+                        children: modeOptions.map((option) {
+                          final isSelected = danmakuMode == option['value'];
+                          return Padding(
+                            padding: const EdgeInsets.only(right: 8),
+                            child: ChoiceChip(
+                              label: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    option['icon'] as IconData,
+                                    size: 16,
+                                    color: isSelected
+                                        ? theme.colorScheme.onSecondaryContainer
+                                        : theme.colorScheme.outline,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(option['label'] as String),
+                                ],
+                              ),
+                              selected: isSelected,
+                              onSelected: (selected) {
+                                if (selected) {
                                   setState(() {
-                                    isSending = false;
+                                    danmakuMode = option['value'] as String;
                                   });
                                 }
                               },
-                        icon: isSending
-                            ? SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: theme.colorScheme.onPrimary,
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        '弹幕颜色',
+                        style: theme.textTheme.labelMedium?.copyWith(
+                          color: theme.colorScheme.outline,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 4,
+                        children: colorOptions.map((option) {
+                          final isSelected = danmakuColor == option['value'];
+                          return GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                danmakuColor = option['value'] as String;
+                              });
+                            },
+                            child: Container(
+                              width: 32,
+                              height: 32,
+                              decoration: BoxDecoration(
+                                color: option['color'] as Color,
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: isSelected
+                                      ? theme.colorScheme.primary
+                                      : theme.colorScheme.outline
+                                          .withValues(alpha: 0.3),
+                                  width: isSelected ? 3 : 1,
                                 ),
-                              )
-                            : const Icon(Icons.send_rounded, size: 20),
+                              ),
+                              child: isSelected
+                                  ? Icon(
+                                      Icons.check,
+                                      size: 18,
+                                      color: theme.colorScheme.primary,
+                                    )
+                                  : null,
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        '字体大小',
+                        style: theme.textTheme.labelMedium?.copyWith(
+                          color: theme.colorScheme.outline,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Row(
+                        children: fontSizeOptions.map((option) {
+                          final isSelected = danmakuFontSize == option['value'];
+                          return Padding(
+                            padding: const EdgeInsets.only(right: 8),
+                            child: ChoiceChip(
+                              label: Text(option['label'] as String),
+                              selected: isSelected,
+                              onSelected: (selected) {
+                                if (selected) {
+                                  setState(() {
+                                    danmakuFontSize = option['value'] as String;
+                                  });
+                                }
+                              },
+                            ),
+                          );
+                        }).toList(),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 12),
-                  Text(
-                    '弹幕类型',
-                    style: theme.textTheme.labelMedium?.copyWith(
-                      color: theme.colorScheme.outline,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Row(
-                    children: modeOptions.map((option) {
-                      final isSelected = danmakuMode == option['value'];
-                      return Padding(
-                        padding: const EdgeInsets.only(right: 8),
-                        child: ChoiceChip(
-                          label: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                option['icon'] as IconData,
-                                size: 16,
-                                color: isSelected
-                                    ? theme.colorScheme.onSecondaryContainer
-                                    : theme.colorScheme.outline,
-                              ),
-                              const SizedBox(width: 4),
-                              Text(option['label'] as String),
-                            ],
-                          ),
-                          selected: isSelected,
-                          onSelected: (selected) {
-                            if (selected) {
-                              setState(() {
-                                danmakuMode = option['value'] as String;
-                              });
-                            }
-                          },
-                        ),
-                      );
-                    }).toList(),
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    '弹幕颜色',
-                    style: theme.textTheme.labelMedium?.copyWith(
-                      color: theme.colorScheme.outline,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 4,
-                    children: colorOptions.map((option) {
-                      final isSelected = danmakuColor == option['value'];
-                      return GestureDetector(
-                        onTap: () {
-                          setState(() {
-                            danmakuColor = option['value'] as String;
-                          });
-                        },
-                        child: Container(
-                          width: 32,
-                          height: 32,
-                          decoration: BoxDecoration(
-                            color: option['color'] as Color,
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: isSelected
-                                  ? theme.colorScheme.primary
-                                  : theme.colorScheme.outline
-                                      .withValues(alpha: 0.3),
-                              width: isSelected ? 3 : 1,
-                            ),
-                          ),
-                          child: isSelected
-                              ? Icon(
-                                  Icons.check,
-                                  size: 18,
-                                  color: theme.colorScheme.primary,
-                                )
-                              : null,
-                        ),
-                      );
-                    }).toList(),
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    '字体大小',
-                    style: theme.textTheme.labelMedium?.copyWith(
-                      color: theme.colorScheme.outline,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Row(
-                    children: fontSizeOptions.map((option) {
-                      final isSelected = danmakuFontSize == option['value'];
-                      return Padding(
-                        padding: const EdgeInsets.only(right: 8),
-                        child: ChoiceChip(
-                          label: Text(option['label'] as String),
-                          selected: isSelected,
-                          onSelected: (selected) {
-                            if (selected) {
-                              setState(() {
-                                danmakuFontSize = option['value'] as String;
-                              });
-                            }
-                          },
-                        ),
-                      );
-                    }).toList(),
-                  ),
-                ],
-              ),
                 ),
               ),
             );

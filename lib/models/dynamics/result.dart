@@ -1,3 +1,5 @@
+import 'package:piliotto/api/models/following.dart';
+
 class DynamicsDataModel {
   DynamicsDataModel({
     this.hasMore,
@@ -22,11 +24,17 @@ class DynamicItemModel {
     this.idStr,
     this.modules,
     this.type,
+    this.vid,
+    this.bid,
+    this.contentType,
   });
 
   String? idStr;
   ItemModulesModel? modules;
   String? type;
+  int? vid;
+  int? bid;
+  String? contentType;
 
   DynamicItemModel.fromJson(Map<String, dynamic> json) {
     idStr = json['bid'].toString();
@@ -37,6 +45,28 @@ class DynamicItemModel {
     } else {
       type = 'DYNAMIC_TYPE_WORD';
     }
+  }
+
+  factory DynamicItemModel.fromTimelineItem(TimelineItem item) {
+    String dynamicType;
+    if (item.contentType == 'video') {
+      dynamicType = 'DYNAMIC_TYPE_VIDEO';
+    } else if (item.thumbnails != null && item.thumbnails!.isNotEmpty) {
+      dynamicType = 'DYNAMIC_TYPE_DRAW';
+    } else {
+      dynamicType = 'DYNAMIC_TYPE_WORD';
+    }
+
+    return DynamicItemModel(
+      idStr: item.contentType == 'video' 
+          ? item.vid.toString() 
+          : item.bid.toString(),
+      vid: item.vid,
+      bid: item.bid,
+      contentType: item.contentType,
+      type: dynamicType,
+      modules: ItemModulesModel.fromTimelineItem(item),
+    );
   }
 }
 
@@ -55,6 +85,14 @@ class ItemModulesModel {
     moduleAuthor = ModuleAuthorModel.fromJson(json);
     moduleDynamic = ModuleDynamicModel.fromJson(json);
     moduleStat = ModuleStatModel.fromJson(json);
+  }
+
+  factory ItemModulesModel.fromTimelineItem(TimelineItem item) {
+    return ItemModulesModel(
+      moduleAuthor: ModuleAuthorModel.fromTimelineItem(item),
+      moduleDynamic: ModuleDynamicModel.fromTimelineItem(item),
+      moduleStat: ModuleStatModel.fromTimelineItem(item),
+    );
   }
 }
 
@@ -77,6 +115,15 @@ class ModuleAuthorModel {
     name = json['username']?.toString();
     pubTime = json['time'];
   }
+
+  factory ModuleAuthorModel.fromTimelineItem(TimelineItem item) {
+    return ModuleAuthorModel(
+      face: item.avatarUrl,
+      mid: item.uid,
+      name: item.username,
+      pubTime: item.time,
+    );
+  }
 }
 
 class ModuleDynamicModel {
@@ -94,6 +141,15 @@ class ModuleDynamicModel {
       major = DynamicMajorModel.fromJson(json);
     }
   }
+
+  factory ModuleDynamicModel.fromTimelineItem(TimelineItem item) {
+    return ModuleDynamicModel(
+      desc: DynamicDescModel.fromTimelineItem(item),
+      major: item.thumbnails != null && item.thumbnails!.isNotEmpty
+          ? DynamicMajorModel.fromTimelineItem(item)
+          : null,
+    );
+  }
 }
 
 class DynamicDescModel {
@@ -108,6 +164,13 @@ class DynamicDescModel {
   DynamicDescModel.fromJson(Map<String, dynamic> json) {
     title = json['title']?.toString() ?? '';
     text = json['content']?.toString() ?? '';
+  }
+
+  factory DynamicDescModel.fromTimelineItem(TimelineItem item) {
+    return DynamicDescModel(
+      title: item.title,
+      text: item.content ?? '',
+    );
   }
 }
 
@@ -136,6 +199,26 @@ class DynamicMajorModel {
       );
       type = 'MAJOR_TYPE_DRAW';
     }
+  }
+
+  factory DynamicMajorModel.fromTimelineItem(TimelineItem item) {
+    if (item.thumbnails != null && item.thumbnails!.isNotEmpty) {
+      return DynamicMajorModel(
+        draw: DynamicDrawModel(
+          id: 0,
+          items: item.thumbnails!.map((url) {
+            return DynamicDrawItemModel(
+              src: url,
+              width: 0,
+              height: 0,
+              size: 0,
+            );
+          }).toList(),
+        ),
+        type: 'MAJOR_TYPE_DRAW',
+      );
+    }
+    return DynamicMajorModel();
   }
 }
 
@@ -178,6 +261,14 @@ class ModuleStatModel {
     comment = Comment.fromJson(json);
     forward = ForWard.fromJson(json);
     like = Like.fromJson(json);
+  }
+
+  factory ModuleStatModel.fromTimelineItem(TimelineItem item) {
+    return ModuleStatModel(
+      comment: Comment(count: item.viewCount.toString()),
+      forward: ForWard(),
+      like: Like(count: item.likeCount.toString()),
+    );
   }
 }
 

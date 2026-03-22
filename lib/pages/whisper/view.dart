@@ -136,16 +136,14 @@ class _WhisperPageState extends State<WhisperPage> {
                           title: Container(
                             width: 100,
                             height: 14,
-                            color: Theme.of(context)
-                                .colorScheme
-                                .onInverseSurface,
+                            color:
+                                Theme.of(context).colorScheme.onInverseSurface,
                           ),
                           subtitle: Container(
                             width: 80,
                             height: 14,
-                            color: Theme.of(context)
-                                .colorScheme
-                                .onInverseSurface,
+                            color:
+                                Theme.of(context).colorScheme.onInverseSurface,
                           ),
                         ),
                       );

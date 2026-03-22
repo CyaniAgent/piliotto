@@ -5,6 +5,7 @@ import '../api/services/block_service.dart';
 import '../api/services/danmaku_service.dart';
 import '../api/services/following_service.dart';
 import '../api/services/moderation_service.dart';
+import '../api/services/old_api_service.dart';
 import '../api/models/video.dart';
 import '../api/models/auth.dart';
 import '../api/models/channel.dart';
@@ -886,6 +887,11 @@ class OttohubService {
       offset: offset,
       num: num,
     );
+  }
+
+  // 用户详情
+  static Future<Map<String, dynamic>> getUserDetail({required int uid}) {
+    return OldApiService.getUserDetail(uid: uid);
   }
 
   // Moderation 相关方法

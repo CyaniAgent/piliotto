@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:piliotto/common/widgets/markdown_text.dart';
 import 'package:piliotto/common/widgets/network_img_layer.dart';
 import 'package:piliotto/plugin/pl_gallery/index.dart';
 
@@ -53,16 +54,13 @@ class _ContentState extends State<Content> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         if (desc != null && desc.text != null && desc.text!.isNotEmpty)
-          SelectionArea(
-            child: Text(
-              desc.text!,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: colorScheme.onSurfaceVariant,
-                height: 1.5,
-              ),
-              maxLines: widget.source == 'detail' ? null : 4,
-              overflow: TextOverflow.ellipsis,
+          MarkdownText(
+            text: desc.text!,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: colorScheme.onSurfaceVariant,
+              height: 1.5,
             ),
+            maxLines: widget.source == 'detail' ? null : 4,
           ),
         if (hasPics) ...[
           const SizedBox(height: 12),
