@@ -4,7 +4,6 @@ import 'package:piliotto/common/widgets/network_img_layer.dart';
 import 'package:piliotto/models/common/theme_type.dart';
 import 'package:piliotto/pages/fav/index.dart';
 import 'package:piliotto/pages/history/index.dart';
-import 'package:piliotto/pages/later/index.dart';
 import 'package:piliotto/pages/mine/controller.dart';
 
 class UserDrawer extends StatelessWidget {
@@ -264,13 +263,6 @@ class UserDrawer extends StatelessWidget {
           Icons.history_outlined,
           '历史记录',
           () => Get.to(const HistoryPage()),
-        ),
-        _buildMenuItem(
-          context,
-          theme,
-          Icons.watch_later_outlined,
-          '稍后再看',
-          () => Get.to(const LaterPage()),
         ),
         _buildMenuItem(
           context,

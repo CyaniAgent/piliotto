@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
 import 'package:piliotto/common/widgets/network_img_layer.dart';
-import 'package:piliotto/models/live/item.dart';
 import 'package:piliotto/models/member/info.dart';
 
 class ProfilePanel extends StatelessWidget {
@@ -27,61 +26,11 @@ class ProfilePanel extends StatelessWidget {
             children: [
               Hero(
                 tag: ctr.heroTag!,
-                child: Stack(
-                  children: [
-                    NetworkImgLayer(
-                      width: 80,
-                      height: 80,
-                      type: 'avatar',
-                      src: !loadingStatus ? memberInfo.face : ctr.face.value,
-                    ),
-                    if (!loadingStatus &&
-                        memberInfo.liveRoom != null &&
-                        memberInfo.liveRoom!.liveStatus == 1)
-                      Positioned(
-                        bottom: 0,
-                        left: 10,
-                        child: GestureDetector(
-                          onTap: () {
-                            LiveItemModel liveItem = LiveItemModel.fromJson({
-                              'title': memberInfo.liveRoom!.title,
-                              'uname': memberInfo.name,
-                              'face': memberInfo.face,
-                              'roomid': memberInfo.liveRoom!.roomId,
-                              'watched_show': memberInfo.liveRoom!.watchedShow,
-                            });
-                            Get.toNamed(
-                              '/liveRoom?roomid=${memberInfo.liveRoom!.roomId}',
-                              arguments: {'liveItem': liveItem},
-                            );
-                          },
-                          child: Container(
-                            padding: const EdgeInsets.fromLTRB(6, 2, 6, 2),
-                            decoration: BoxDecoration(
-                              color: colorScheme.primary,
-                              borderRadius:
-                                  const BorderRadius.all(Radius.circular(10)),
-                            ),
-                            child: Row(children: [
-                              const Icon(
-                                Icons.videocam,
-                                size: 12,
-                                color: Colors.white,
-                              ),
-                              Text(
-                                ' 直播中',
-                                style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: Theme.of(context)
-                                        .textTheme
-                                        .labelSmall!
-                                        .fontSize),
-                              )
-                            ]),
-                          ),
-                        ),
-                      )
-                  ],
+                child: NetworkImgLayer(
+                  width: 80,
+                  height: 80,
+                  type: 'avatar',
+                  src: !loadingStatus ? memberInfo.face : ctr.face.value,
                 ),
               ),
               const SizedBox(width: 16),
@@ -197,15 +146,7 @@ class ProfilePanel extends StatelessWidget {
                           Expanded(
                             child: TextButton(
                               onPressed: () {
-                                Get.toNamed(
-                                  '/whisperDetail',
-                                  parameters: {
-                                    'name': memberInfo.name!,
-                                    'face': memberInfo.face!,
-                                    'mid': memberInfo.mid.toString(),
-                                    'heroTag': ctr.heroTag!,
-                                  },
-                                );
+                                SmartDialog.showToast('私信功能暂不支持');
                               },
                               style: TextButton.styleFrom(
                                 backgroundColor:

@@ -5,7 +5,6 @@ import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
 import 'package:universal_platform/universal_platform.dart';
 
-import '../http/search.dart';
 import 'id_utils.dart';
 import 'url_utils.dart';
 import 'utils.dart';
@@ -13,36 +12,30 @@ import 'utils.dart';
 class PiliSchame {
   static AppScheme appScheme = AppSchemeImpl.getInstance()!;
   static Future<void> init() async {
-    // 只在移动平台上使用appscheme
     if (UniversalPlatform.isAndroid || UniversalPlatform.isIOS) {
       try {
-        ///
         final SchemeEntity? value = await appScheme.getInitScheme();
         if (value != null) {
           _routePush(value);
         }
 
-        /// 完整链接进入 b23.无效
         appScheme.getLatestScheme().then((SchemeEntity? value) {
           if (value != null) {
             _routePush(value);
           }
         });
 
-        /// 注册从外部打开的Scheme监听信息 #
         appScheme.registerSchemeListener().listen((SchemeEntity? event) {
           if (event != null) {
             _routePush(event);
           }
         });
       } catch (e) {
-        // 捕获异常，避免初始化失败
-        // AppScheme 初始化错误: $e
+        // ignore: scheme initialization failed
       }
     }
   }
 
-  /// 路由跳转
   static void _routePush(value) async {
     final String scheme = value.scheme;
     final String host = value.host;
@@ -80,28 +73,13 @@ class PiliSchame {
           SmartDialog.showToast('暂不支持番剧观看');
           break;
         case 'opus':
-          if (path.startsWith('/detail')) {
-            var opusId = path.split('/').last;
-            Get.toNamed('/opus', parameters: {
-              'title': '',
-              'id': opusId,
-              'articleType': 'opus',
-            });
-          }
+          SmartDialog.showToast('暂不支持专栏查看');
           break;
         case 'search':
-          Get.toNamed('/searchResult', parameters: {'keyword': ''});
+          Get.toNamed('/search');
           break;
         case 'article':
-          final String id = path.split('/').last.split('?').first;
-          Get.toNamed(
-            '/read',
-            parameters: {
-              'title': 'cv$id',
-              'id': id,
-              'dynamicType': 'read',
-            },
-          );
+          SmartDialog.showToast('暂不支持专栏查看');
           break;
         case 'pgc':
           SmartDialog.showToast('暂不支持番剧观看');
@@ -117,7 +95,6 @@ class PiliSchame {
     }
   }
 
-  // 投稿跳转
   static Future<void> _videoPush(int? aidVal, String? bvidVal) async {
     SmartDialog.showLoading<dynamic>(msg: '获取中...');
     try {
@@ -129,11 +106,9 @@ class PiliSchame {
       if (bvidVal == null) {
         bvid = IdUtils.av2bv(aidVal!);
       }
-      final int cid = await SearchHttp.ab2c(bvid: bvidVal, aid: aidVal);
       final String heroTag = Utils.makeHeroTag(aid);
       SmartDialog.dismiss<dynamic>().then(
-        // ignore: always_specify_types
-        (e) => Get.toNamed<dynamic>('/video?bvid=$bvid&cid=$cid',
+        (e) => Get.toNamed<dynamic>('/video?bvid=$bvid&cid=0',
             arguments: <String, String?>{
               'pic': '',
               'heroTag': heroTag,
@@ -145,12 +120,8 @@ class PiliSchame {
   }
 
   static Future<void> fullPathPush(SchemeEntity value) async {
-    // https://m.bilibili.com/bangumi/play/ss39708
-    // https | m.bilibili.com | /bangumi/play/ss39708
-    // final String scheme = value.scheme!;
     final String host = value.host!;
     final String? path = value.path;
-    Map<String, String>? query = value.query;
     RegExp regExp = RegExp(r'^((www\.)|(m\.))?bilibili\.com$');
     if (regExp.hasMatch(host)) {
       if (path!.startsWith('/video')) {
@@ -210,11 +181,9 @@ class PiliSchame {
       final String area = path.split('/').last;
       switch (area) {
         case 'bangumi':
-          // 番剧
           SmartDialog.showToast('暂不支持番剧观看');
           break;
         case 'video':
-          // 投稿
           final Map<String, dynamic> map = IdUtils.matchAvorBv(input: path);
           if (map.containsKey('AV')) {
             _videoPush(map['AV']! as int, null);
@@ -225,17 +194,9 @@ class PiliSchame {
           }
           break;
         case 'read':
-          // 专栏
-          String id = Utils.matchNum(query!['id']!).first.toString();
-          Get.toNamed('/read', parameters: {
-            'url': value.dataString!,
-            'title': '',
-            'id': id,
-            'articleType': 'read'
-          });
+          SmartDialog.showToast('暂不支持专栏查看');
           break;
         case 'space':
-          // 个人空间
           Get.toNamed('/member?mid=$area', arguments: {'face': ''});
           break;
         default:

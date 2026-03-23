@@ -174,8 +174,8 @@ flutter_launcher_icons:
   ios: true
   remove_alpha_ios: true
   image_path: assets/images/logo/logo.png
-  adaptive_icon_background: "#E4DFFF"
-  adaptive_icon_foreground: assets\images\logo\android_logo.png
+  # adaptive_icon_background: "#E4DFFF"
+  # adaptive_icon_foreground: assets\images\logo\android_logo.png
 
   macos:
     generate: true

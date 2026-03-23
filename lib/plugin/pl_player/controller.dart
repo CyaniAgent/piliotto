@@ -20,8 +20,6 @@ import 'package:screen_brightness/screen_brightness.dart';
 import 'package:status_bar_control_plus/status_bar_control_plus.dart';
 import 'package:universal_platform/universal_platform.dart';
 import '../../services/loggeer.dart';
-import '../../models/video/subTitile/content.dart';
-import '../../models/video/subTitile/result.dart';
 
 Box videoStorage = GStrorage.video;
 Box setting = GStrorage.setting;
@@ -70,8 +68,6 @@ class PlPlayerController {
   final Rx<bool> _doubleSpeedStatus = false.obs;
   final Rx<bool> _controlsLock = false.obs;
   final Rx<bool> _isFullScreen = false.obs;
-  final Rx<bool> _subTitleOpen = false.obs;
-  final Rx<int> _subTitleCode = (-1).obs;
 
   final Rx<String> _direction = 'horizontal'.obs;
 
@@ -116,7 +112,6 @@ class PlPlayerController {
   PreferredSizeWidget? headerControl;
   PreferredSizeWidget? bottomControl;
   Widget? danmuWidget;
-  RxList subtitles = [].obs;
   String videoType = 'archive';
 
   /// 数据加载监听
@@ -146,11 +141,6 @@ class PlPlayerController {
   // 视频静音
   Rx<bool> get mute => _mute;
   Stream<bool> get onMuteChanged => _mute.stream;
-
-  /// 字幕开启状态
-  Rx<bool> get subTitleOpen => _subTitleOpen;
-  Rx<int> get subTitleCode => _subTitleCode;
-  // Stream<bool> get onSubTitleOpenChanged => _subTitleOpen.stream;
 
   /// [videoPlayerController] instace of Player
   Player? get videoPlayerController => _videoPlayerController;
@@ -235,10 +225,6 @@ class PlPlayerController {
 
   // 播放顺序相关
   PlayRepeat playRepeat = PlayRepeat.pause;
-
-  RxList<SubTitileContentModel> subtitleContents =
-      <SubTitileContentModel>[].obs;
-  RxString subtitleContent = ''.obs;
 
   void updateSliderPositionSecond() {
     int newSecond = _sliderPosition.value.inSeconds;
@@ -329,8 +315,6 @@ class PlPlayerController {
     bool enableHeart = true,
     // 是否首次加载
     bool isFirstTime = true,
-    //  是否开启字幕
-    bool enableSubTitle = false,
   }) async {
     try {
       _autoPlay = autoplay;
@@ -345,9 +329,6 @@ class PlPlayerController {
       _cid = cid;
       _enableHeart = enableHeart;
       _isFirstTime = isFirstTime;
-      _subTitleOpen.value = enableSubTitle;
-      subtitles = [].obs;
-      subtitleContent.value = '';
       if (_videoPlayerController != null &&
           _videoPlayerController!.state.playing) {
         await pause(notify: false);
@@ -516,8 +497,6 @@ class PlPlayerController {
             _sliderPosition.value = event;
             updateSliderPositionSecond();
           }
-          querySubtitleContent(
-              videoPlayerController!.state.position.inSeconds.toDouble());
 
           /// 触发回调事件
           for (var element in _positionListeners) {
@@ -992,33 +971,6 @@ class PlPlayerController {
         cid: _cid,
         progress: progress,
       );
-    }
-  }
-
-  /// 字幕
-  void toggleSubtitle(int code) {
-    _subTitleOpen.value = code != -1;
-    _subTitleCode.value = code;
-  }
-
-  void querySubtitleContent(double progress) {
-    if (subTitleCode.value == -1) {
-      subtitleContent.value = '';
-      return;
-    }
-    if (subtitles.isEmpty) {
-      return;
-    }
-    final SubTitlteItemModel? subtitle = subtitles.firstWhereOrNull(
-      (element) => element.id == subTitleCode.value,
-    );
-    if (subtitle != null && subtitle.body!.isNotEmpty) {
-      for (var content in subtitle.body!) {
-        if (progress >= content['from']! && progress <= content['to']!) {
-          subtitleContent.value = content['content']!;
-          return;
-        }
-      }
     }
   }
 

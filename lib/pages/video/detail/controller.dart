@@ -78,7 +78,6 @@ class VideoDetailController extends GetxController
   PersistentBottomSheetController? replyReplyBottomSheetCtr;
 
   late bool enableRelatedVideo;
-  List subtitles = [];
   RxList<BottomControlType> bottomList = [
     BottomControlType.playOrPause,
     BottomControlType.time,
@@ -235,8 +234,7 @@ class VideoDetailController extends GetxController
     plPlayerController.headerControl = headerControl;
     logger.d('设置 headerControl');
 
-    plPlayerController.subtitles.value = subtitles;
-    logger.d('设置字幕');
+    logger.d('设置 headerControl');
   }
 
   // mob端全屏状态关闭二级回复
@@ -247,14 +245,8 @@ class VideoDetailController extends GetxController
     // replyReplyBottomSheetCtr is null
   }
 
-  // 获取字幕配置
-  Future getSubtitle() async {
-    // Ottohub API 暂不支持字幕
-    subtitles = [];
-  }
-
   // 获取弹幕
-  Future getDanmaku(List subtitles) async {
+  Future getDanmaku() async {
     try {
       final logger = getLogger();
       logger.d('开始获取弹幕，vid: $vid');
@@ -304,16 +296,6 @@ class VideoDetailController extends GetxController
     } catch (e) {
       return Colors.white;
     }
-  }
-
-  setSubtitleContent() {
-    plPlayerController.subtitleContent.value = '';
-    plPlayerController.subtitles.value = subtitles;
-  }
-
-  clearSubtitleContent() {
-    plPlayerController.subtitleContent.value = '';
-    plPlayerController.subtitles.value = [];
   }
 
   /// 发送弹幕

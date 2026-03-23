@@ -9,7 +9,6 @@ import 'package:get/get.dart';
 import 'package:hive/hive.dart';
 import 'package:piliotto/services/ottohub_service.dart';
 
-import 'package:piliotto/pages/dlna/index.dart';
 import 'package:piliotto/pages/video/detail/index.dart';
 import 'package:piliotto/pages/video/detail/introduction/controller.dart';
 import 'package:piliotto/pages/video/detail/introduction/widgets/menu_row.dart';
@@ -372,67 +371,6 @@ class _HeaderControlState extends State<HeaderControl> {
         });
       },
     );
-  }
-
-  /// 选择字幕
-  void showSubtitleDialog() async {
-    if (widget.controller == null || widget.videoDetailCtr == null) {
-      SmartDialog.showToast('无法设置字幕');
-      return;
-    }
-    int tempThemeValue = widget.controller!.subTitleCode.value;
-    final List subtitles = widget.videoDetailCtr!.subtitles;
-    int len = subtitles.length;
-    if (subtitles.firstWhereOrNull((element) => element.id == tempThemeValue) ==
-        null) {
-      tempThemeValue = -1;
-    }
-    showDialog(
-        context: context,
-        builder: (BuildContext context) {
-          return AlertDialog(
-            title: const Text('选择字幕'),
-            contentPadding: const EdgeInsets.fromLTRB(0, 12, 0, 18),
-            content: StatefulBuilder(
-              builder: (context, StateSetter setState) {
-                return len == 0
-                    ? const SizedBox(
-                        height: 60,
-                        child: Center(
-                          child: Text('没有字幕'),
-                        ),
-                      )
-                    : SingleChildScrollView(
-                        child: RadioGroup<int>(
-                          groupValue: tempThemeValue,
-                          onChanged: (int? value) {
-                            if (value != null) {
-                              tempThemeValue = value;
-                              widget.controller?.toggleSubtitle(value);
-                              Get.back();
-                            }
-                          },
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const RadioListTile<int>(
-                                value: -1,
-                                title: Text('关闭字幕'),
-                              ),
-                              ...widget.videoDetailCtr!.subtitles
-                                  .map((e) => RadioListTile<int>(
-                                        value: e.id,
-                                        title: Text(e.title),
-                                      ))
-                                  .toList(),
-                            ],
-                          ),
-                        ),
-                      );
-              },
-            ),
-          );
-        });
   }
 
   /// 选择倍速
@@ -970,30 +908,6 @@ class _HeaderControlState extends State<HeaderControl> {
             ),
           ],
           const Spacer(),
-          // ComBtn(
-          //   icon: const Icon(
-          //     FontAwesomeIcons.cropSimple,
-          //     size: 15,
-          //     color: Colors.white,
-          //   ),
-          //   fuc: () => _.screenshot(),
-          // ),
-          ComBtn(
-            icon: const Icon(
-              Icons.cast,
-              size: 19,
-              color: Colors.white,
-            ),
-            fuc: () async {
-              showDialog<void>(
-                context: context,
-                builder: (BuildContext context) {
-                  return LiveDlnaPage(
-                      datasource: widget.videoDetailCtr?.videoUrl ?? '');
-                },
-              );
-            },
-          ),
           if (isFullScreen.value) ...[
             SizedBox(
               width: 56,
@@ -1065,18 +979,6 @@ class _HeaderControlState extends State<HeaderControl> {
             ),
             SizedBox(width: buttonSpace),
           ],
-
-          /// 字幕
-          if (widget.showSubtitleBtn ?? true)
-            ComBtn(
-              icon: const Icon(
-                Icons.closed_caption_off,
-                size: 22,
-                color: Colors.white,
-              ),
-              fuc: () => showSubtitleDialog(),
-            ),
-          SizedBox(width: buttonSpace),
           Obx(
             () => SizedBox(
               width: 45,

@@ -1,6 +1,6 @@
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
-import 'package:piliotto/http/dynamics.dart';
+import 'package:piliotto/api/services/old_api_service.dart';
 import 'package:piliotto/models/dynamics/result.dart';
 import 'package:piliotto/models/dynamics/up.dart';
 
@@ -16,31 +16,40 @@ class UpDynamicsController extends GetxController {
     if (type == 'init') {
       dynamicsList.clear();
     }
-    // 下拉刷新数据渲染时会触发onLoad
     if (type == 'onLoad' && page == 1) {
       return;
     }
     isLoadingDynamic.value = true;
-    var res = await DynamicsHttp.followDynamic(
-      page: type == 'init' ? 1 : page,
-      type: 'all',
-      offset: offset,
-      mid: upInfo.mid,
-    );
-    isLoadingDynamic.value = false;
-    if (res['status']) {
-      if (type == 'onLoad' && res['data'].items.isEmpty) {
-        SmartDialog.showToast('没有更多了');
-        return;
-      }
-      if (type == 'init') {
-        dynamicsList.value = res['data'].items;
+    try {
+      final res = await OldApiService.getUserBlogList(
+        uid: upInfo.mid ?? 0,
+        offset: type == 'init' ? 0 : (int.tryParse(offset ?? '0') ?? 0),
+        num: 10,
+      );
+      isLoadingDynamic.value = false;
+      if (res['status'] == 'success') {
+        final List<dynamic> blogList = res['blog_list'] as List;
+        final items = blogList.map((blog) {
+          return DynamicItemModel.fromJson(blog);
+        }).toList();
+
+        if (type == 'onLoad' && items.isEmpty) {
+          SmartDialog.showToast('没有更多了');
+          return;
+        }
+        if (type == 'init') {
+          dynamicsList.value = items;
+        } else {
+          dynamicsList.addAll(items);
+        }
+        offset = ((int.tryParse(offset ?? '0') ?? 0) + items.length).toString();
+        page++;
       } else {
-        dynamicsList.addAll(res['data'].items);
+        SmartDialog.showToast(res['message'] ?? '获取动态失败');
       }
-      offset = res['data'].offset;
-      page++;
+    } catch (e) {
+      isLoadingDynamic.value = false;
+      SmartDialog.showToast('获取动态失败: $e');
     }
-    return res;
   }
 }

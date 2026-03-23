@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:piliotto/common/constants.dart';
 import 'package:piliotto/common/widgets/stat/danmu.dart';
 import 'package:piliotto/common/widgets/stat/view.dart';
-import 'package:piliotto/http/search.dart';
 import 'package:piliotto/http/video.dart';
 import 'package:piliotto/utils/id_utils.dart';
 import 'package:piliotto/utils/image_save.dart';
@@ -12,7 +11,6 @@ import 'package:piliotto/utils/utils.dart';
 import 'package:piliotto/common/widgets/network_img_layer.dart';
 import '../../../common/widgets/badge.dart';
 
-// 收藏视频卡片 - 水平布局
 class FavVideoCardH extends StatelessWidget {
   final dynamic videoItem;
   final Function? callFn;
@@ -34,13 +32,11 @@ class FavVideoCardH extends StatelessWidget {
     String heroTag = Utils.makeHeroTag(id);
     return InkWell(
       onTap: () async {
-        // int? seasonId;
         String? epId;
         if (videoItem.ogv != null &&
             (videoItem.ogv['type_name'] == '番剧' ||
                 videoItem.ogv['type_name'] == '国创')) {
-          videoItem.cid = await SearchHttp.ab2c(bvid: bvid);
-          // seasonId = videoItem.ogv['season_id'];
+          videoItem.cid = 0;
           epId = videoItem.epId;
         } else if (videoItem.page == 0 || videoItem.page > 1) {
           var result = await VideoHttp.videoIntro(vid: id);
@@ -54,14 +50,10 @@ class FavVideoCardH extends StatelessWidget {
           'cid': videoItem.cid.toString(),
           'epId': epId ?? '',
         };
-        // if (seasonId != null) {
-        //   parameters['seasonId'] = seasonId.toString();
-        // }
         Get.toNamed('/video', parameters: parameters, arguments: {
           'videoItem': videoItem,
           'heroTag': heroTag,
-          'videoType':
-              epId != null ? 'media_bangumi' : 'video',
+          'videoType': epId != null ? 'media_bangumi' : 'video',
         });
       },
       onLongPress: () => imageSaveDialog(
@@ -218,7 +210,6 @@ class VideoContent extends StatelessWidget {
                     child: IconButton(
                       style: ButtonStyle(
                         padding: WidgetStateProperty.all(EdgeInsets.zero),
-
                       ),
                       onPressed: () {
                         showDialog(
@@ -256,7 +247,7 @@ class VideoContent extends StatelessWidget {
                       ),
                     ),
                   )
-                : const SizedBox(),
+                : const SizedBox.shrink(),
           ],
         ),
       ),

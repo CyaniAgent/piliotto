@@ -230,7 +230,6 @@ class _VideoDetailPageState extends State<VideoDetailPage>
       vdCtr.defaultST = plPlayerController!.position.value;
       plPlayerController!.removeStatusLister(playerListener);
       plPlayerController!.pause();
-      vdCtr.clearSubtitleContent();
     }
     isShowing.value = false;
     super.didPushNext();
@@ -246,7 +245,6 @@ class _VideoDetailPageState extends State<VideoDetailPage>
 
     if (plPlayerController != null &&
         plPlayerController!.videoPlayerController != null) {
-      vdCtr.setSubtitleContent();
       isShowing.value = true;
     }
     vdCtr.isFirstTime = false;

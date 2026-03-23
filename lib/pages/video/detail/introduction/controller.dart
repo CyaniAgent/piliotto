@@ -274,6 +274,7 @@ class VideoIntroController extends GetxController {
   }
 
   // 修改分P或番剧分集
+  // TODO:移除或者改名，因为 Ottohub 没有提供修改分P或番剧分集的接口
   Future changeSeasonOrbangu(
     int vid,
     String? cover,
@@ -285,10 +286,7 @@ class VideoIntroController extends GetxController {
     videoDetailCtr
       ..vid = vid
       ..cover.value = cover ?? ''
-      ..getVideoDetail()
-      ..clearSubtitleContent();
-    await videoDetailCtr.getSubtitle();
-    videoDetailCtr.setSubtitleContent();
+      ..getVideoDetail();
     // 重新请求评论
     try {
       /// 未渲染回复组件时可能异常
