@@ -5,8 +5,6 @@ import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
-// TODO: 迁移到 Ottohub API
-// import 'package:piliotto/http/common.dart';
 import 'package:piliotto/utils/storage.dart';
 import 'package:piliotto/utils/utils.dart';
 import '../../models/common/dynamic_badge_mode.dart';
@@ -49,10 +47,6 @@ class MainController extends GetxController {
         SettingBoxKey.dynamicBadgeMode,
         defaultValue: DynamicBadgeMode.number.code)];
     setNavBarConfig();
-    if (dynamicBadgeType.value != DynamicBadgeMode.hidden &&
-        pagesIds.contains(2)) {
-      getUnreadDynamic();
-    }
     enableGradientBg =
         setting.get(SettingBoxKey.enableGradientBg, defaultValue: true);
   }
@@ -61,40 +55,14 @@ class MainController extends GetxController {
     if (_lastPressedAt == null ||
         DateTime.now().difference(_lastPressedAt!) >
             const Duration(seconds: 2)) {
-      // 两次点击时间间隔超过2秒，重新记录时间戳
       _lastPressedAt = DateTime.now();
       if (selectedIndex != 0) {
         pageController.jumpTo(0);
       }
-      SmartDialog.showToast("再按一次退出Pili");
-      return; // 不退出应用
+      SmartDialog.showToast("再按一次退出PiliOtto");
+      return;
     }
-    SystemNavigator.pop(); // 退出应用
-  }
-
-  void getUnreadDynamic() async {
-    // TODO: 迁移到 Ottohub API
-    // if (!userLogin.value) {
-    //   return;
-    // }
-    // int dynamicItemIndex =
-    //     navigationBars.indexWhere((item) => item['label'] == "动态");
-    // var res = await CommonHttp.unReadDynamic();
-    // var data = res['data'];
-    // if (dynamicItemIndex != -1) {
-    //   navigationBars[dynamicItemIndex]['count'] =
-    //       data == null ? 0 : data.length; // 修改 count 属性为新的值
-    // }
-    // navigationBars.refresh();
-  }
-
-  void clearUnread() async {
-    int dynamicItemIndex =
-        navigationBars.indexWhere((item) => item['label'] == "动态");
-    if (dynamicItemIndex != -1) {
-      navigationBars[dynamicItemIndex]['count'] = 0; // 修改 count 属性为新的值
-    }
-    navigationBars.refresh();
+    SystemNavigator.pop();
   }
 
   void setNavBarConfig() async {

@@ -1,4 +1,4 @@
-// TODO: 迁移到 Ottohub API（如果有历史记录功能）
+import 'package:piliotto/api/services/video_service.dart';
 
 class Data {
   static Future init() async {
@@ -6,6 +6,10 @@ class Data {
   }
 
   static Future historyStatus() async {
-    // Ottohub API 暂不支持历史记录功能
+    try {
+      await VideoService.getHistoryVideos();
+    } catch (e) {
+      // 历史记录功能需要登录
+    }
   }
 }

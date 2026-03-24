@@ -96,7 +96,7 @@ class MemberHttp {
   static Future followings({
     required int vmid,
     int pn = 1,
-    int ps = 20,
+    int ps = 12,
     String order = 'desc',
     String orderType = 'attention',
   }) async {
@@ -122,7 +122,7 @@ class MemberHttp {
   static Future fans({
     required int vmid,
     int pn = 1,
-    int ps = 20,
+    int ps = 12,
     String order = 'desc',
     String orderType = 'attention',
   }) async {

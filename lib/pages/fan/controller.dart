@@ -11,7 +11,7 @@ final _logger = getLogger();
 class FanController extends GetxController {
   Box userInfoCache = GStrorage.userInfo;
   int offset = 0;
-  int num = 20;
+  final int num = 12; // API 限制每次最多获取 12 条
   RxList<FollowingUser> fanList = <FollowingUser>[].obs;
   late int mid;
   late String name;
@@ -27,7 +27,9 @@ class FanController extends GetxController {
     mid = Get.parameters['mid'] != null
         ? int.parse(Get.parameters['mid']!)
         : userInfo?.mid ?? 0;
-    name = Get.parameters['name'] ?? userInfo?.uname ?? '';
+    name = Get.parameters['name'] != null
+        ? Uri.decodeComponent(Get.parameters['name']!)
+        : userInfo?.uname ?? '';
   }
 
   Future<void> queryFans({bool isLoadMore = false}) async {
@@ -61,7 +63,7 @@ class FanController extends GetxController {
       if (!hasMore.value) {
         loadingText.value = '没有更多了';
       }
-      offset++;
+      offset += users.length;
     } catch (e) {
       _logger.e('获取粉丝列表失败: $e');
       SmartDialog.showToast('获取粉丝列表失败');

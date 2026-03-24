@@ -1,7 +1,5 @@
 import 'package:get/get.dart';
 import 'package:piliotto/utils/event_bus.dart';
-import 'package:piliotto/utils/id_utils.dart';
-import 'package:piliotto/utils/login.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
 class WebviewController extends GetxController {
@@ -39,42 +37,24 @@ class WebviewController extends GetxController {
           onProgress: (int progress) {
             loadProgress.value = progress;
           },
-          onPageStarted: (String url) {
-            final List pathSegments = Uri.parse(url).pathSegments;
-            if (pathSegments.isNotEmpty &&
-                url != 'https://passport.bilibili.com/h5-app/passport/login') {
-              final String str = pathSegments[0];
-              final Map matchRes = IdUtils.matchAvorBv(input: str);
-              final List matchKeys = matchRes.keys.toList();
-              if (matchKeys.isNotEmpty) {
-                if (matchKeys.first == 'BV') {
-                  Get.offAndToNamed(
-                    '/searchResult',
-                    parameters: {'keyword': matchRes['BV']},
-                  );
-                }
-              }
-            }
-          },
+          onPageStarted: (String url) {},
           onUrlChange: (UrlChange urlChange) async {
             loadShow.value = false;
-            String url = urlChange.url ?? '';
-            if (type.value == 'login' &&
-                (url.startsWith(
-                        'https://passport.bilibili.com/web/sso/exchange_cookie') ||
-                    url.startsWith('https://m.bilibili.com/'))) {
-              LoginUtils.confirmLogin(url, controller);
-            }
           },
           onWebResourceError: (WebResourceError error) {},
           onNavigationRequest: (NavigationRequest request) {
-            if (request.url.startsWith('bilibili://')) {
-              if (request.url.startsWith('bilibili://video/')) {
-                String str = Uri.parse(request.url).pathSegments[0];
-                Get.offAndToNamed(
-                  '/searchResult',
-                  parameters: {'keyword': str},
-                );
+            if (request.url.startsWith('ottohub://')) {
+              if (request.url.startsWith('ottohub://video/')) {
+                final uri = Uri.parse(request.url);
+                if (uri.pathSegments.isNotEmpty) {
+                  final vid = int.tryParse(uri.pathSegments[0]);
+                  if (vid != null) {
+                    Get.offAndToNamed('/video?vid=$vid', arguments: {
+                      'pic': '',
+                      'heroTag': 'video_$vid',
+                    });
+                  }
+                }
               }
               return NavigationDecision.prevent;
             }

@@ -69,7 +69,6 @@ class _MainAppState extends State<MainApp> with SingleTickerProviderStateMixin {
         _lastSelectTime = DateTime.now().millisecondsSinceEpoch;
       }
       _dynamicController!.flag = true;
-      _mainController.clearUnread();
     } else {
       _dynamicController?.flag = false;
     }

@@ -198,7 +198,7 @@ class MemberController extends GetxController {
   void shareUser() {
     SharePlus.instance.share(
       ShareParams(
-        text: '${memberInfo.value.name} - https://space.bilibili.com/$mid',
+        text: '${memberInfo.value.name} - https://www.ottohub.cn/u/$mid',
       ),
     );
   }

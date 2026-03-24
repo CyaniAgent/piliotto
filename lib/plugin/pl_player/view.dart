@@ -340,8 +340,9 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
           ),
         ),
         fuc: () {
-          _.triggerFullScreen(status: !_.isFullScreen.value);
-          widget.fullScreenCb?.call(!_.isFullScreen.value);
+          final newStatus = !_.isFullScreen.value;
+          _.triggerFullScreen(status: newStatus);
+          widget.fullScreenCb?.call(newStatus);
         },
       ),
     };

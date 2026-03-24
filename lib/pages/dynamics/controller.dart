@@ -268,7 +268,7 @@ class DynamicsController extends GetxController {
       final response = await FollowingService.getFollowingList(
         uid: uid,
         offset: 0,
-        num: 20,
+        num: 12,
       );
       final upList = response.userList.map((user) {
         return UpItem(

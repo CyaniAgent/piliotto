@@ -17,7 +17,6 @@ import 'package:piliotto/utils/id_utils.dart';
 import 'package:piliotto/utils/storage.dart';
 import 'package:piliotto/utils/utils.dart';
 import 'reply_save.dart';
-import 'zan.dart';
 
 Box setting = GStrorage.setting;
 
@@ -30,7 +29,6 @@ class ReplyItem extends StatefulWidget {
     this.replyReply,
     this.replyType,
     this.replySave = false,
-    this.showLikeButton = false,
     super.key,
   });
   final ReplyItemModel? replyItem;
@@ -40,7 +38,6 @@ class ReplyItem extends StatefulWidget {
   final Function? replyReply;
   final ReplyType? replyType;
   final bool? replySave;
-  final bool showLikeButton;
 
   @override
   State<ReplyItem> createState() => _ReplyItemState();
@@ -389,8 +386,6 @@ class _ReplyItemState extends State<ReplyItem> {
     return Row(
       children: <Widget>[
         const SizedBox(width: 32),
-        if (widget.showLikeButton)
-          ZanButton(replyItem: widget.replyItem!, replyType: widget.replyType),
         if (widget.replySave!) ...[
           SizedBox(
             height: 32,

@@ -61,7 +61,9 @@ class _UpPanelState extends State<UpPanel> {
                     GestureDetector(
                       onTap: () {
                         feedBack();
-                        Get.toNamed('/follow?mid=${userInfo.mid}');
+                        Get.toNamed(
+                          '/follow?mid=${userInfo.mid}&name=${Uri.encodeComponent(userInfo.name ?? '')}',
+                        );
                       },
                       child: Container(
                         padding: const EdgeInsets.only(top: 5, bottom: 5),

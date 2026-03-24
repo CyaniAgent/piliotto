@@ -964,10 +964,14 @@ class _HeaderControlState extends State<HeaderControl> {
                     canUsePiP = false;
                   }
                   if (canUsePiP && widget.floating != null) {
-                    const Rational aspectRatio =
-                        Rational(16, 9); //TODO: 从视频详情中获取视频比例
+                    final videoWidth =
+                        widget.videoDetailCtr?.videoItem.videoWidth ?? 16;
+                    final videoHeight =
+                        widget.videoDetailCtr?.videoItem.videoHeight ?? 9;
+                    final Rational aspectRatio =
+                        Rational(videoWidth, videoHeight);
                     await widget.floating!
-                        .enable(const ImmediatePiP(aspectRatio: aspectRatio));
+                        .enable(ImmediatePiP(aspectRatio: aspectRatio));
                   } else {}
                 },
                 icon: const Icon(

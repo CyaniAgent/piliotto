@@ -1,6 +1,6 @@
 import 'package:dio/dio.dart';
+import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
-import 'package:piliotto/utils/id_utils.dart';
 
 class UrlUtils {
   static Future<String> parseRedirectUrl(String url) async {
@@ -34,20 +34,17 @@ class UrlUtils {
     String title,
     String redirectUrl,
   ) async {
-    final Map matchRes = IdUtils.matchAvorBv(input: pathSegment);
-    if (matchRes.containsKey('BV')) {
-      final String bv = matchRes['BV'];
-      // TODO: Ottohub API 使用 vid 而不是 bvid，需要转换
-      // 暂时跳转到 webview
+    final vid = int.tryParse(pathSegment);
+    if (vid != null) {
       await Get.toNamed(
-        '/webview',
-        parameters: {
-          'url': 'https://www.bilibili.com/video/$bv',
-          'type': 'url',
-          'pageTitle': title,
+        '/video?vid=$vid',
+        arguments: <String, String?>{
+          'pic': '',
+          'heroTag': 'video_$vid',
         },
       );
     } else {
+      SmartDialog.showToast('无法解析视频ID');
       await Get.toNamed(
         '/webview',
         parameters: {

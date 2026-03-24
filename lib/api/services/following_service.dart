@@ -31,7 +31,7 @@ class FollowingService {
   static Future<UserListResponse> getFollowingList({
     required int uid,
     int offset = 0,
-    int num = 20,
+    int num = 12,
   }) async {
     final queryParams = {
       'offset': offset,
@@ -49,7 +49,7 @@ class FollowingService {
   static Future<UserListResponse> getFansList({
     required int uid,
     int offset = 0,
-    int num = 20,
+    int num = 12,
   }) async {
     final queryParams = {
       'offset': offset,

@@ -6,8 +6,8 @@ class FollowHttp {
     try {
       final response = await FollowingService.getFollowingList(
         uid: vmid!,
-        offset: (pn! - 1) * (ps ?? 20),
-        num: ps ?? 20,
+        offset: (pn! - 1) * (ps ?? 12),
+        num: ps ?? 12,
       );
       return {'status': true, 'data': response};
     } catch (err) {

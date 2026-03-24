@@ -273,9 +273,8 @@ class VideoIntroController extends GetxController {
     );
   }
 
-  // 修改分P或番剧分集
-  // TODO:移除或者改名，因为 Ottohub 没有提供修改分P或番剧分集的接口
-  Future changeSeasonOrbangu(
+  // 切换视频（用于相关视频推荐等场景）
+  Future switchVideo(
     int vid,
     String? cover,
   ) async {
