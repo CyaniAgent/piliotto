@@ -17,8 +17,9 @@ class MemberController extends GetxController {
   String? heroTag;
   Box userInfoCache = GStrorage.userInfo;
   late int ownerMid;
-  // 投稿列表
-  RxList<VListItemModel>? archiveList = <VListItemModel>[].obs;
+  RxList<VListItemModel> archiveList = <VListItemModel>[].obs;
+  RxBool isLoadingArchive = false.obs;
+  int _archiveOffset = 0;
   dynamic userInfo;
   RxInt attribute = (-1).obs;
   RxString attributeText = '关注'.obs;
@@ -37,7 +38,6 @@ class MemberController extends GetxController {
     relationSearch();
   }
 
-  // 获取用户信息
   Future<Map<String, dynamic>> getInfo() async {
     var res = await OldApiService.getUserDetail(uid: mid);
     if (res['status'] == 'success') {
@@ -58,20 +58,44 @@ class MemberController extends GetxController {
     return res;
   }
 
-  // 获取用户状态
+  Future<void> getMemberArchive(String type) async {
+    if (isLoadingArchive.value) return;
+    isLoadingArchive.value = true;
+    if (type == 'init') {
+      _archiveOffset = 0;
+      archiveList.clear();
+    }
+    try {
+      final res = await OldApiService.getUserVideoList(
+        uid: mid,
+        offset: _archiveOffset,
+        num: 20,
+      );
+      if (res['status'] == 'success') {
+        final List<dynamic> videoList = res['video_list'] as List;
+        final items = videoList.map((v) => VListItemModel.fromJson(v)).toList();
+        if (type == 'init') {
+          archiveList.value = items;
+        } else {
+          archiveList.addAll(items);
+        }
+        _archiveOffset += items.length;
+      }
+    } catch (e) {
+      SmartDialog.showToast('获取投稿失败: $e');
+    }
+    isLoadingArchive.value = false;
+  }
+
   Future<Map<String, dynamic>> getMemberStat() async {
-    // Ottohub API 暂不支持此接口
     userStat = {};
     return {'status': true, 'data': {}};
   }
 
-  // 获取用户播放数 获赞数
   Future<Map<String, dynamic>> getMemberView() async {
-    // Ottohub API 暂不支持此接口
     return {'status': true, 'data': {}};
   }
 
-  // 关注/取关up
   Future actionRelationMod() async {
     if (userInfo == null) {
       SmartDialog.showToast('账号未登录');
@@ -114,7 +138,6 @@ class MemberController extends GetxController {
     );
   }
 
-  // 关系查询
   Future relationSearch() async {
     if (userInfo == null) return;
     if (mid == ownerMid) return;
@@ -124,19 +147,19 @@ class MemberController extends GetxController {
         final followStatus = res['data']['follow_status'];
         switch (followStatus) {
           case 1:
-            attribute.value = 0; // 互相未关注
+            attribute.value = 0;
             attributeText.value = '关注';
             break;
           case 2:
-            attribute.value = 2; // 我关注对方
+            attribute.value = 2;
             attributeText.value = '已关注';
             break;
           case 3:
-            attribute.value = 1; // 对方关注我
+            attribute.value = 1;
             attributeText.value = '回关';
             break;
           case 4:
-            attribute.value = 6; // 互相关注
+            attribute.value = 6;
             attributeText.value = '已互关';
             break;
           default:
@@ -150,7 +173,6 @@ class MemberController extends GetxController {
     }
   }
 
-  // 拉黑用户
   Future blockUser() async {
     if (userInfo == null) {
       SmartDialog.showToast('账号未登录');
@@ -202,14 +224,4 @@ class MemberController extends GetxController {
       ),
     );
   }
-
-  // 跳转查看动态
-  void pushDynamicsPage() => Get.toNamed('/memberDynamics?mid=$mid');
-
-  // 跳转查看投稿
-  void pushArchivesPage() => Get.toNamed('/memberArchive?mid=$mid');
-
-  void pushfavPage() => Get.toNamed('/fav?mid=$mid');
-  // 跳转图文专栏
-  void pushArticlePage() => Get.toNamed('/memberArticle?mid=$mid');
 }

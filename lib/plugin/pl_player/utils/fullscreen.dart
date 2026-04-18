@@ -4,6 +4,8 @@ import 'package:device_info_plus/device_info_plus.dart';
 import 'package:auto_orientation_v2/auto_orientation_v2.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import 'package:universal_platform/universal_platform.dart';
+import 'package:window_manager/window_manager.dart';
 
 //横屏
 Future<void> landScape() async {
@@ -38,12 +40,13 @@ Future<void> verticalScreen() async {
 
 Future<void> enterFullScreen() async {
   try {
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (UniversalPlatform.isDesktop) {
+      await windowManager.setFullScreen(true);
+    } else if (Platform.isAndroid || Platform.isIOS) {
       await SystemChrome.setEnabledSystemUIMode(
         SystemUiMode.immersiveSticky,
       );
     }
-    // 桌面平台不调用系统全屏，由 UI 层控制
   } catch (exception, stacktrace) {
     debugPrint(exception.toString());
     debugPrint(stacktrace.toString());
@@ -57,6 +60,8 @@ Future<void> exitFullScreen() async {
   try {
     if (kIsWeb) {
       document.exitFullscreen();
+    } else if (UniversalPlatform.isDesktop) {
+      await windowManager.setFullScreen(false);
     } else if (Platform.isAndroid || Platform.isIOS) {
       if (Platform.isAndroid &&
           (await DeviceInfoPlugin().androidInfo).version.sdkInt < 29) {
@@ -68,7 +73,6 @@ Future<void> exitFullScreen() async {
       );
       await SystemChrome.setPreferredOrientations([]);
     }
-    // 桌面平台不调用原生退出全屏，由 UI 层控制
   } catch (exception, stacktrace) {
     debugPrint(exception.toString());
     debugPrint(stacktrace.toString());

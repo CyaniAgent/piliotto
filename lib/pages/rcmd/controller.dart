@@ -10,7 +10,7 @@ import 'package:piliotto/services/loggeer.dart';
 
 class RcmdController extends GetxController {
   final ScrollController scrollController = ScrollController();
-  bool isLoadingMore = true;
+  RxBool isLoadingMore = true.obs;
   OverlayEntry? popupDialog;
   Box setting = GStrorage.setting;
   RxInt crossAxisCount = 2.obs;
@@ -48,7 +48,7 @@ class RcmdController extends GetxController {
 
   // 获取推荐
   Future queryRcmdFeed(type) async {
-    if (isLoadingMore == false) {
+    if (isLoadingMore.value == false) {
       return;
     }
     try {
@@ -68,15 +68,10 @@ class RcmdController extends GetxController {
       } else if (type == 'onLoad') {
         videoList.addAll(videos);
       }
-      // 若videoList数量太小，可能会影响翻页，此时再次请求
-      // 为避免请求到的数据太少时还在反复请求，要求本次返回数据大于1条才触发
-      if (videos.length > 1 && videoList.length < 10) {
-        await queryRcmdFeed('onLoad');
-      }
-      isLoadingMore = false;
+      isLoadingMore.value = false;
       return {'status': true, 'data': videos};
     } catch (error) {
-      isLoadingMore = false;
+      isLoadingMore.value = false;
       getLogger().log(Level.error, 'Error fetching videos: $error');
       return {'status': false, 'data': [], 'msg': error.toString()};
     }
@@ -84,14 +79,13 @@ class RcmdController extends GetxController {
 
   // 下拉刷新
   Future onRefresh() async {
-    isLoadingMore = true;
+    isLoadingMore.value = true;
     await queryRcmdFeed('onRefresh');
   }
 
-  // 上拉加载
   Future onLoad() async {
-    if (!isLoadingMore) {
-      isLoadingMore = true;
+    if (!isLoadingMore.value) {
+      isLoadingMore.value = true;
       await queryRcmdFeed('onLoad');
     }
   }

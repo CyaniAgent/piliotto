@@ -19,9 +19,8 @@ class HotPage extends StatefulWidget {
 }
 
 class _HotPageState extends State<HotPage> with AutomaticKeepAliveClientMixin {
-  late HotController _hotController;
-  List videoList = [];
-  Future? _futureBuilderFuture;
+  final HotController _hotController = Get.put(HotController());
+  late Future _futureBuilderFuture;
 
   @override
   bool get wantKeepAlive => true;
@@ -29,9 +28,7 @@ class _HotPageState extends State<HotPage> with AutomaticKeepAliveClientMixin {
   @override
   void initState() {
     super.initState();
-    _hotController = Get.put(HotController(),
-        tag: 'hot_${DateTime.now().millisecondsSinceEpoch}');
-    _futureBuilderFuture = _hotController.queryHotFeed('init');
+    _futureBuilderFuture = _hotController.queryHotFeed(type: 'init');
     _hotController.scrollController.addListener(_scrollListener);
   }
 
@@ -39,8 +36,8 @@ class _HotPageState extends State<HotPage> with AutomaticKeepAliveClientMixin {
     if (_hotController.scrollController.hasClients &&
         _hotController.scrollController.position.pixels >=
             _hotController.scrollController.position.maxScrollExtent - 200) {
-      if (!_hotController.isLoadingMore) {
-        _hotController.isLoadingMore = true;
+      if (!_hotController.isLoadingMore &&
+          _hotController.noMore != '没有更多了') {
         _hotController.onLoad();
       }
     }
@@ -50,14 +47,12 @@ class _HotPageState extends State<HotPage> with AutomaticKeepAliveClientMixin {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // 初始计算列数
     _hotController.updateCrossAxisCount();
   }
 
   @override
   void didUpdateWidget(covariant HotPage oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // 屏幕尺寸变化时更新列数（使用防抖处理）
     EasyThrottle.throttle(
         'updateCrossAxisCount', const Duration(milliseconds: 100), () {
       _hotController.updateCrossAxisCount();
@@ -67,7 +62,6 @@ class _HotPageState extends State<HotPage> with AutomaticKeepAliveClientMixin {
   @override
   void dispose() {
     _hotController.scrollController.removeListener(_scrollListener);
-    Get.delete<HotController>(tag: 'hot_${_hotController.hashCode}');
     super.dispose();
   }
 
@@ -92,37 +86,7 @@ class _HotPageState extends State<HotPage> with AutomaticKeepAliveClientMixin {
               future: _futureBuilderFuture,
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.done) {
-                  Map data = snapshot.data as Map;
-                  if (data['status']) {
-                    return Obx(
-                      () {
-                        return SliverPadding(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: isWideScreen
-                                ? (screenWidth - maxContentWidth) / 2
-                                : 0,
-                          ),
-                          sliver: SliverGrid(
-                            gridDelegate:
-                                SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount:
-                                  _hotController.crossAxisCount.value,
-                              mainAxisSpacing: 16,
-                              crossAxisSpacing: 16,
-                              childAspectRatio: 3 / 1,
-                            ),
-                            delegate:
-                                SliverChildBuilderDelegate((context, index) {
-                              return VideoCardH(
-                                videoItem: _hotController.videoList[index],
-                                showPubdate: true,
-                              );
-                            }, childCount: _hotController.videoList.length),
-                          ),
-                        );
-                      },
-                    );
-                  } else {
+                  if (_hotController.videoList.isEmpty) {
                     return SliverPadding(
                       padding: EdgeInsets.symmetric(
                         horizontal: isWideScreen
@@ -131,19 +95,48 @@ class _HotPageState extends State<HotPage> with AutomaticKeepAliveClientMixin {
                       ),
                       sliver: SliverToBoxAdapter(
                         child: HttpError(
-                          errMsg: data['msg'],
+                          errMsg: _hotController.noMore == '加载失败'
+                              ? '加载失败，请重试'
+                              : '暂无数据',
                           fn: () {
                             setState(() {
                               _futureBuilderFuture =
-                                  _hotController.queryHotFeed('init');
+                                  _hotController.queryHotFeed(type: 'init');
                             });
                           },
                         ),
                       ),
                     );
                   }
+                  return Obx(
+                    () {
+                      return SliverPadding(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: isWideScreen
+                              ? (screenWidth - maxContentWidth) / 2
+                              : 0,
+                        ),
+                        sliver: SliverGrid(
+                          gridDelegate:
+                              SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount:
+                                _hotController.crossAxisCount.value,
+                            mainAxisSpacing: 16,
+                            crossAxisSpacing: 16,
+                            childAspectRatio: 3 / 1,
+                          ),
+                          delegate:
+                              SliverChildBuilderDelegate((context, index) {
+                            return VideoCardH(
+                              videoItem: _hotController.videoList[index],
+                              showPubdate: true,
+                            );
+                          }, childCount: _hotController.videoList.length),
+                        ),
+                      );
+                    },
+                  );
                 } else {
-                  // 骨架屏
                   return SliverPadding(
                     padding: EdgeInsets.symmetric(
                       horizontal: isWideScreen

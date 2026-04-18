@@ -75,6 +75,45 @@ class _ReplyItemState extends State<ReplyItem> {
     );
   }
 
+  Widget _buildExpandButton(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.only(left: 45, top: 4),
+      child: TextButton.icon(
+        onPressed: () {
+          setState(() {
+            _isExpanded = !_isExpanded;
+          });
+        },
+        icon: AnimatedRotation(
+          turns: _isExpanded ? 0.5 : 0,
+          duration: const Duration(milliseconds: 200),
+          child: Icon(
+            Icons.keyboard_arrow_down_rounded,
+            size: 18,
+            color: colorScheme.primary,
+          ),
+        ),
+        label: AnimatedSwitcher(
+          duration: const Duration(milliseconds: 200),
+          child: Text(
+            _isExpanded ? '收起' : '展开全文',
+            key: ValueKey(_isExpanded),
+            style: TextStyle(
+              color: colorScheme.primary,
+              fontSize: 13,
+            ),
+          ),
+        ),
+        style: TextButton.styleFrom(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+          minimumSize: Size.zero,
+          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        ),
+      ),
+    );
+  }
+
   Widget lfAvtar(BuildContext context, String heroTag) {
     ColorScheme colorScheme = Theme.of(context).colorScheme;
     return Stack(
@@ -274,24 +313,7 @@ class _ReplyItemState extends State<ReplyItem> {
           ),
         ),
         // 展开/折叠按钮
-        if (_needsExpandButton)
-          Padding(
-            padding: const EdgeInsets.only(left: 45, top: 4),
-            child: GestureDetector(
-              onTap: () {
-                setState(() {
-                  _isExpanded = !_isExpanded;
-                });
-              },
-              child: Text(
-                _isExpanded ? '收起' : '展开',
-                style: TextStyle(
-                  color: Theme.of(context).colorScheme.primary,
-                  fontSize: 13,
-                ),
-              ),
-            ),
-          ),
+        if (_needsExpandButton) _buildExpandButton(context),
         // 操作区域
         bottonAction(context, widget.replyItem!.replyControl, widget.replySave),
         // 一楼的评论 - 二级评论功能

@@ -2,8 +2,15 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:piliotto/common/skeleton/video_card_h.dart';
 import 'package:piliotto/common/widgets/network_img_layer.dart';
+import 'package:piliotto/common/widgets/no_data.dart';
+import 'package:piliotto/common/widgets/video_card_h.dart';
+import 'package:piliotto/pages/dynamics/widgets/dynamic_panel.dart';
+import 'package:piliotto/pages/fav/index.dart';
 import 'package:piliotto/pages/member/index.dart';
+import 'package:piliotto/pages/member_dynamics/index.dart';
+import 'package:piliotto/utils/feed_back.dart';
 import 'package:piliotto/utils/utils.dart';
 
 class MemberPage extends StatefulWidget {
@@ -13,12 +20,15 @@ class MemberPage extends StatefulWidget {
   State<MemberPage> createState() => _MemberPageState();
 }
 
-class _MemberPageState extends State<MemberPage> {
+class _MemberPageState extends State<MemberPage> with TickerProviderStateMixin {
   late String heroTag;
   late MemberController _memberController;
+  late MemberDynamicsController _dynamicsController;
   late Future _futureBuilderFuture;
   final ScrollController _scrollController = ScrollController();
   late int mid;
+  late TabController _tabController;
+  late List<String> _tabs;
 
   @override
   void initState() {
@@ -26,12 +36,45 @@ class _MemberPageState extends State<MemberPage> {
     mid = int.parse(Get.parameters['mid']!);
     heroTag = Get.arguments['heroTag'] ?? Utils.makeHeroTag(mid);
     _memberController = Get.put(MemberController(), tag: heroTag);
-    _futureBuilderFuture = _memberController.getInfo();
+    _dynamicsController = Get.put(MemberDynamicsController(), tag: heroTag);
+    _futureBuilderFuture = _initData();
+  }
+
+  Future<void> _initData() async {
+    await _memberController.getInfo();
+    _tabs = _memberController.isOwner.value ? ['视频', '动态', '收藏'] : ['视频', '动态'];
+    _tabController = TabController(length: _tabs.length, vsync: this);
+    _tabController.addListener(_onTabChanged);
+    await _memberController.getMemberArchive('init');
+  }
+
+  void _onTabChanged() {
+    if (_tabController.indexIsChanging) return;
+    feedBack();
+    _loadTabData(_tabController.index);
+  }
+
+  Future<void> _loadTabData(int index) async {
+    if (_memberController.isOwner.value) {
+      switch (index) {
+        case 1:
+          _dynamicsController.getMemberDynamic('onRefresh');
+          break;
+      }
+    } else {
+      switch (index) {
+        case 1:
+          _dynamicsController.getMemberDynamic('onRefresh');
+          break;
+      }
+    }
   }
 
   @override
   void dispose() {
     _scrollController.dispose();
+    _tabController.removeListener(_onTabChanged);
+    _tabController.dispose();
     super.dispose();
   }
 
@@ -44,76 +87,42 @@ class _MemberPageState extends State<MemberPage> {
         future: _futureBuilderFuture,
         builder: (context, snapshot) {
           final isLoading = snapshot.connectionState != ConnectionState.done;
-          final hasError = snapshot.hasError ||
-              (snapshot.data != null &&
-                  (snapshot.data as Map?)?['status'] != 'success');
-          final hasData = snapshot.data != null &&
-              (snapshot.data as Map?)?['status'] == 'success';
+          final hasError = snapshot.hasError;
 
-          return CustomScrollView(
-            controller: _scrollController,
-            slivers: [
-              _buildAppBar(context, theme, isLoading),
-              SliverToBoxAdapter(
-                child: Stack(
-                  clipBehavior: Clip.none,
-                  children: [
-                    _buildBanner(theme),
-                    if (hasData || isLoading) ...[
-                      Positioned(
-                        top: 200 - 45,
-                        left: 20,
-                        child: _buildAvatar(theme),
-                      ),
-                      _buildContent(context, theme, isLoading, hasData),
-                    ],
-                    if (hasError && !isLoading) _buildErrorContent(theme),
-                  ],
-                ),
-              ),
-            ],
-          );
+          if (isLoading) {
+            return _buildLoadingScaffold(theme);
+          }
+
+          if (hasError) {
+            return _buildErrorScaffold(theme);
+          }
+
+          return _buildContentScaffold(context, theme);
         },
       ),
     );
   }
 
-  Widget _buildErrorContent(ThemeData theme) {
-    return Container(
-      margin: const EdgeInsets.only(top: 200),
-      padding: const EdgeInsets.all(20),
-      child: Center(
+  Widget _buildLoadingScaffold(ThemeData theme) {
+    return Scaffold(
+      appBar: AppBar(leading: IconButton(icon: const Icon(Icons.arrow_back), onPressed: () => Get.back())),
+      body: const Center(child: CircularProgressIndicator()),
+    );
+  }
+
+  Widget _buildErrorScaffold(ThemeData theme) {
+    return Scaffold(
+      appBar: AppBar(leading: IconButton(icon: const Icon(Icons.arrow_back), onPressed: () => Get.back())),
+      body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.error_outline,
-              size: 64,
-              color: theme.colorScheme.error,
-            ),
+            Icon(Icons.error_outline, size: 64, color: theme.colorScheme.error),
             const SizedBox(height: 16),
-            Text(
-              '加载失败',
-              style: TextStyle(
-                fontSize: 18,
-                color: theme.colorScheme.onSurface,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              '无法获取用户信息',
-              style: TextStyle(
-                fontSize: 14,
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-            ),
+            Text('加载失败', style: TextStyle(fontSize: 18, color: theme.colorScheme.onSurface)),
             const SizedBox(height: 24),
             FilledButton.icon(
-              onPressed: () {
-                setState(() {
-                  _futureBuilderFuture = _memberController.getInfo();
-                });
-              },
+              onPressed: () => setState(() => _futureBuilderFuture = _initData()),
               icon: const Icon(Icons.refresh),
               label: const Text('重试'),
             ),
@@ -123,23 +132,62 @@ class _MemberPageState extends State<MemberPage> {
     );
   }
 
-  Widget _buildAppBar(BuildContext context, ThemeData theme, bool isLoading) {
-    return SliverAppBar(
-      leading: IconButton(
-        icon: const Icon(Icons.arrow_back),
-        onPressed: () => Get.back(),
+  Widget _buildContentScaffold(BuildContext context, ThemeData theme) {
+    return Scaffold(
+      body: NestedScrollView(
+        controller: _scrollController,
+        headerSliverBuilder: (context, innerBoxIsScrolled) => [
+          _buildSliverAppBar(context, theme),
+          SliverToBoxAdapter(child: _buildUserInfoSection(theme)),
+          SliverPersistentHeader(
+            delegate: _SliverTabBarDelegate(
+              TabBar(
+                controller: _tabController,
+                tabs: _tabs.map((t) => Tab(text: t)).toList(),
+                isScrollable: false,
+                dividerColor: Colors.transparent,
+                tabAlignment: TabAlignment.center,
+              ),
+            ),
+            pinned: true,
+          ),
+        ],
+        body: TabBarView(
+          controller: _tabController,
+          children: _buildTabPages(),
+        ),
       ),
+    );
+  }
+
+  List<Widget> _buildTabPages() {
+    if (_memberController.isOwner.value) {
+      return [
+        _VideoTabPage(heroTag: heroTag),
+        _DynamicsTabPage(controller: _dynamicsController),
+        const _FavoriteTabPage(),
+      ];
+    } else {
+      return [
+        _VideoTabPage(heroTag: heroTag),
+        _DynamicsTabPage(controller: _dynamicsController),
+      ];
+    }
+  }
+
+  Widget _buildSliverAppBar(BuildContext context, ThemeData theme) {
+    return SliverAppBar(
+      leading: IconButton(icon: const Icon(Icons.arrow_back), onPressed: () => Get.back()),
       actions: [
-        if (!isLoading && _memberController.memberInfo.value.name != null) ...[
+        if (_memberController.memberInfo.value.name != null) ...[
           IconButton(
-            onPressed: () => Get.toNamed(
-                '/memberSearch?mid=$mid&uname=${_memberController.memberInfo.value.name}'),
+            onPressed: () => Get.toNamed('/memberSearch?mid=$mid&uname=${_memberController.memberInfo.value.name}'),
             icon: const Icon(Icons.search_outlined),
           ),
           PopupMenuButton(
             icon: const Icon(Icons.more_vert),
             itemBuilder: (BuildContext context) => <PopupMenuEntry>[
-              if (_memberController.ownerMid != _memberController.mid) ...[
+              if (!_memberController.isOwner.value)
                 PopupMenuItem(
                   onTap: () => _memberController.blockUser(),
                   child: Row(
@@ -147,13 +195,10 @@ class _MemberPageState extends State<MemberPage> {
                     children: [
                       const Icon(Icons.block, size: 19),
                       const SizedBox(width: 10),
-                      Obx(() => Text(_memberController.attribute.value != 128
-                          ? '加入黑名单'
-                          : '移除黑名单')),
+                      Obx(() => Text(_memberController.attribute.value != 128 ? '加入黑名单' : '移除黑名单')),
                     ],
                   ),
-                )
-              ],
+                ),
               PopupMenuItem(
                 onTap: () => _memberController.shareUser(),
                 child: Row(
@@ -161,9 +206,7 @@ class _MemberPageState extends State<MemberPage> {
                   children: [
                     const Icon(Icons.share_outlined, size: 19),
                     const SizedBox(width: 10),
-                    Text(_memberController.ownerMid != _memberController.mid
-                        ? '分享用户'
-                        : '分享我的主页'),
+                    Text(!_memberController.isOwner.value ? '分享用户' : '分享我的主页'),
                   ],
                 ),
               ),
@@ -175,6 +218,8 @@ class _MemberPageState extends State<MemberPage> {
       floating: true,
       pinned: true,
       snap: true,
+      expandedHeight: 200,
+      flexibleSpace: FlexibleSpaceBar(background: _buildBanner(theme)),
     );
   }
 
@@ -186,241 +231,243 @@ class _MemberPageState extends State<MemberPage> {
         decoration: BoxDecoration(
           color: theme.colorScheme.secondaryContainer,
           image: cover != null && cover.isNotEmpty
-              ? DecorationImage(
-                  image: NetworkImage(cover),
-                  fit: BoxFit.cover,
-                )
+              ? DecorationImage(image: NetworkImage(cover), fit: BoxFit.cover)
               : null,
         ),
       );
     });
   }
 
-  Widget _buildAvatar(ThemeData theme) {
-    return GestureDetector(
-      onTap: () {},
-      child: Container(
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          border: Border.all(
-            color: theme.colorScheme.surface,
-            width: 3,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: theme.colorScheme.shadow.withAlpha(50),
-              blurRadius: 10,
-              spreadRadius: 2,
-            ),
-          ],
-        ),
-        child: Obx(() {
-          final face = _memberController.face.value;
-          if (face.isNotEmpty) {
-            return ClipOval(
-              child: NetworkImgLayer(
-                src: face,
-                width: 90,
-                height: 90,
-                type: 'avatar',
-              ),
-            );
-          }
-          return CircleAvatar(
-            radius: 45,
-            backgroundColor: theme.colorScheme.surface,
-            child: Icon(
-              Icons.person,
-              size: 50,
-              color: theme.colorScheme.primary,
-            ),
-          );
-        }),
-      ),
-    );
-  }
-
-  Widget _buildContent(
-    BuildContext context,
-    ThemeData theme,
-    bool isLoading,
-    bool hasData,
-  ) {
+  Widget _buildUserInfoSection(ThemeData theme) {
     return Container(
-      margin: const EdgeInsets.only(top: 155),
-      padding: const EdgeInsets.all(20),
-      child: Column(
+      padding: const EdgeInsets.all(16),
+      child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildUserInfoSection(context, theme, isLoading, hasData),
-          if (hasData) ...[
-            const SizedBox(height: 16),
-            _buildUserStats(theme),
-            const SizedBox(height: 24),
-            _buildMenuItems(context, theme),
-          ],
+          _buildAvatar(theme),
+          const SizedBox(width: 16),
+          Expanded(child: _buildUserDetails(theme)),
         ],
       ),
     );
   }
 
-  Widget _buildUserInfoSection(
-    BuildContext context,
-    ThemeData theme,
-    bool isLoading,
-    bool hasData,
-  ) {
-    return Padding(
-      padding: const EdgeInsets.only(left: 115, top: 20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (isLoading)
-            Container(
-              width: 150,
-              height: 24,
-              decoration: BoxDecoration(
-                color: theme.colorScheme.surfaceContainerHighest,
-                borderRadius: BorderRadius.circular(4),
-              ),
-            )
-          else
-            Obx(() => Text(
-                  _memberController.memberInfo.value.name ?? '',
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: theme.colorScheme.onSurface,
-                  ),
-                )),
-          const SizedBox(height: 4),
-          if (isLoading)
-            Container(
-              width: 100,
-              height: 14,
-              decoration: BoxDecoration(
-                color: theme.colorScheme.surfaceContainerHighest,
-                borderRadius: BorderRadius.circular(4),
-              ),
-            )
-          else
-            Text(
-              'UID: $mid',
+  Widget _buildAvatar(ThemeData theme) {
+    return Container(
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        border: Border.all(color: theme.colorScheme.surface, width: 3),
+        boxShadow: [
+          BoxShadow(
+            color: theme.colorScheme.shadow.withAlpha(50),
+            blurRadius: 10,
+            spreadRadius: 2,
+          ),
+        ],
+      ),
+      child: Obx(() {
+        final face = _memberController.face.value;
+        if (face.isNotEmpty) {
+          return ClipOval(
+            child: NetworkImgLayer(src: face, width: 70, height: 70, type: 'avatar'),
+          );
+        }
+        return CircleAvatar(
+          radius: 35,
+          backgroundColor: theme.colorScheme.surface,
+          child: Icon(Icons.person, size: 40, color: theme.colorScheme.primary),
+        );
+      }),
+    );
+  }
+
+  Widget _buildUserDetails(ThemeData theme) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Obx(() => Text(
+              _memberController.memberInfo.value.name ?? '',
               style: TextStyle(
-                fontSize: 14,
-                color: theme.colorScheme.onSurfaceVariant,
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: theme.colorScheme.onSurface,
               ),
-            ),
+            )),
+        const SizedBox(height: 4),
+        Text('UID: $mid', style: TextStyle(fontSize: 13, color: theme.colorScheme.onSurfaceVariant)),
+        const SizedBox(height: 8),
+        Obx(() => Row(
+              children: [
+                _buildStatItem(theme, '关注', _memberController.memberInfo.value.attention?.toString() ?? '0'),
+                const SizedBox(width: 16),
+                _buildStatItem(theme, '粉丝', _memberController.memberInfo.value.fans?.toString() ?? '0'),
+              ],
+            )),
+        if (!_memberController.isOwner.value) ...[
           const SizedBox(height: 12),
-          if (hasData)
-            Obx(() {
-              if (_memberController.isOwner.value) {
-                return const SizedBox.shrink();
-              }
-              return Row(
+          Obx(() => Row(
                 children: [
                   FilledButton(
                     onPressed: _memberController.actionRelationMod,
-                    child:
-                        Obx(() => Text(_memberController.attributeText.value)),
+                    child: Text(_memberController.attributeText.value),
                   ),
                   const SizedBox(width: 8),
                   OutlinedButton(
-                    onPressed: () {
-                      Get.toNamed(
-                        '/whisperDetail',
-                        parameters: {
-                          'name': _memberController.memberInfo.value.name ?? '',
-                          'face': _memberController.face.value,
-                          'mid': mid.toString(),
-                          'heroTag': heroTag,
-                        },
-                      );
-                    },
+                    onPressed: () => Get.toNamed('/whisperDetail', parameters: {
+                      'name': _memberController.memberInfo.value.name ?? '',
+                      'face': _memberController.face.value,
+                      'mid': mid.toString(),
+                      'heroTag': heroTag,
+                    }),
                     child: const Text('发消息'),
                   ),
                 ],
-              );
-            }),
+              )),
         ],
-      ),
+      ],
     );
-  }
-
-  Widget _buildUserStats(ThemeData theme) {
-    return Obx(() {
-      final info = _memberController.memberInfo.value;
-      return Row(
-        children: [
-          _buildStatItem(theme, '关注', info.attention?.toString() ?? '0'),
-          const SizedBox(width: 24),
-          _buildStatItem(theme, '粉丝', info.fans?.toString() ?? '0'),
-        ],
-      );
-    });
   }
 
   Widget _buildStatItem(ThemeData theme, String label, String value) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-            color: theme.colorScheme.onSurface,
-          ),
-        ),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 12,
-            color: theme.colorScheme.onSurfaceVariant,
-          ),
-        ),
+        Text(value, style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface)),
+        Text(label, style: TextStyle(fontSize: 12, color: theme.colorScheme.onSurfaceVariant)),
       ],
     );
   }
+}
 
-  Widget _buildMenuItems(BuildContext context, ThemeData theme) {
-    return Obx(() => Column(
-          children: [
-            _buildMenuItem(
-              context,
-              theme,
-              Icons.favorite_border_outlined,
-              '${_memberController.isOwner.value ? '我' : 'Ta'}的收藏',
-              _memberController.pushfavPage,
-            ),
-          ],
-        ));
+class _SliverTabBarDelegate extends SliverPersistentHeaderDelegate {
+  final TabBar tabBar;
+
+  _SliverTabBarDelegate(this.tabBar);
+
+  @override
+  double get minExtent => tabBar.preferredSize.height;
+
+  @override
+  double get maxExtent => tabBar.preferredSize.height;
+
+  @override
+  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
+    return Container(color: Theme.of(context).colorScheme.surface, child: tabBar);
   }
 
-  Widget _buildMenuItem(
-    BuildContext context,
-    ThemeData theme,
-    IconData icon,
-    String title,
-    VoidCallback onTap,
-  ) {
-    return ListTile(
-      onTap: onTap,
-      leading: Icon(
-        icon,
-        size: 24,
-        color: theme.colorScheme.primary,
-      ),
-      title: Text(
-        title,
-        style: TextStyle(
-          fontSize: 16,
-          color: theme.colorScheme.onSurface,
-          fontWeight: FontWeight.w500,
+  @override
+  bool shouldRebuild(_SliverTabBarDelegate oldDelegate) => false;
+}
+
+class _VideoTabPage extends StatefulWidget {
+  final String heroTag;
+
+  const _VideoTabPage({required this.heroTag});
+
+  @override
+  State<_VideoTabPage> createState() => _VideoTabPageState();
+}
+
+class _VideoTabPageState extends State<_VideoTabPage> with AutomaticKeepAliveClientMixin {
+  late MemberController _controller;
+
+  @override
+  bool get wantKeepAlive => true;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = Get.find<MemberController>(tag: widget.heroTag);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context);
+    return Obx(() {
+      if (_controller.isLoadingArchive.value && _controller.archiveList.isEmpty) {
+        return ListView.builder(itemCount: 10, itemBuilder: (_, __) => const VideoCardHSkeleton());
+      }
+      if (_controller.archiveList.isEmpty) {
+        return const NoData();
+      }
+      return ListView.builder(
+        itemCount: _controller.archiveList.length,
+        itemBuilder: (context, index) => VideoCardH(
+          videoItem: _controller.archiveList[index],
+          showOwner: false,
+          showPubdate: true,
         ),
-      ),
-      trailing: const Icon(Icons.arrow_forward_outlined, size: 19),
-    );
+      );
+    });
+  }
+}
+
+class _DynamicsTabPage extends StatefulWidget {
+  final MemberDynamicsController controller;
+
+  const _DynamicsTabPage({required this.controller});
+
+  @override
+  State<_DynamicsTabPage> createState() => _DynamicsTabPageState();
+}
+
+class _DynamicsTabPageState extends State<_DynamicsTabPage> with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context);
+    return Obx(() {
+      final list = widget.controller.dynamicsList;
+      if (list.isEmpty) {
+        return const NoData();
+      }
+      return ListView.builder(
+        itemCount: list.length,
+        itemBuilder: (context, index) => DynamicPanel(item: list[index]),
+      );
+    });
+  }
+}
+
+class _FavoriteTabPage extends StatefulWidget {
+  const _FavoriteTabPage();
+
+  @override
+  State<_FavoriteTabPage> createState() => _FavoriteTabPageState();
+}
+
+class _FavoriteTabPageState extends State<_FavoriteTabPage> with AutomaticKeepAliveClientMixin {
+  FavController? _controller;
+
+  @override
+  bool get wantKeepAlive => true;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = Get.put(FavController());
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context);
+    if (_controller == null) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    return Obx(() {
+      if (_controller!.isLoading.value && _controller!.favoriteList.isEmpty) {
+        return ListView.builder(itemCount: 10, itemBuilder: (_, __) => const VideoCardHSkeleton());
+      }
+      if (_controller!.favoriteList.isEmpty) {
+        return const NoData();
+      }
+      return ListView.builder(
+        controller: _controller!.scrollController,
+        itemCount: _controller!.favoriteList.length,
+        itemBuilder: (context, index) => VideoCardH(videoItem: _controller!.favoriteList[index]),
+      );
+    });
   }
 }

@@ -39,7 +39,6 @@ class _RcmdPageState extends State<RcmdPage>
             scrollController.position.maxScrollExtent - 200) {
           EasyThrottle.throttle(
               'my-throttler', const Duration(milliseconds: 200), () {
-            _rcmdController.isLoadingMore = true;
             _rcmdController.onLoad();
           });
         }
@@ -103,7 +102,7 @@ class _RcmdPageState extends State<RcmdPage>
                   errMsg: data['msg'],
                   fn: () {
                     setState(() {
-                      _rcmdController.isLoadingMore = true;
+                      _rcmdController.isLoadingMore.value = true;
                       _futureBuilderFuture =
                           _rcmdController.queryRcmdFeed('init');
                     });

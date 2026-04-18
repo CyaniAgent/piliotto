@@ -45,8 +45,8 @@ class TListItemModel {
   String? name;
 
   TListItemModel.fromJson(Map<String, dynamic> json) {
-    tid = json['tid'];
-    count = json['count'];
+    tid = _parseInt(json['tid']);
+    count = _parseInt(json['count']);
     name = json['name'];
   }
 }
@@ -69,6 +69,7 @@ class VListItemModel {
     this.length,
     this.duration,
     this.videoReview,
+    this.vid,
     this.aid,
     this.bvid,
     this.cid,
@@ -94,6 +95,7 @@ class VListItemModel {
   String? length;
   String? duration;
   int? videoReview;
+  int? vid;
   int? aid;
   String? bvid;
   int? cid;
@@ -104,23 +106,26 @@ class VListItemModel {
   Owner? owner;
 
   VListItemModel.fromJson(Map<String, dynamic> json) {
-    comment = json['comment'];
-    typeid = json['typeid'];
-    play = json['play'];
-    pic = json['pic'];
+    comment = _parseInt(json['comment_count'] ?? json['comment']);
+    typeid = _parseInt(json['type'] ?? json['typeid']);
+    play = _parseInt(json['view_count'] ?? json['play']);
+    pic = json['cover_url'] ?? json['pic'];
     subtitle = json['subtitle'];
-    description = json['description'];
+    description = json['intro'] ?? json['description'];
     copyright = json['copyright'];
     title = json['title'];
-    review = json['review'];
-    author = json['author'];
-    mid = json['mid'];
-    created = json['created'];
-    pubdate = json['created'];
-    length = json['length'];
-    duration = json['length'];
-    videoReview = json['video_review'];
-    aid = json['aid'];
+    review = _parseInt(json['like_count'] ?? json['review']);
+    author = json['username'] ?? json['author'];
+    mid = _parseInt(json['uid'] ?? json['mid']);
+    created = json['time'] != null
+        ? DateTime.parse(json['time']).millisecondsSinceEpoch ~/ 1000
+        : _parseInt(json['created']);
+    pubdate = created;
+    length = json['duration']?.toString() ?? json['length'];
+    duration = length;
+    videoReview = _parseInt(json['danmaku_count'] ?? json['video_review']);
+    vid = _parseInt(json['vid']);
+    aid = _parseInt(json['aid']);
     bvid = json['bvid'];
     cid = null;
     hideClick = json['hide_click'];
@@ -141,8 +146,8 @@ class Stat {
   int? danmaku;
 
   Stat.fromJson(Map<String, dynamic> json) {
-    view = json["play"];
-    danmaku = json['video_review'];
+    view = _parseInt(json['view_count'] ?? json["play"]);
+    danmaku = _parseInt(json['danmaku_count'] ?? json['video_review']);
   }
 }
 
@@ -157,8 +162,15 @@ class Owner {
   String? face;
 
   Owner.fromJson(Map<String, dynamic> json) {
-    mid = json["mid"];
-    name = json["author"];
-    face = '';
+    mid = _parseInt(json['uid'] ?? json["mid"]);
+    name = json['username'] ?? json["author"];
+    face = json['avatar_url'] ?? '';
   }
+}
+
+int? _parseInt(dynamic value) {
+  if (value == null) return null;
+  if (value is int) return value;
+  if (value is String) return int.tryParse(value);
+  return null;
 }

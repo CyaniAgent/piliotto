@@ -5,7 +5,6 @@ import 'package:get/get.dart';
 import 'package:piliotto/utils/feed_back.dart';
 import 'package:piliotto/utils/image_save.dart';
 
-import '../../http/video.dart';
 import '../../api/models/video.dart';
 import '../../services/ottohub_service.dart';
 import '../../utils/utils.dart';
@@ -15,7 +14,6 @@ import 'network_img_layer.dart';
 import 'stat/danmu.dart';
 import 'stat/view.dart';
 
-// 视频卡片 - 水平布局
 class VideoCardH extends StatelessWidget {
   const VideoCardH({
     super.key,
@@ -29,10 +27,8 @@ class VideoCardH extends StatelessWidget {
     this.showCharge = false,
     this.rankIndex,
   });
-  // ignore: prefer_typing_uninitialized_variables
-  final videoItem;
+  final dynamic videoItem;
   final Function()? onPressedFn;
-  // normal 推荐, later 稍后再看, search 搜索, rank 排行榜
   final String source;
   final bool showOwner;
   final bool showView;
@@ -41,454 +37,287 @@ class VideoCardH extends StatelessWidget {
   final bool showCharge;
   final int? rankIndex;
 
-  @override
-  Widget build(BuildContext context) {
-    // 处理Ottohub的Video模型
+  int get _videoId {
     if (videoItem is Video) {
-      final String heroTag = Utils.makeHeroTag(videoItem.vid.toString());
-      return InkWell(
-        onTap: () async {
-          Get.toNamed('/video?vid=${videoItem.vid}', arguments: {
-            'pic': videoItem.coverUrl,
-            'heroTag': heroTag,
-          });
-        },
-        onLongPress: () => imageSaveDialog(
-          context,
-          videoItem,
-          SmartDialog.dismiss,
-        ),
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(
-              StyleString.safeSpace, 5, StyleString.safeSpace, 5),
-          child: LayoutBuilder(
-            builder: (BuildContext context, BoxConstraints boxConstraints) {
-              final double width = (boxConstraints.maxWidth -
-                      StyleString.cardSpace *
-                          6 /
-                          MediaQuery.textScalerOf(context).scale(1.0)) /
-                  2;
-              return Container(
-                constraints: const BoxConstraints(minHeight: 88),
-                height: width / StyleString.aspectRatio,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    AspectRatio(
-                      aspectRatio: StyleString.aspectRatio,
-                      child: LayoutBuilder(
-                        builder: (BuildContext context,
-                            BoxConstraints boxConstraints) {
-                          final double maxWidth = boxConstraints.maxWidth;
-                          final double maxHeight = boxConstraints.maxHeight;
-                          return Stack(
-                            children: [
-                              Hero(
-                                tag: heroTag,
-                                child: NetworkImgLayer(
-                                  src: videoItem.coverUrl ?? '',
-                                  width: maxWidth,
-                                  height: maxHeight,
-                                ),
-                              ),
-                              if (rankIndex != null && rankIndex! <= 3)
-                                Positioned(
-                                  left: 0,
-                                  top: 0,
-                                  child: Container(
-                                    width: 28,
-                                    height: 28,
-                                    decoration: BoxDecoration(
-                                      color: rankIndex == 1
-                                          ? const Color(0xFFFFD700)
-                                          : rankIndex == 2
-                                              ? const Color(0xFFC0C0C0)
-                                              : const Color(0xFFCD7F32),
-                                      borderRadius: const BorderRadius.only(
-                                        topLeft: Radius.circular(8),
-                                        bottomRight: Radius.circular(8),
-                                      ),
-                                    ),
-                                    alignment: Alignment.center,
-                                    child: Text(
-                                      '$rankIndex',
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              if (rankIndex != null && rankIndex! > 3)
-                                Positioned(
-                                  left: 0,
-                                  top: 0,
-                                  child: Container(
-                                    width: 28,
-                                    height: 28,
-                                    decoration: const BoxDecoration(
-                                      color: Colors.black54,
-                                      borderRadius: BorderRadius.only(
-                                        topLeft: Radius.circular(8),
-                                        bottomRight: Radius.circular(8),
-                                      ),
-                                    ),
-                                    alignment: Alignment.center,
-                                    child: Text(
-                                      '$rankIndex',
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 12,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              if (videoItem.duration != null &&
-                                  videoItem.duration! > 0)
-                                PBadge(
-                                  text: Utils.timeFormat(videoItem.duration!),
-                                  right: 6.0,
-                                  bottom: 6.0,
-                                  type: 'gray',
-                                ),
-                            ],
-                          );
-                        },
-                      ),
-                    ),
-                    VideoContent(
-                      videoItem: videoItem,
-                      source: source,
-                      showOwner: showOwner,
-                      showView: showView,
-                      showDanmaku: showDanmaku,
-                      showPubdate: showPubdate,
-                      onPressedFn: onPressedFn,
-                    )
-                  ],
-                ),
-              );
-            },
-          ),
-        ),
-      );
-    } else {
-      final int aid = videoItem.aid;
-      final String bvid = videoItem.bvid;
-      final String heroTag = Utils.makeHeroTag(aid);
-      return InkWell(
-        onTap: () async {
-          try {
-            if (showCharge && videoItem?.typeid == 33) {}
-            Get.toNamed('/video?bvid=$bvid',
-                arguments: {'videoItem': videoItem, 'heroTag': heroTag});
-          } catch (err) {
-            SmartDialog.showToast(err.toString());
-          }
-        },
-        onLongPress: () => imageSaveDialog(
-          context,
-          videoItem,
-          SmartDialog.dismiss,
-        ),
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(
-              StyleString.safeSpace, 5, StyleString.safeSpace, 5),
-          child: LayoutBuilder(
-            builder: (BuildContext context, BoxConstraints boxConstraints) {
-              final double width = (boxConstraints.maxWidth -
-                      StyleString.cardSpace *
-                          6 /
-                          MediaQuery.textScalerOf(context).scale(1.0)) /
-                  2;
-              return Container(
-                constraints: const BoxConstraints(minHeight: 88),
-                height: width / StyleString.aspectRatio,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    AspectRatio(
-                      aspectRatio: StyleString.aspectRatio,
-                      child: LayoutBuilder(
-                        builder: (BuildContext context,
-                            BoxConstraints boxConstraints) {
-                          final double maxWidth = boxConstraints.maxWidth;
-                          final double maxHeight = boxConstraints.maxHeight;
-                          return Stack(
-                            children: [
-                              Hero(
-                                tag: heroTag,
-                                child: NetworkImgLayer(
-                                  src: videoItem.pic as String,
-                                  width: maxWidth,
-                                  height: maxHeight,
-                                ),
-                              ),
-                              if (videoItem.duration != 0)
-                                PBadge(
-                                  text: Utils.timeFormat(videoItem.duration!),
-                                  right: 6.0,
-                                  bottom: 6.0,
-                                  type: 'gray',
-                                ),
-                              if (showCharge && videoItem?.isChargingSrc)
-                                const PBadge(
-                                  text: '充电专属',
-                                  right: 6.0,
-                                  top: 6.0,
-                                  type: 'primary',
-                                ),
-                            ],
-                          );
-                        },
-                      ),
-                    ),
-                    VideoContent(
-                      videoItem: videoItem,
-                      source: source,
-                      showOwner: showOwner,
-                      showView: showView,
-                      showDanmaku: showDanmaku,
-                      showPubdate: showPubdate,
-                      onPressedFn: onPressedFn,
-                    )
-                  ],
-                ),
-              );
-            },
-          ),
-        ),
-      );
+      return videoItem.vid;
     }
+    return videoItem.vid ?? videoItem.aid ?? 0;
   }
-}
 
-class VideoContent extends StatelessWidget {
-  // ignore: prefer_typing_uninitialized_variables
-  final videoItem;
-  final String source;
-  final bool showOwner;
-  final bool showView;
-  final bool showDanmaku;
-  final bool showPubdate;
-  final Function()? onPressedFn;
+  String get _coverUrl {
+    if (videoItem is Video) {
+      return videoItem.coverUrl ?? '';
+    }
+    return videoItem.pic ?? videoItem.coverUrl ?? '';
+  }
 
-  const VideoContent({
-    super.key,
-    required this.videoItem,
-    this.source = 'normal',
-    this.showOwner = true,
-    this.showView = true,
-    this.showDanmaku = true,
-    this.showPubdate = false,
-    this.onPressedFn,
-  });
+  String get _title {
+    if (videoItem is Video) {
+      return videoItem.title ?? '';
+    }
+    return videoItem.title ?? '';
+  }
+
+  String get _ownerName {
+    if (videoItem is Video) {
+      return videoItem.username ?? '';
+    }
+    return videoItem.owner?.name ?? videoItem.author ?? '';
+  }
+
+  int get _viewCount {
+    if (videoItem is Video) {
+      return videoItem.viewCount ?? 0;
+    }
+    return videoItem.stat?.view ?? videoItem.play ?? 0;
+  }
+
+  int? get _danmakuCount {
+    if (videoItem is Video) {
+      return null;
+    }
+    return videoItem.stat?.danmaku ?? videoItem.videoReview ?? 0;
+  }
+
+  int get _duration {
+    if (videoItem is Video) {
+      return videoItem.duration ?? 0;
+    }
+    final dur = videoItem.duration ?? videoItem.length;
+    if (dur is int) return dur;
+    if (dur is String) return int.tryParse(dur) ?? 0;
+    return 0;
+  }
+
+  int? get _pubdate {
+    if (videoItem is Video) {
+      final time = videoItem.time;
+      if (time is int) return time;
+      if (time is String) {
+        final dt = DateTime.tryParse(time);
+        return dt != null ? dt.millisecondsSinceEpoch ~/ 1000 : null;
+      }
+      return null;
+    }
+    return videoItem.pubdate ?? videoItem.created;
+  }
 
   @override
   Widget build(BuildContext context) {
-    // 处理Ottohub的Video模型
-    if (videoItem is Video) {
-      return Expanded(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(10, 0, 6, 0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                videoItem.title,
-                textAlign: TextAlign.start,
-                style: const TextStyle(
-                  fontWeight: FontWeight.w500,
-                ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-              const Spacer(),
-              if (showPubdate)
-                Text(
-                  Utils.dateFormat(videoItem.time),
-                  style: TextStyle(
-                      fontSize: 11,
-                      color: Theme.of(context).colorScheme.outline),
-                ),
-              if (showOwner)
-                Row(
-                  children: [
-                    Text(
-                      videoItem.username,
-                      style: TextStyle(
-                        fontSize:
-                            Theme.of(context).textTheme.labelMedium!.fontSize,
-                        color: Theme.of(context).colorScheme.outline,
-                      ),
+    final String heroTag = Utils.makeHeroTag(_videoId);
+    return InkWell(
+      onTap: () async {
+        Get.toNamed('/video?vid=$_videoId', arguments: {
+          'pic': _coverUrl,
+          'heroTag': heroTag,
+        });
+      },
+      onLongPress: () => imageSaveDialog(
+        context,
+        videoItem,
+        SmartDialog.dismiss,
+      ),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(
+            StyleString.safeSpace, 5, StyleString.safeSpace, 5),
+        child: LayoutBuilder(
+          builder: (BuildContext context, BoxConstraints boxConstraints) {
+            final double width = (boxConstraints.maxWidth -
+                    StyleString.cardSpace *
+                        6 /
+                        MediaQuery.textScalerOf(context).scale(1.0)) /
+                2;
+            return Container(
+              constraints: const BoxConstraints(minHeight: 88),
+              height: width / StyleString.aspectRatio,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  AspectRatio(
+                    aspectRatio: StyleString.aspectRatio,
+                    child: LayoutBuilder(
+                      builder: (BuildContext context,
+                          BoxConstraints boxConstraints) {
+                        final double maxWidth = boxConstraints.maxWidth;
+                        final double maxHeight = boxConstraints.maxHeight;
+                        return Stack(
+                          children: [
+                            Hero(
+                              tag: heroTag,
+                              child: NetworkImgLayer(
+                                src: _coverUrl,
+                                width: maxWidth,
+                                height: maxHeight,
+                              ),
+                            ),
+                            if (rankIndex != null && rankIndex! <= 3)
+                              Positioned(
+                                left: 0,
+                                top: 0,
+                                child: Container(
+                                  width: 28,
+                                  height: 28,
+                                  decoration: BoxDecoration(
+                                    color: rankIndex == 1
+                                        ? const Color(0xFFFFD700)
+                                        : rankIndex == 2
+                                            ? const Color(0xFFC0C0C0)
+                                            : const Color(0xFFCD7F32),
+                                    borderRadius: const BorderRadius.only(
+                                      topLeft: Radius.circular(8),
+                                      bottomRight: Radius.circular(8),
+                                    ),
+                                  ),
+                                  alignment: Alignment.center,
+                                  child: Text(
+                                    '$rankIndex',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            if (rankIndex != null && rankIndex! > 3)
+                              Positioned(
+                                left: 0,
+                                top: 0,
+                                child: Container(
+                                  width: 28,
+                                  height: 28,
+                                  decoration: const BoxDecoration(
+                                    color: Colors.black54,
+                                    borderRadius: BorderRadius.only(
+                                      topLeft: Radius.circular(8),
+                                      bottomRight: Radius.circular(8),
+                                    ),
+                                  ),
+                                  alignment: Alignment.center,
+                                  child: Text(
+                                    '$rankIndex',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            if (_duration > 0)
+                              PBadge(
+                                text: Utils.timeFormat(_duration),
+                                right: 6.0,
+                                bottom: 6.0,
+                                type: 'gray',
+                              ),
+                          ],
+                        );
+                      },
                     ),
-                  ],
-                ),
-              Row(
-                children: [
-                  if (showView) ...[
-                    StatView(view: videoItem.viewCount),
-                    const SizedBox(width: 8),
-                  ],
-                  const Spacer(),
-                  if (source == 'normal')
-                    SizedBox(
-                      width: 24,
-                      height: 24,
-                      child: IconButton(
-                        padding: EdgeInsets.zero,
-                        onPressed: () {
-                          feedBack();
-                          showModalBottomSheet(
-                            context: context,
-                            useRootNavigator: true,
-                            isScrollControlled: true,
-                            builder: (context) {
-                              return MorePanel(videoItem: videoItem);
-                            },
-                          );
-                        },
-                        icon: Icon(
-                          Icons.more_vert_outlined,
-                          color: Theme.of(context).colorScheme.outline,
-                          size: 14,
-                        ),
-                      ),
-                    ),
-                  if (source == 'later') ...[
-                    IconButton(
-                      style: ButtonStyle(
-                        padding: WidgetStateProperty.all(EdgeInsets.zero),
-                      ),
-                      onPressed: () => onPressedFn?.call(),
-                      icon: Icon(
-                        Icons.clear_outlined,
-                        color: Theme.of(context).colorScheme.outline,
-                        size: 18,
-                      ),
-                    )
-                  ],
-                ],
-              ),
-            ],
-          ),
-        ),
-      );
-    } else {
-      return Expanded(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(10, 0, 6, 0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              if (source == 'normal' || source == 'later') ...[
-                Text(
-                  videoItem.title as String,
-                  textAlign: TextAlign.start,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w500,
                   ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ] else ...[
-                RichText(
-                  maxLines: 2,
-                  text: TextSpan(
-                    children: [
-                      for (final i in videoItem.titleList) ...[
-                        TextSpan(
-                          text: i['text'] as String,
-                          style: TextStyle(
-                            fontWeight: FontWeight.w500,
-                            letterSpacing: 0.3,
-                            color: i['type'] == 'em'
-                                ? Theme.of(context).colorScheme.primary
-                                : Theme.of(context).colorScheme.onSurface,
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(10, 0, 6, 0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            _title,
+                            textAlign: TextAlign.start,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w500,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
                           ),
-                        ),
-                      ]
-                    ],
+                          const Spacer(),
+                          if (showPubdate && _pubdate != null)
+                            Text(
+                              Utils.dateFormat(_pubdate!),
+                              style: TextStyle(
+                                  fontSize: 11,
+                                  color: Theme.of(context).colorScheme.outline),
+                            ),
+                          if (showOwner)
+                            Row(
+                              children: [
+                                Text(
+                                  _ownerName,
+                                  style: TextStyle(
+                                    fontSize: Theme.of(context)
+                                        .textTheme
+                                        .labelMedium!
+                                        .fontSize,
+                                    color:
+                                        Theme.of(context).colorScheme.outline,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          Row(
+                            children: [
+                              if (showView) ...[
+                                StatView(view: _viewCount),
+                                const SizedBox(width: 8),
+                              ],
+                              if (showDanmaku && _danmakuCount != null)
+                                StatDanMu(danmu: _danmakuCount),
+                              const Spacer(),
+                              if (source == 'normal')
+                                SizedBox(
+                                  width: 24,
+                                  height: 24,
+                                  child: IconButton(
+                                    padding: EdgeInsets.zero,
+                                    onPressed: () {
+                                      feedBack();
+                                      showModalBottomSheet(
+                                        context: context,
+                                        useRootNavigator: true,
+                                        isScrollControlled: true,
+                                        builder: (context) {
+                                          return MorePanel(
+                                              videoItem: videoItem);
+                                        },
+                                      );
+                                    },
+                                    icon: Icon(
+                                      Icons.more_vert_outlined,
+                                      color:
+                                          Theme.of(context).colorScheme.outline,
+                                      size: 14,
+                                    ),
+                                  ),
+                                ),
+                              if (source == 'later') ...[
+                                IconButton(
+                                  style: ButtonStyle(
+                                    padding: WidgetStateProperty.all(
+                                        EdgeInsets.zero),
+                                  ),
+                                  onPressed: () => onPressedFn?.call(),
+                                  icon: Icon(
+                                    Icons.clear_outlined,
+                                    color:
+                                        Theme.of(context).colorScheme.outline,
+                                    size: 18,
+                                  ),
+                                )
+                              ],
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
-                ),
-              ],
-              const Spacer(),
-              if (showPubdate)
-                Text(
-                  Utils.dateFormat(videoItem.pubdate!),
-                  style: TextStyle(
-                      fontSize: 11,
-                      color: Theme.of(context).colorScheme.outline),
-                ),
-              if (showOwner)
-                Row(
-                  children: [
-                    Text(
-                      videoItem.owner.name as String,
-                      style: TextStyle(
-                        fontSize:
-                            Theme.of(context).textTheme.labelMedium!.fontSize,
-                        color: Theme.of(context).colorScheme.outline,
-                      ),
-                    ),
-                  ],
-                ),
-              Row(
-                children: [
-                  if (showView) ...[
-                    StatView(view: videoItem.stat.view as int),
-                    const SizedBox(width: 8),
-                  ],
-                  if (showDanmaku)
-                    StatDanMu(danmu: videoItem.stat.danmaku as int),
-                  const Spacer(),
-                  if (source == 'normal')
-                    SizedBox(
-                      width: 24,
-                      height: 24,
-                      child: IconButton(
-                        padding: EdgeInsets.zero,
-                        onPressed: () {
-                          feedBack();
-                          showModalBottomSheet(
-                            context: context,
-                            useRootNavigator: true,
-                            isScrollControlled: true,
-                            builder: (context) {
-                              return MorePanel(videoItem: videoItem);
-                            },
-                          );
-                        },
-                        icon: Icon(
-                          Icons.more_vert_outlined,
-                          color: Theme.of(context).colorScheme.outline,
-                          size: 14,
-                        ),
-                      ),
-                    ),
-                  if (source == 'later') ...[
-                    IconButton(
-                      style: ButtonStyle(
-                        padding: WidgetStateProperty.all(EdgeInsets.zero),
-                      ),
-                      onPressed: () => onPressedFn?.call(),
-                      icon: Icon(
-                        Icons.clear_outlined,
-                        color: Theme.of(context).colorScheme.outline,
-                        size: 18,
-                      ),
-                    )
-                  ],
                 ],
               ),
-            ],
-          ),
+            );
+          },
         ),
-      );
-    }
+      ),
+    );
   }
 }
 
@@ -496,13 +325,18 @@ class MorePanel extends StatelessWidget {
   final dynamic videoItem;
   const MorePanel({super.key, required this.videoItem});
 
-  Future<dynamic> menuActionHandler(String type) async {
-    switch (type) {
-      case 'block':
-        blockUser();
-        break;
-      default:
+  String get _ownerName {
+    if (videoItem is Video) {
+      return videoItem.username ?? '';
     }
+    return videoItem.owner?.name ?? videoItem.author ?? '';
+  }
+
+  int get _ownerId {
+    if (videoItem is Video) {
+      return videoItem.uid;
+    }
+    return videoItem.owner?.mid ?? videoItem.mid ?? 0;
   }
 
   void blockUser() async {
@@ -510,20 +344,10 @@ class MorePanel extends StatelessWidget {
       useSystem: true,
       animationType: SmartAnimationType.centerFade_otherSlide,
       builder: (BuildContext context) {
-        String username;
-        int userId;
-
-        if (videoItem is Video) {
-          username = videoItem.username;
-          userId = videoItem.uid;
-        } else {
-          username = videoItem.owner.name;
-          userId = videoItem.owner.mid;
-        }
-
         return AlertDialog(
           title: const Text('提示'),
-          content: Text('确定拉黑:$username($userId)?\n\n注：被拉黑的Up可以在隐私设置-黑名单管理中解除'),
+          content:
+              Text('确定拉黑:$_ownerName($_ownerId)?\n\n注：被拉黑的Up可以在隐私设置-黑名单管理中解除'),
           actions: [
             TextButton(
               onPressed: () => SmartDialog.dismiss(),
@@ -534,28 +358,13 @@ class MorePanel extends StatelessWidget {
             ),
             TextButton(
               onPressed: () async {
-                // 处理Ottohub的Video模型
-                if (videoItem is Video) {
-                  // 使用Ottohub的blockUser方法
-                  try {
-                    await OttohubService.blockUser(
-                      blockedId: userId,
-                    );
-                    SmartDialog.dismiss();
-                    SmartDialog.showToast('拉黑成功');
-                  } catch (error) {
-                    SmartDialog.dismiss();
-                    SmartDialog.showToast('拉黑失败: $error');
-                  }
-                } else {
-                  // 使用旧的API
-                  var res = await VideoHttp.relationMod(
-                    mid: userId,
-                    act: 5,
-                    reSrc: 11,
-                  );
+                try {
+                  await OttohubService.blockUser(blockedId: _ownerId);
                   SmartDialog.dismiss();
-                  SmartDialog.showToast(res['msg'] ?? '成功');
+                  SmartDialog.showToast('拉黑成功');
+                } catch (error) {
+                  SmartDialog.dismiss();
+                  SmartDialog.showToast('拉黑失败: $error');
                 }
               },
               child: const Text('确认'),
@@ -590,11 +399,11 @@ class MorePanel extends StatelessWidget {
             ),
           ),
           ListTile(
-            onTap: () async => await menuActionHandler('block'),
+            onTap: () async => blockUser(),
             minLeadingWidth: 0,
             leading: const Icon(Icons.block, size: 19),
             title: Text(
-              '拉黑up主 「${videoItem is Video ? videoItem.username : videoItem.owner.name}」',
+              '拉黑up主 「$_ownerName」',
               style: Theme.of(context).textTheme.titleSmall,
             ),
           ),

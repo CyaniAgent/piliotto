@@ -99,6 +99,8 @@ dependencies:
   screen_brightness: ^2.1.7
   wakelock_plus: ^1.1.6
   universal_platform: ^1.1.0
+  # 窗口管理（桌面端全屏）
+  window_manager: ^0.4.3
   # 进度条
   audio_video_progress_bar: ^2.0.3
   auto_orientation_v2: ^2.3.7

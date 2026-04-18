@@ -28,7 +28,7 @@ class _DynamicsPageState extends State<DynamicsPage>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 2, vsync: this);
     _tabController.addListener(_onTabChanged);
     _dynamicsController.queryFollowDynamic();
   }
@@ -50,7 +50,7 @@ class _DynamicsPageState extends State<DynamicsPage>
 
   void _onTabChanged() {
     if (_tabController.indexIsChanging) return;
-    final tabs = ['following', 'latest', 'popular'];
+    final tabs = ['latest', 'popular'];
     final tab = tabs[_tabController.index];
     _dynamicsController.onTabChanged(tab);
   }
@@ -77,7 +77,6 @@ class _DynamicsPageState extends State<DynamicsPage>
               child: TabBar(
                 controller: _tabController,
                 tabs: const [
-                  Tab(text: '关注'),
                   Tab(text: '最新'),
                   Tab(text: '热门'),
                 ],
@@ -88,7 +87,7 @@ class _DynamicsPageState extends State<DynamicsPage>
                 tabAlignment: TabAlignment.center,
                 onTap: (value) {
                   feedBack();
-                  final tabs = ['following', 'latest', 'popular'];
+                  final tabs = ['latest', 'popular'];
                   _dynamicsController.onTabChanged(tabs[value]);
                 },
               ),
@@ -98,10 +97,6 @@ class _DynamicsPageState extends State<DynamicsPage>
             child: TabBarView(
               controller: _tabController,
               children: [
-                _TabPage(
-                  tab: 'following',
-                  dynamicsController: _dynamicsController,
-                ),
                 _TabPage(
                   tab: 'latest',
                   dynamicsController: _dynamicsController,

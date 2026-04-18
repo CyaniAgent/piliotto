@@ -2,12 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
 import 'package:hive/hive.dart';
-import 'package:piliotto/api/services/following_service.dart';
 import 'package:piliotto/api/services/old_api_service.dart';
 import 'package:piliotto/api/services/api_service.dart';
 import 'package:piliotto/models/common/dynamics_type.dart';
 import 'package:piliotto/models/dynamics/result.dart';
-import 'package:piliotto/models/dynamics/up.dart';
 import 'package:piliotto/utils/feed_back.dart';
 import 'package:piliotto/utils/responsive_util.dart';
 
@@ -20,9 +18,6 @@ class DynamicsController extends GetxController {
   Rx<DynamicsType> dynamicsType = DynamicsType.values[0].obs;
   RxString dynamicsTypeLabel = '全部'.obs;
   final ScrollController scrollController = ScrollController();
-  Rx<FollowUpModel> upData = FollowUpModel().obs;
-  RxInt mid = (-1).obs;
-  Rx<UpItem> upInfo = UpItem().obs;
   List filterTypeList = [
     {
       'label': DynamicsType.all.labels,
@@ -54,19 +49,16 @@ class DynamicsController extends GetxController {
   Box setting = GStrorage.setting;
   RxInt crossAxisCount = 1.obs;
 
-  RxString currentTab = 'following'.obs;
+  RxString currentTab = 'latest'.obs;
   final Map<String, List<DynamicItemModel>> _tabDataCache = {
-    'following': [],
     'latest': [],
     'popular': [],
   };
   final Map<String, int> _tabOffsetCache = {
-    'following': 0,
     'latest': 0,
     'popular': 0,
   };
   final Map<String, bool> _tabHasLoadedCache = {
-    'following': false,
     'latest': false,
     'popular': false,
   };
@@ -122,9 +114,7 @@ class DynamicsController extends GetxController {
     try {
       List<DynamicItemModel> items;
 
-      if (tab == 'following') {
-        items = await _queryFollowingTimeline(type: type);
-      } else if (tab == 'latest') {
+      if (tab == 'latest') {
         items = await _queryLatestBlogs(type: type);
       } else {
         items = await _queryPopularBlogs(type: type);
@@ -152,26 +142,11 @@ class DynamicsController extends GetxController {
       }
     } on ApiException catch (e) {
       isLoadingDynamic.value = false;
-      if (e.message == 'Token required') {
-        SmartDialog.showToast('请先登录查看关注动态');
-      } else {
-        SmartDialog.showToast('请求失败: ${e.message}');
-      }
+      SmartDialog.showToast('请求失败: ${e.message}');
     } catch (e) {
       isLoadingDynamic.value = false;
       SmartDialog.showToast('请求失败: $e');
     }
-  }
-
-  Future<List<DynamicItemModel>> _queryFollowingTimeline(
-      {type = 'init'}) async {
-    final response = await FollowingService.getFollowingTimeline(
-      offset: _tabOffsetCache['following']!,
-      num: 10,
-    );
-    return response.timelineList.map((timelineItem) {
-      return DynamicItemModel.fromTimelineItem(timelineItem);
-    }).toList();
   }
 
   Future<List<DynamicItemModel>> _queryLatestBlogs({type = 'init'}) async {
@@ -256,53 +231,8 @@ class DynamicsController extends GetxController {
     }
   }
 
-  Future queryFollowUp({type = 'init'}) async {
-    if (!userLogin.value || userInfo == null) {
-      return {'status': false, 'msg': '账号未登录'};
-    }
-    if (type == 'init') {
-      upData.value.upList = <UpItem>[];
-    }
-    try {
-      final uid = userInfo.mid as int;
-      final response = await FollowingService.getFollowingList(
-        uid: uid,
-        offset: 0,
-        num: 12,
-      );
-      final upList = response.userList.map((user) {
-        return UpItem(
-          face: user.avatarUrl,
-          uname: user.username,
-          mid: user.uid,
-        );
-      }).toList();
-      upData.value.upList = upList;
-      if (upList.isEmpty) {
-        mid.value = -1;
-      }
-      upData.value.upList!.insertAll(0, [
-        UpItem(face: '', uname: '全部动态', mid: -1),
-        UpItem(face: userInfo.face, uname: '我', mid: userInfo.mid),
-      ]);
-      return {'status': true};
-    } on ApiException catch (e) {
-      return {'status': false, 'msg': e.message};
-    } catch (e) {
-      return {'status': false, 'msg': e.toString()};
-    }
-  }
-
-  onSelectUp(mid) async {
-    dynamicsType.value = DynamicsType.values[0];
-    dynamicsList.value = <DynamicItemModel>[];
-    page = 1;
-    queryFollowDynamic();
-  }
-
   onRefresh() async {
     page = 1;
-    await queryFollowUp();
     await queryFollowDynamic();
   }
 
@@ -317,17 +247,10 @@ class DynamicsController extends GetxController {
   }
 
   void resetSearch() {
-    mid.value = -1;
     dynamicsType.value = DynamicsType.values[0];
     initialValue.value = 0;
     SmartDialog.showToast('还原默认加载');
     dynamicsList.value = <DynamicItemModel>[];
     queryFollowDynamic();
-  }
-
-  void onTapUp(data) {
-    mid.value = data.mid;
-    upInfo.value = data;
-    onSelectUp(data.mid);
   }
 }

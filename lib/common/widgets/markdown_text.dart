@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
+import 'package:flutter_html/flutter_html.dart';
 import 'package:get/get.dart';
 import 'package:piliotto/utils/utils.dart';
 
@@ -38,7 +39,54 @@ class MarkdownText extends StatelessWidget {
     }
 
     final processedText = _processText(text);
+    final hasHtml = _hasHtmlTags(processedText);
     final hasMarkdown = _hasMarkdownSyntax(processedText);
+
+    if (hasHtml) {
+      return Html(
+        data: processedText,
+        style: {
+          'body': Style(
+            margin: Margins.zero,
+            padding: HtmlPaddings.zero,
+            fontSize: FontSize(defaultStyle?.fontSize ?? 14),
+            fontWeight: defaultStyle?.fontWeight,
+            color: defaultStyle?.color,
+            lineHeight: const LineHeight(1.6),
+          ),
+          'a': Style(
+            color: colorScheme.primary,
+            textDecoration: TextDecoration.underline,
+          ),
+          'strong': Style(
+            fontWeight: FontWeight.bold,
+          ),
+          'em': Style(
+            fontStyle: FontStyle.italic,
+          ),
+          'br': Style(
+            margin: Margins.zero,
+            padding: HtmlPaddings.zero,
+          ),
+        },
+        onLinkTap: (url, attributes, element) {
+          if (url == null) return;
+          if (enableTimeJump && onTimeJump != null && _isTimeFormat(url)) {
+            onTimeJump!(Duration(seconds: Utils.duration(url)));
+            return;
+          }
+          if (onLinkTap != null) {
+            onLinkTap!(url);
+          } else {
+            Get.toNamed('/webview', parameters: {
+              'url': url,
+              'type': 'url',
+              'pageTitle': url,
+            });
+          }
+        },
+      );
+    }
 
     if (!hasMarkdown) {
       final textWidget = Text(
@@ -146,6 +194,35 @@ class MarkdownText extends StatelessWidget {
         .replaceAll('&quot;', '"')
         .replaceAll('&apos;', "'")
         .replaceAll('&nbsp;', ' ');
+  }
+
+  bool _hasHtmlTags(String text) {
+    final htmlPatterns = [
+      RegExp(r'<br\s*/?>', caseSensitive: false),
+      RegExp(r'<a\s+[^>]*>', caseSensitive: false),
+      RegExp(r'</a>', caseSensitive: false),
+      RegExp(r'<strong>', caseSensitive: false),
+      RegExp(r'</strong>', caseSensitive: false),
+      RegExp(r'<em>', caseSensitive: false),
+      RegExp(r'</em>', caseSensitive: false),
+      RegExp(r'<b>', caseSensitive: false),
+      RegExp(r'</b>', caseSensitive: false),
+      RegExp(r'<i>', caseSensitive: false),
+      RegExp(r'</i>', caseSensitive: false),
+      RegExp(r'<p>', caseSensitive: false),
+      RegExp(r'</p>', caseSensitive: false),
+      RegExp(r'<div>', caseSensitive: false),
+      RegExp(r'</div>', caseSensitive: false),
+      RegExp(r'<span[^>]*>', caseSensitive: false),
+      RegExp(r'</span>', caseSensitive: false),
+    ];
+
+    for (final pattern in htmlPatterns) {
+      if (pattern.hasMatch(text)) {
+        return true;
+      }
+    }
+    return false;
   }
 
   bool _hasMarkdownSyntax(String text) {

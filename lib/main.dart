@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:device_info_plus/device_info_plus.dart';
+// import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_displaymode/flutter_displaymode.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -12,6 +12,8 @@ import 'package:hive/hive.dart';
 import 'package:piliotto/common/widgets/custom_toast.dart';
 import 'package:piliotto/models/common/color_type.dart';
 import 'package:piliotto/models/common/theme_type.dart';
+import 'package:universal_platform/universal_platform.dart';
+import 'package:window_manager/window_manager.dart';
 
 import 'package:piliotto/pages/video/detail/index.dart';
 import 'package:piliotto/router/app_pages.dart';
@@ -31,15 +33,30 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   MediaKit.ensureInitialized();
 
+  // 桌面端窗口初始化
+  if (UniversalPlatform.isDesktop) {
+    await windowManager.ensureInitialized();
+    const windowOptions = WindowOptions(
+      size: Size(1280, 720),
+      minimumSize: Size(640, 480),
+      center: true,
+      // backgroundColor: Colors.transparent,
+      skipTaskbar: false,
+      titleBarStyle: TitleBarStyle.normal,
+      title: 'PiliOtto',
+    );
+    await windowManager.waitUntilReadyToShow(windowOptions, () async {
+      await windowManager.show();
+      await windowManager.focus();
+    });
+  }
+
   // Catcher 2的日志级别设置已由系统处理
 
   await SystemChrome.setPreferredOrientations(
       [DeviceOrientation.portraitUp, DeviceOrientation.portraitDown]);
   await GStrorage.init();
   clearLogs();
-  // Ottohub 不需要初始化 Request 和 Cookie
-  // Request();
-  // await Request.setCookie();
 
   // 异常捕获 logo记录
   final Catcher2Options releaseConfig = Catcher2Options(
@@ -54,18 +71,18 @@ void main() async {
     },
   );
 
-  // 小白条、导航栏沉浸
-  if (Platform.isAndroid) {
-    final androidInfo = await DeviceInfoPlugin().androidInfo;
-    if (androidInfo.version.sdkInt >= 29) {
-      SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-    }
-    SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
-      systemNavigationBarColor: Colors.transparent,
-      systemNavigationBarDividerColor: Colors.transparent,
-      statusBarColor: Colors.transparent,
-    ));
-  }
+  // // 小白条、导航栏沉浸
+  // if (Platform.isAndroid) {
+  //   final androidInfo = await DeviceInfoPlugin().androidInfo;
+  //   if (androidInfo.version.sdkInt >= 29) {
+  //     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+  //   }
+  //   SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
+  //     systemNavigationBarColor: Colors.transparent,
+  //     systemNavigationBarDividerColor: Colors.transparent,
+  //     statusBarColor: Colors.transparent,
+  //   ));
+  // }
 
   PiliSchame.init();
   await GlobalDataCache().initialize();
