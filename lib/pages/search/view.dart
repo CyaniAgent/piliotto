@@ -37,10 +37,11 @@ class _SearchPageState extends State<SearchPage> {
     double screenWidth = MediaQuery.of(context).size.width;
     bool isWideScreen = ResponsiveUtil.isMd;
     double maxContentWidth = 800;
+    final ColorScheme colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
       appBar: AppBar(
-        title: _buildSearchInput(),
+        title: _buildSearchInput(colorScheme),
         actions: [
           TextButton(
             onPressed: () {
@@ -62,54 +63,32 @@ class _SearchPageState extends State<SearchPage> {
     );
   }
 
-  Widget _buildSearchInput() {
+  Widget _buildSearchInput(ColorScheme colorScheme) {
     return Hero(
       tag: 'searchBar',
-      child: Container(
-        height: 40,
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surfaceContainerHighest,
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Row(
-          children: [
-            const SizedBox(width: 12),
-            Icon(
-              Icons.search,
-              size: 20,
-              color: Theme.of(context).colorScheme.outline,
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: TextField(
-                controller: _videoSearchController.searchInputController,
-                focusNode: _videoSearchController.searchFocusNode,
-                textInputAction: TextInputAction.search,
-                autofocus: true,
-                onSubmitted: (value) {
-                  String keyword = value.trim();
-                  if (keyword.isEmpty &&
-                      hintText != null &&
-                      hintText!.isNotEmpty) {
-                    keyword = hintText!;
-                  }
-                  if (keyword.isNotEmpty) {
-                    _videoSearchController.searchVideos(keyword);
-                  }
-                },
-                decoration: InputDecoration(
-                  hintText: hintText ?? '搜索视频',
-                  hintStyle: TextStyle(
-                    fontSize: 14,
-                    color: Theme.of(context).colorScheme.outline,
-                  ),
-                  border: InputBorder.none,
-                  contentPadding: EdgeInsets.zero,
-                  isDense: true,
-                ),
-                style: const TextStyle(fontSize: 14),
-              ),
-            ),
+      child: Material(
+        color: Colors.transparent,
+        child: SearchBar(
+          controller: _videoSearchController.searchInputController,
+          focusNode: _videoSearchController.searchFocusNode,
+          hintText: hintText ?? '搜索视频',
+          autoFocus: true,
+          textInputAction: TextInputAction.search,
+          onSubmitted: (value) {
+            String keyword = value.trim();
+            if (keyword.isEmpty && hintText != null && hintText!.isNotEmpty) {
+              keyword = hintText!;
+            }
+            if (keyword.isNotEmpty) {
+              _videoSearchController.searchVideos(keyword);
+            }
+          },
+          leading: Icon(
+            Icons.search,
+            size: 20,
+            color: colorScheme.onSurfaceVariant,
+          ),
+          trailing: [
             ValueListenableBuilder<TextEditingValue>(
               valueListenable: _videoSearchController.searchInputController,
               builder: (context, value, child) {
@@ -121,14 +100,30 @@ class _SearchPageState extends State<SearchPage> {
                     icon: Icon(
                       Icons.clear,
                       size: 20,
-                      color: Theme.of(context).colorScheme.outline,
+                      color: colorScheme.onSurfaceVariant,
                     ),
                   );
                 }
-                return const SizedBox(width: 8);
+                return const SizedBox.shrink();
               },
             ),
           ],
+          constraints: const BoxConstraints(minHeight: 40, maxHeight: 40),
+          shape: WidgetStateProperty.all(
+            const RoundedRectangleBorder(
+              borderRadius: BorderRadius.all(Radius.circular(20)),
+            ),
+          ),
+          backgroundColor: WidgetStateProperty.all(
+            colorScheme.surfaceContainerHighest,
+          ),
+          elevation: WidgetStateProperty.all(0),
+          textStyle: WidgetStateProperty.all(
+            TextStyle(fontSize: 14, color: colorScheme.onSurface),
+          ),
+          hintStyle: WidgetStateProperty.all(
+            TextStyle(fontSize: 14, color: colorScheme.outline),
+          ),
         ),
       ),
     );

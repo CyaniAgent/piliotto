@@ -259,7 +259,7 @@ class UserInfoWidget extends StatelessWidget {
           ),
           const SizedBox(width: 8),
         ],
-        SearchBar(ctr: ctr),
+        HomeSearchBar(ctr: ctr),
         if (!isNarrowScreen) ...[
           if (userLogin.value) ...[
             const SizedBox(width: 4),
@@ -359,8 +359,8 @@ class _CustomTabsState extends State<CustomTabs> {
   }
 }
 
-class SearchBar extends StatelessWidget {
-  const SearchBar({
+class HomeSearchBar extends StatelessWidget {
+  const HomeSearchBar({
     Key? key,
     required this.ctr,
   }) : super(key: key);
@@ -371,40 +371,34 @@ class SearchBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final ColorScheme colorScheme = Theme.of(context).colorScheme;
     return Expanded(
-      child: Container(
-        height: 44,
-        clipBehavior: Clip.hardEdge,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(25),
-        ),
-        child: Material(
-          color: colorScheme.onSecondaryContainer.withValues(alpha: 0.05),
-          child: InkWell(
-            splashColor: colorScheme.primaryContainer.withValues(alpha: 0.3),
+      child: Material(
+        color: Colors.transparent,
+        child: Obx(
+          () => SearchBar(
+            hintText: ctr!.defaultSearch.value,
+            leading: Icon(
+              Icons.search_outlined,
+              color: colorScheme.onSurfaceVariant,
+            ),
             onTap: () => Get.toNamed('/search',
                 parameters: {'hintText': ctr!.defaultSearch.value}),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 14),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.search_outlined,
-                    color: colorScheme.onSecondaryContainer,
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Obx(
-                      () => Text(
-                        ctr!.defaultSearch.value,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(color: colorScheme.outline),
-                      ),
-                    ),
-                  ),
-                ],
+            constraints: const BoxConstraints(minHeight: 44, maxHeight: 44),
+            shape: WidgetStateProperty.all(
+              const RoundedRectangleBorder(
+                borderRadius: BorderRadius.all(Radius.circular(25)),
               ),
             ),
+            backgroundColor: WidgetStateProperty.all(
+              colorScheme.onSecondaryContainer.withValues(alpha: 0.05),
+            ),
+            elevation: WidgetStateProperty.all(0),
+            textStyle: WidgetStateProperty.all(
+              TextStyle(color: colorScheme.outline, fontSize: 14),
+            ),
+            hintStyle: WidgetStateProperty.all(
+              TextStyle(color: colorScheme.outline, fontSize: 14),
+            ),
+            readOnly: true,
           ),
         ),
       ),
