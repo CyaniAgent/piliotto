@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:get/get.dart';
+import 'package:hive/hive.dart';
 import 'package:piliotto/common/constants.dart';
 import 'package:piliotto/common/skeleton/video_card_h.dart';
 import 'package:piliotto/common/widgets/video_card_h.dart';
 import 'package:piliotto/pages/search/controller.dart';
 import 'package:piliotto/utils/responsive_util.dart';
+import 'package:piliotto/utils/storage.dart';
 
 class SearchPage extends StatefulWidget {
   const SearchPage({Key? key}) : super(key: key);
@@ -15,19 +18,73 @@ class SearchPage extends StatefulWidget {
 
 class _SearchPageState extends State<SearchPage> {
   late VideoSearchController _videoSearchController;
+  final SearchController _searchController = SearchController();
+  final Box _historyBox = GStrorage.historyword;
+  List<String> _searchHistory = [];
   String? hintText;
+  String? initialKeyword;
+  bool _hasSearched = false;
 
   @override
   void initState() {
     super.initState();
     _videoSearchController = Get.put(VideoSearchController());
     hintText = Get.parameters['hintText'];
+    initialKeyword = Get.parameters['keyword'];
+    _loadSearchHistory();
+
+    if (initialKeyword != null && initialKeyword!.isNotEmpty) {
+      _searchController.text = initialKeyword!;
+    }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_hasSearched && initialKeyword != null && initialKeyword!.isNotEmpty) {
+      _hasSearched = true;
+      SchedulerBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          _videoSearchController.searchVideos(initialKeyword!);
+        }
+      });
+    }
+  }
+
+  void _loadSearchHistory() {
+    final history = _historyBox.get('searchHistory', defaultValue: <String>[]);
+    setState(() {
+      _searchHistory = List<String>.from(history);
+    });
+  }
+
+  void _saveSearchHistory(String keyword) {
+    if (keyword.trim().isEmpty) return;
+    _searchHistory.remove(keyword);
+    _searchHistory.insert(0, keyword);
+    if (_searchHistory.length > 20) {
+      _searchHistory = _searchHistory.sublist(0, 20);
+    }
+    _historyBox.put('searchHistory', _searchHistory);
+  }
+
+  void _clearSearchHistory() {
+    setState(() {
+      _searchHistory.clear();
+    });
+    _historyBox.put('searchHistory', <String>[]);
+  }
+
+  void _onSearch(String keyword) {
+    if (keyword.trim().isEmpty) return;
+    _saveSearchHistory(keyword.trim());
+    _searchController.closeView(null);
+    _videoSearchController.searchVideos(keyword.trim());
   }
 
   @override
   void dispose() {
-    _videoSearchController.searchFocusNode.dispose();
-    _videoSearchController.searchInputController.dispose();
+    _searchController.dispose();
     _videoSearchController.scrollController.dispose();
     super.dispose();
   }
@@ -37,95 +94,163 @@ class _SearchPageState extends State<SearchPage> {
     double screenWidth = MediaQuery.of(context).size.width;
     bool isWideScreen = ResponsiveUtil.isMd;
     double maxContentWidth = 800;
-    final ColorScheme colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
       appBar: AppBar(
-        title: _buildSearchInput(colorScheme),
-        actions: [
-          TextButton(
-            onPressed: () {
-              String keyword =
-                  _videoSearchController.searchInputController.text.trim();
-              if (keyword.isEmpty && hintText != null && hintText!.isNotEmpty) {
-                keyword = hintText!;
-              }
-              if (keyword.isNotEmpty) {
-                _videoSearchController.searchVideos(keyword);
-              }
-            },
-            child: const Text('搜索'),
-          ),
-        ],
+        title: isWideScreen
+            ? Center(
+                child: SizedBox(
+                  width: 400,
+                  child: _buildSearchInput(),
+                ),
+              )
+            : _buildSearchInput(),
+        centerTitle: true,
+        titleSpacing: 0,
       ),
       body: Obx(
           () => _buildSearchResult(screenWidth, isWideScreen, maxContentWidth)),
     );
   }
 
-  Widget _buildSearchInput(ColorScheme colorScheme) {
-    return Hero(
-      tag: 'searchBar',
-      child: Material(
-        color: Colors.transparent,
-        child: SearchBar(
-          controller: _videoSearchController.searchInputController,
-          focusNode: _videoSearchController.searchFocusNode,
-          hintText: hintText ?? '搜索视频',
-          autoFocus: true,
-          textInputAction: TextInputAction.search,
-          onSubmitted: (value) {
-            String keyword = value.trim();
-            if (keyword.isEmpty && hintText != null && hintText!.isNotEmpty) {
-              keyword = hintText!;
-            }
-            if (keyword.isNotEmpty) {
-              _videoSearchController.searchVideos(keyword);
-            }
+  Widget _buildSearchInput() {
+    return SearchAnchor(
+      searchController: _searchController,
+      viewHintText: hintText ?? '搜索视频',
+      viewOnSubmitted: (value) {
+        _onSearch(value);
+      },
+      viewTrailing: [
+        IconButton(
+          onPressed: () {
+            _onSearch(_searchController.text);
           },
-          leading: Icon(
-            Icons.search,
-            size: 20,
-            color: colorScheme.onSurfaceVariant,
-          ),
+          icon: const Icon(Icons.search),
+        ),
+      ],
+      builder: (context, controller) {
+        return SearchBar(
+          controller: controller,
+          hintText: hintText ?? '搜索视频',
+          leading: const Icon(Icons.search_outlined),
+          onTap: () {
+            controller.openView();
+          },
+          onChanged: (_) {
+            controller.openView();
+          },
+          onSubmitted: (value) {
+            _onSearch(value);
+          },
           trailing: [
             ValueListenableBuilder<TextEditingValue>(
-              valueListenable: _videoSearchController.searchInputController,
+              valueListenable: controller,
               builder: (context, value, child) {
                 if (value.text.isNotEmpty) {
                   return IconButton(
                     onPressed: () {
-                      _videoSearchController.searchInputController.clear();
+                      controller.clear();
                     },
-                    icon: Icon(
-                      Icons.clear,
-                      size: 20,
-                      color: colorScheme.onSurfaceVariant,
-                    ),
+                    icon: const Icon(Icons.clear),
                   );
                 }
                 return const SizedBox.shrink();
               },
             ),
           ],
-          constraints: const BoxConstraints(minHeight: 40, maxHeight: 40),
-          shape: WidgetStateProperty.all(
-            const RoundedRectangleBorder(
-              borderRadius: BorderRadius.all(Radius.circular(20)),
+          elevation: WidgetStateProperty.resolveWith((states) {
+            if (states.contains(WidgetState.focused)) {
+              return 3.0;
+            }
+            return 0.0;
+          }),
+        );
+      },
+      suggestionsBuilder: (context, controller) {
+        final query = controller.text.toLowerCase();
+        final filteredHistory = query.isEmpty
+            ? _searchHistory
+            : _searchHistory
+                .where((item) => item.toLowerCase().contains(query))
+                .toList();
+
+        if (filteredHistory.isEmpty && query.isEmpty) {
+          return [
+            Center(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Text(
+                  '暂无搜索历史',
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.outline,
+                  ),
+                ),
+              ),
             ),
-          ),
-          backgroundColor: WidgetStateProperty.all(
-            colorScheme.surfaceContainerHighest,
-          ),
-          elevation: WidgetStateProperty.all(0),
-          textStyle: WidgetStateProperty.all(
-            TextStyle(fontSize: 14, color: colorScheme.onSurface),
-          ),
-          hintStyle: WidgetStateProperty.all(
-            TextStyle(fontSize: 14, color: colorScheme.outline),
-          ),
-        ),
-      ),
+          ];
+        }
+
+        final List<Widget> suggestions = [
+          if (_searchHistory.isNotEmpty) ...[
+            Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 16.0,
+                vertical: 8.0,
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    '搜索历史',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Theme.of(context).colorScheme.outline,
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: _clearSearchHistory,
+                    style: TextButton.styleFrom(
+                      minimumSize: Size.zero,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                    child: const Text('清空'),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ];
+
+        suggestions.addAll(
+          filteredHistory.map((item) {
+            return ListTile(
+              leading: const Icon(Icons.history, size: 20),
+              title: Text(item),
+              trailing: IconButton(
+                icon: const Icon(Icons.close, size: 18),
+                onPressed: () {
+                  setState(() {
+                    _searchHistory.remove(item);
+                    _historyBox.put('searchHistory', _searchHistory);
+                  });
+                },
+              ),
+              onTap: () {
+                controller.closeView(item);
+                _onSearch(item);
+              },
+              dense: true,
+              visualDensity: VisualDensity.compact,
+            );
+          }),
+        );
+
+        return suggestions;
+      },
     );
   }
 

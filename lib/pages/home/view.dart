@@ -5,10 +5,12 @@ import 'package:easy_debounce/easy_throttle.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
+import 'package:hive/hive.dart';
 import 'package:piliotto/common/widgets/network_img_layer.dart';
 import 'package:piliotto/pages/main/controller.dart';
 import 'package:piliotto/pages/mine/index.dart';
 import 'package:piliotto/utils/feed_back.dart';
+import 'package:piliotto/utils/storage.dart';
 import './controller.dart';
 
 class HomePage extends StatefulWidget {
@@ -359,7 +361,7 @@ class _CustomTabsState extends State<CustomTabs> {
   }
 }
 
-class HomeSearchBar extends StatelessWidget {
+class HomeSearchBar extends StatefulWidget {
   const HomeSearchBar({
     Key? key,
     required this.ctr,
@@ -368,37 +370,185 @@ class HomeSearchBar extends StatelessWidget {
   final HomeController? ctr;
 
   @override
+  State<HomeSearchBar> createState() => _HomeSearchBarState();
+}
+
+class _HomeSearchBarState extends State<HomeSearchBar> {
+  final SearchController _searchController = SearchController();
+  final Box _historyBox = GStrorage.historyword;
+  List<String> _searchHistory = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSearchHistory();
+  }
+
+  void _loadSearchHistory() {
+    final history = _historyBox.get('searchHistory', defaultValue: <String>[]);
+    setState(() {
+      _searchHistory = List<String>.from(history);
+    });
+  }
+
+  void _saveSearchHistory(String keyword) {
+    if (keyword.trim().isEmpty) return;
+    _searchHistory.remove(keyword);
+    _searchHistory.insert(0, keyword);
+    if (_searchHistory.length > 20) {
+      _searchHistory = _searchHistory.sublist(0, 20);
+    }
+    _historyBox.put('searchHistory', _searchHistory);
+  }
+
+  void _clearSearchHistory() {
+    setState(() {
+      _searchHistory.clear();
+    });
+    _historyBox.put('searchHistory', <String>[]);
+  }
+
+  void _onSearch(String keyword) {
+    if (keyword.trim().isEmpty) return;
+    _saveSearchHistory(keyword.trim());
+    _searchController.closeView(null);
+    Future.delayed(const Duration(milliseconds: 100), () {
+      Get.toNamed('/search', parameters: {'keyword': keyword.trim()});
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final ColorScheme colorScheme = Theme.of(context).colorScheme;
+    final isWideScreen = MediaQuery.of(context).size.width > 600;
     return Expanded(
-      child: Material(
-        color: Colors.transparent,
+      child: Center(
         child: Obx(
-          () => SearchBar(
-            hintText: ctr!.defaultSearch.value,
-            leading: Icon(
-              Icons.search_outlined,
-              color: colorScheme.onSurfaceVariant,
+          () => ConstrainedBox(
+            constraints: BoxConstraints(
+              maxWidth: isWideScreen ? 500 : double.infinity,
             ),
-            onTap: () => Get.toNamed('/search',
-                parameters: {'hintText': ctr!.defaultSearch.value}),
-            constraints: const BoxConstraints(minHeight: 44, maxHeight: 44),
-            shape: WidgetStateProperty.all(
-              const RoundedRectangleBorder(
-                borderRadius: BorderRadius.all(Radius.circular(25)),
-              ),
+            child: SearchAnchor(
+              searchController: _searchController,
+              viewHintText: widget.ctr!.defaultSearch.value,
+              viewOnSubmitted: (value) {
+                _onSearch(value);
+              },
+              viewTrailing: [
+                IconButton(
+                  onPressed: () {
+                    _onSearch(_searchController.text);
+                  },
+                  icon: const Icon(Icons.search),
+                ),
+              ],
+              builder: (context, controller) {
+                return SearchBar(
+                  controller: controller,
+                  hintText: widget.ctr!.defaultSearch.value,
+                  leading: const Icon(Icons.search_outlined),
+                  onTap: () {
+                    controller.openView();
+                  },
+                  onChanged: (_) {
+                    controller.openView();
+                  },
+                  onSubmitted: (value) {
+                    _onSearch(value);
+                  },
+                  elevation: WidgetStateProperty.resolveWith((states) {
+                    if (states.contains(WidgetState.focused)) {
+                      return 3.0;
+                    }
+                    return 0.0;
+                  }),
+                );
+              },
+              suggestionsBuilder: (context, controller) {
+                final query = controller.text.toLowerCase();
+                final filteredHistory = query.isEmpty
+                    ? _searchHistory
+                    : _searchHistory
+                        .where((item) => item.toLowerCase().contains(query))
+                        .toList();
+
+                if (filteredHistory.isEmpty && query.isEmpty) {
+                  return [
+                    Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Text(
+                          '暂无搜索历史',
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.outline,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ];
+                }
+
+                final List<Widget> suggestions = [
+                  if (_searchHistory.isNotEmpty) ...[
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16.0,
+                        vertical: 8.0,
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            '搜索历史',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Theme.of(context).colorScheme.outline,
+                            ),
+                          ),
+                          TextButton(
+                            onPressed: _clearSearchHistory,
+                            style: TextButton.styleFrom(
+                              minimumSize: Size.zero,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
+                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            ),
+                            child: const Text('清空'),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ];
+
+                suggestions.addAll(
+                  filteredHistory.map((item) {
+                    return ListTile(
+                      leading: const Icon(Icons.history, size: 20),
+                      title: Text(item),
+                      trailing: IconButton(
+                        icon: const Icon(Icons.close, size: 18),
+                        onPressed: () {
+                          setState(() {
+                            _searchHistory.remove(item);
+                            _historyBox.put('searchHistory', _searchHistory);
+                          });
+                        },
+                      ),
+                      onTap: () {
+                        controller.closeView(item);
+                        _onSearch(item);
+                      },
+                      dense: true,
+                      visualDensity: VisualDensity.compact,
+                    );
+                  }),
+                );
+
+                return suggestions;
+              },
             ),
-            backgroundColor: WidgetStateProperty.all(
-              colorScheme.onSecondaryContainer.withValues(alpha: 0.05),
-            ),
-            elevation: WidgetStateProperty.all(0),
-            textStyle: WidgetStateProperty.all(
-              TextStyle(color: colorScheme.outline, fontSize: 14),
-            ),
-            hintStyle: WidgetStateProperty.all(
-              TextStyle(color: colorScheme.outline, fontSize: 14),
-            ),
-            readOnly: true,
           ),
         ),
       ),

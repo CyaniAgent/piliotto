@@ -51,8 +51,6 @@ void main() async {
     });
   }
 
-  // Catcher 2的日志级别设置已由系统处理
-
   await SystemChrome.setPreferredOrientations(
       [DeviceOrientation.portraitUp, DeviceOrientation.portraitDown]);
   await GStrorage.init();
