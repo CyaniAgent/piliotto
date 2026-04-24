@@ -5,6 +5,7 @@ import 'package:hive/hive.dart';
 import 'package:piliotto/api/models/video.dart';
 import 'package:piliotto/api/services/video_service.dart';
 import 'package:piliotto/models/user/info.dart';
+import 'package:piliotto/utils/responsive_util.dart';
 import 'package:piliotto/utils/storage.dart';
 
 class HistoryController extends GetxController {
@@ -16,6 +17,7 @@ class HistoryController extends GetxController {
   RxBool isLoading = false.obs;
   RxBool enableMultiple = false.obs;
   RxInt checkedCount = 0.obs;
+  RxInt crossAxisCount = 1.obs;
   Box userInfoCache = GStrorage.userInfo;
   UserInfoData? userInfo;
 
@@ -23,7 +25,21 @@ class HistoryController extends GetxController {
   void onInit() {
     super.onInit();
     userInfo = userInfoCache.get('userInfoCache');
+    updateCrossAxisCount();
     queryHistoryList();
+  }
+
+  void updateCrossAxisCount() {
+    try {
+      int baseCount = ResponsiveUtil.calculateCrossAxisCount(
+        baseCount: 1,
+        minCount: 1,
+        maxCount: 3,
+      );
+      crossAxisCount.value = baseCount;
+    } catch (e) {
+      crossAxisCount.value = 1;
+    }
   }
 
   Future queryHistoryList({type = 'init'}) async {

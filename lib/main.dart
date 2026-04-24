@@ -243,7 +243,7 @@ class BuildMainApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final SnackBarThemeData snackBarTheme = SnackBarThemeData(
+    final SnackBarThemeData lightSnackBarTheme = SnackBarThemeData(
       actionTextColor: lightColorScheme.primary,
       backgroundColor: lightColorScheme.secondaryContainer,
       closeIconColor: lightColorScheme.secondary,
@@ -251,13 +251,33 @@ class BuildMainApp extends StatelessWidget {
       elevation: 20,
     );
 
+    final SnackBarThemeData darkSnackBarTheme = SnackBarThemeData(
+      actionTextColor: darkColorScheme.primary,
+      backgroundColor: darkColorScheme.secondaryContainer,
+      closeIconColor: darkColorScheme.secondary,
+      contentTextStyle: TextStyle(color: darkColorScheme.secondary),
+      elevation: 20,
+    );
+
+    ThemeMode appThemeMode;
+    switch (currentThemeValue) {
+      case ThemeType.light:
+        appThemeMode = ThemeMode.light;
+        break;
+      case ThemeType.dark:
+        appThemeMode = ThemeMode.dark;
+        break;
+      case ThemeType.system:
+        appThemeMode = ThemeMode.system;
+        break;
+    }
+
     return GetMaterialApp(
       title: 'PiliOtto',
+      themeMode: appThemeMode,
       theme: ThemeData(
-        colorScheme: currentThemeValue == ThemeType.dark
-            ? darkColorScheme
-            : lightColorScheme,
-        snackBarTheme: snackBarTheme,
+        colorScheme: lightColorScheme,
+        snackBarTheme: lightSnackBarTheme,
         pageTransitionsTheme: const PageTransitionsTheme(
           builders: <TargetPlatform, PageTransitionsBuilder>{
             TargetPlatform.android: ZoomPageTransitionsBuilder(
@@ -267,10 +287,8 @@ class BuildMainApp extends StatelessWidget {
         ),
       ),
       darkTheme: ThemeData(
-        colorScheme: currentThemeValue == ThemeType.light
-            ? lightColorScheme
-            : darkColorScheme,
-        snackBarTheme: snackBarTheme,
+        colorScheme: darkColorScheme,
+        snackBarTheme: darkSnackBarTheme,
       ),
       localizationsDelegates: const [
         GlobalCupertinoLocalizations.delegate,

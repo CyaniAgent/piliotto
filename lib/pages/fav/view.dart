@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import 'package:piliotto/common/skeleton/video_card_h.dart';
 import 'package:piliotto/common/widgets/video_card_h.dart';
 import 'package:piliotto/pages/fav/index.dart';
+import 'package:piliotto/utils/responsive_util.dart';
 
 class FavPage extends StatefulWidget {
   const FavPage({super.key});
@@ -33,6 +34,12 @@ class _FavPageState extends State<FavPage> {
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _favController.updateCrossAxisCount();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
@@ -56,11 +63,23 @@ class _FavPageState extends State<FavPage> {
     return Obx(() {
       if (_favController.isLoading.value &&
           _favController.favoriteList.isEmpty) {
-        return ListView.builder(
-          itemBuilder: (context, index) {
-            return const VideoCardHSkeleton();
-          },
-          itemCount: 10,
+        return CustomScrollView(
+          slivers: [
+            SliverPadding(
+              padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
+              sliver: SliverGrid(
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: _favController.crossAxisCount.value,
+                  mainAxisSpacing: 16,
+                  crossAxisSpacing: 16,
+                  childAspectRatio: 3 / 1,
+                ),
+                delegate: SliverChildBuilderDelegate((context, index) {
+                  return const VideoCardHSkeleton();
+                }, childCount: 10),
+              ),
+            ),
+          ],
         );
       }
 
@@ -93,39 +112,43 @@ class _FavPageState extends State<FavPage> {
         );
       }
 
-      return ListView.builder(
+      return CustomScrollView(
         controller: scrollController,
-        itemCount: _favController.favoriteList.length + 1,
-        itemBuilder: (context, index) {
-          if (index == _favController.favoriteList.length) {
-            return Obx(() => Container(
-                  height: 60,
-                  alignment: Alignment.center,
-                  child: Text(
+        slivers: [
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
+            sliver: SliverGrid(
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: _favController.crossAxisCount.value,
+                mainAxisSpacing: 16,
+                crossAxisSpacing: 16,
+                childAspectRatio: 3 / 1,
+              ),
+              delegate: SliverChildBuilderDelegate((context, index) {
+                final video = _favController.favoriteList[index];
+                return VideoCardH(videoItem: video);
+              }, childCount: _favController.favoriteList.length),
+            ),
+          ),
+          SliverToBoxAdapter(
+            child: Container(
+              height: 60,
+              alignment: Alignment.center,
+              child: Obx(() => Text(
                     _favController.hasMore.value ? '加载中...' : '没有更多了',
                     style: TextStyle(
                       color: Theme.of(context).colorScheme.outline,
                       fontSize: 13,
                     ),
-                  ),
-                ));
-          }
-          final video = _favController.favoriteList[index];
-          return Dismissible(
-            key: Key('fav_${video.vid}'),
-            direction: DismissDirection.endToStart,
-            background: Container(
-              alignment: Alignment.centerRight,
-              padding: const EdgeInsets.only(right: 20),
-              color: Colors.red,
-              child: const Icon(Icons.delete, color: Colors.white),
+                  )),
             ),
-            onDismissed: (direction) {
-              _favController.removeFavorite(video.vid);
-            },
-            child: VideoCardH(videoItem: video),
-          );
-        },
+          ),
+          SliverToBoxAdapter(
+            child: SizedBox(
+              height: MediaQuery.of(context).padding.bottom + 10,
+            ),
+          ),
+        ],
       );
     });
   }

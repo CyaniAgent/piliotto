@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:piliotto/common/constants.dart';
 import 'package:piliotto/common/widgets/video_card_h.dart';
 import 'package:piliotto/common/skeleton/video_card_h.dart';
+import 'package:piliotto/utils/feed_back.dart';
 import './controller.dart';
 
 class RankPage extends StatefulWidget {
@@ -56,6 +57,12 @@ class _RankPageState extends State<RankPage>
         isScrollable: false,
         dividerColor: Colors.transparent,
         tabAlignment: TabAlignment.center,
+        onTap: (value) {
+          feedBack();
+          if (value == _rankController.currentTabIndex.value) {
+            _rankController.animateToTop();
+          }
+        },
       ),
     );
   }

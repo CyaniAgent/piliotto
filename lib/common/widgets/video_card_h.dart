@@ -112,11 +112,6 @@ class VideoCardH extends StatelessWidget {
           'heroTag': heroTag,
         });
       },
-      onLongPress: () => imageSaveDialog(
-        context,
-        videoItem,
-        SmartDialog.dismiss,
-      ),
       child: Padding(
         padding: const EdgeInsets.fromLTRB(
             StyleString.safeSpace, 5, StyleString.safeSpace, 5),

@@ -5,6 +5,7 @@ import 'package:piliotto/common/skeleton/video_card_h.dart';
 import 'package:piliotto/common/widgets/http_error.dart';
 import 'package:piliotto/common/widgets/no_data.dart';
 import 'package:piliotto/pages/history/index.dart';
+import 'package:piliotto/utils/responsive_util.dart';
 import 'package:piliotto/utils/route_push.dart';
 
 import 'widgets/item.dart';
@@ -38,6 +39,12 @@ class _HistoryPageState extends State<HistoryPage> {
         }
       },
     );
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _historyController.updateCrossAxisCount();
   }
 
   @override
@@ -84,58 +91,79 @@ class _HistoryPageState extends State<HistoryPage> {
         child: CustomScrollView(
           controller: _historyController.scrollController,
           slivers: [
-            FutureBuilder(
-              future: _futureBuilderFuture,
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.done) {
-                  if (snapshot.data == null) {
-                    return const SliverToBoxAdapter(child: SizedBox());
-                  }
-                  Map? data = snapshot.data;
-                  if (data != null && data['status']) {
-                    return Obx(
-                      () => _historyController.historyList.isNotEmpty
-                          ? SliverList(
-                              delegate: SliverChildBuilderDelegate(
-                                  (context, index) {
-                                return HistoryItem(
-                                  videoItem:
-                                      _historyController.historyList[index],
-                                );
-                              },
-                                  childCount:
-                                      _historyController.historyList.length),
-                            )
-                          : _historyController.isLoadingMore.value
-                              ? const SliverToBoxAdapter(
-                                  child: Center(child: Text('加载中')),
-                                )
-                              : const NoData(),
-                    );
+            SliverPadding(
+              padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
+              sliver: FutureBuilder(
+                future: _futureBuilderFuture,
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.done) {
+                    if (snapshot.data == null) {
+                      return const SliverToBoxAdapter(child: SizedBox());
+                    }
+                    Map? data = snapshot.data;
+                    if (data != null && data['status']) {
+                      return Obx(
+                        () => _historyController.historyList.isNotEmpty
+                            ? SliverGrid(
+                                gridDelegate:
+                                    SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount:
+                                      _historyController.crossAxisCount.value,
+                                  mainAxisSpacing: 16,
+                                  crossAxisSpacing: 16,
+                                  childAspectRatio: 3 / 1,
+                                ),
+                                delegate: SliverChildBuilderDelegate(
+                                    (context, index) {
+                                  return HistoryItem(
+                                    videoItem:
+                                        _historyController.historyList[index],
+                                  );
+                                },
+                                    childCount:
+                                        _historyController.historyList.length),
+                              )
+                            : SliverToBoxAdapter(
+                                child: _historyController.isLoadingMore.value
+                                    ? const Center(child: Text('加载中'))
+                                    : const NoData(),
+                              ),
+                      );
+                    } else {
+                      return SliverToBoxAdapter(
+                        child: HttpError(
+                          errMsg: data?['msg'] ?? '请求异常',
+                          btnText: data?['code'] == -101 ? '去登录' : null,
+                          fn: () {
+                            if (data?['code'] == -101) {
+                              RoutePush.loginRedirectPush();
+                            } else {
+                              setState(() {
+                                _futureBuilderFuture =
+                                    _historyController.queryHistoryList();
+                              });
+                            }
+                          },
+                        ),
+                      );
+                    }
                   } else {
-                    return HttpError(
-                      errMsg: data?['msg'] ?? '请求异常',
-                      btnText: data?['code'] == -101 ? '去登录' : null,
-                      fn: () {
-                        if (data?['code'] == -101) {
-                          RoutePush.loginRedirectPush();
-                        } else {
-                          setState(() {
-                            _futureBuilderFuture =
-                                _historyController.queryHistoryList();
-                          });
-                        }
-                      },
+                    return SliverGrid(
+                      gridDelegate:
+                          SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount:
+                            _historyController.crossAxisCount.value,
+                        mainAxisSpacing: 16,
+                        crossAxisSpacing: 16,
+                        childAspectRatio: 3 / 1,
+                      ),
+                      delegate: SliverChildBuilderDelegate((context, index) {
+                        return const VideoCardHSkeleton();
+                      }, childCount: 10),
                     );
                   }
-                } else {
-                  return SliverList(
-                    delegate: SliverChildBuilderDelegate((context, index) {
-                      return const VideoCardHSkeleton();
-                    }, childCount: 10),
-                  );
-                }
-              },
+                },
+              ),
             ),
             SliverToBoxAdapter(
               child: SizedBox(

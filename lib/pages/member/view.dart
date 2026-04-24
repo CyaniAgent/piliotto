@@ -11,6 +11,7 @@ import 'package:piliotto/pages/fav/index.dart';
 import 'package:piliotto/pages/member/index.dart';
 import 'package:piliotto/pages/member_dynamics/index.dart';
 import 'package:piliotto/utils/feed_back.dart';
+import 'package:piliotto/utils/responsive_util.dart';
 import 'package:piliotto/utils/utils.dart';
 
 class MemberPage extends StatefulWidget {
@@ -29,6 +30,7 @@ class _MemberPageState extends State<MemberPage> with TickerProviderStateMixin {
   late int mid;
   late TabController _tabController;
   late List<String> _tabs;
+  int _previousTabIndex = 0;
 
   @override
   void initState() {
@@ -37,21 +39,44 @@ class _MemberPageState extends State<MemberPage> with TickerProviderStateMixin {
     heroTag = Get.arguments['heroTag'] ?? Utils.makeHeroTag(mid);
     _memberController = Get.put(MemberController(), tag: heroTag);
     _dynamicsController = Get.put(MemberDynamicsController(), tag: heroTag);
+    _tabs = ['视频', '动态'];
+    _tabController = TabController(length: _tabs.length, vsync: this);
+    _previousTabIndex = 0;
     _futureBuilderFuture = _initData();
   }
 
   Future<void> _initData() async {
     await _memberController.getInfo();
-    _tabs = _memberController.isOwner.value ? ['视频', '动态', '收藏'] : ['视频', '动态'];
-    _tabController = TabController(length: _tabs.length, vsync: this);
-    _tabController.addListener(_onTabChanged);
+    final newTabs =
+        _memberController.isOwner.value ? ['视频', '动态', '收藏'] : ['视频', '动态'];
+    if (newTabs.length != _tabs.length) {
+      _tabController.dispose();
+      _tabController = TabController(length: newTabs.length, vsync: this);
+      _tabs = newTabs;
+    }
     await _memberController.getMemberArchive('init');
   }
 
-  void _onTabChanged() {
-    if (_tabController.indexIsChanging) return;
+  void _onTapTab(int index) {
     feedBack();
-    _loadTabData(_tabController.index);
+    if (index == _previousTabIndex) {
+      _scrollToTop();
+    }
+    _previousTabIndex = index;
+    _tabController.animateTo(index);
+    _loadTabData(index);
+  }
+
+  void _scrollToTop() {
+    if (_scrollController.hasClients) {
+      if (_scrollController.offset >= MediaQuery.of(context).size.height * 3) {
+        _scrollController.jumpTo(0);
+      } else {
+        _scrollController.animateTo(0,
+            duration: const Duration(milliseconds: 500),
+            curve: Curves.easeInOut);
+      }
+    }
   }
 
   Future<void> _loadTabData(int index) async {
@@ -73,7 +98,6 @@ class _MemberPageState extends State<MemberPage> with TickerProviderStateMixin {
   @override
   void dispose() {
     _scrollController.dispose();
-    _tabController.removeListener(_onTabChanged);
     _tabController.dispose();
     super.dispose();
   }
@@ -105,24 +129,31 @@ class _MemberPageState extends State<MemberPage> with TickerProviderStateMixin {
 
   Widget _buildLoadingScaffold(ThemeData theme) {
     return Scaffold(
-      appBar: AppBar(leading: IconButton(icon: const Icon(Icons.arrow_back), onPressed: () => Get.back())),
+      appBar: AppBar(
+          leading: IconButton(
+              icon: const Icon(Icons.arrow_back), onPressed: () => Get.back())),
       body: const Center(child: CircularProgressIndicator()),
     );
   }
 
   Widget _buildErrorScaffold(ThemeData theme) {
     return Scaffold(
-      appBar: AppBar(leading: IconButton(icon: const Icon(Icons.arrow_back), onPressed: () => Get.back())),
+      appBar: AppBar(
+          leading: IconButton(
+              icon: const Icon(Icons.arrow_back), onPressed: () => Get.back())),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(Icons.error_outline, size: 64, color: theme.colorScheme.error),
             const SizedBox(height: 16),
-            Text('加载失败', style: TextStyle(fontSize: 18, color: theme.colorScheme.onSurface)),
+            Text('加载失败',
+                style: TextStyle(
+                    fontSize: 18, color: theme.colorScheme.onSurface)),
             const SizedBox(height: 24),
             FilledButton.icon(
-              onPressed: () => setState(() => _futureBuilderFuture = _initData()),
+              onPressed: () =>
+                  setState(() => _futureBuilderFuture = _initData()),
               icon: const Icon(Icons.refresh),
               label: const Text('重试'),
             ),
@@ -143,9 +174,10 @@ class _MemberPageState extends State<MemberPage> with TickerProviderStateMixin {
               TabBar(
                 controller: _tabController,
                 tabs: _tabs.map((t) => Tab(text: t)).toList(),
-                isScrollable: false,
+                isScrollable: true,
                 dividerColor: Colors.transparent,
                 tabAlignment: TabAlignment.center,
+                onTap: _onTapTab,
               ),
             ),
             pinned: true,
@@ -180,11 +212,61 @@ class _MemberPageState extends State<MemberPage> with TickerProviderStateMixin {
         icon: Obx(() => Icon(Icons.arrow_back, color: _getIconColor(theme))),
         onPressed: () => Get.back(),
       ),
+      title: ListenableBuilder(
+        listenable: _scrollController,
+        builder: (context, _) {
+          final name = _memberController.memberInfo.value.name;
+          if (name == null || name.isEmpty) return const SizedBox();
+          // 只在折叠状态（已滚动超过工具栏高度）时显示 title
+          final isCollapsed = _scrollController.hasClients &&
+              _scrollController.offset > kToolbarHeight;
+          if (!isCollapsed) return const SizedBox();
+          return Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ClipOval(
+                child: NetworkImgLayer(
+                  src: _memberController.face.value,
+                  width: 32,
+                  height: 32,
+                  type: 'avatar',
+                ),
+              ),
+              const SizedBox(width: 10),
+              Flexible(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      name,
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w500,
+                        color: theme.colorScheme.onSurface,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    Text(
+                      'UID: $mid',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: theme.colorScheme.onSurface.withAlpha(180),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          );
+        },
+      ),
       actions: [
         if (_memberController.memberInfo.value.name != null) ...[
           IconButton(
-            onPressed: () => Get.toNamed('/memberSearch?mid=$mid&uname=${_memberController.memberInfo.value.name}'),
-            icon: Obx(() => Icon(Icons.search_outlined, color: _getIconColor(theme))),
+            onPressed: () => Get.toNamed(
+                '/memberSearch?mid=$mid&uname=${_memberController.memberInfo.value.name}'),
+            icon: Obx(
+                () => Icon(Icons.search_outlined, color: _getIconColor(theme))),
           ),
           PopupMenuButton(
             icon: Obx(() => Icon(Icons.more_vert, color: _getIconColor(theme))),
@@ -197,7 +279,9 @@ class _MemberPageState extends State<MemberPage> with TickerProviderStateMixin {
                     children: [
                       const Icon(Icons.block, size: 19),
                       const SizedBox(width: 10),
-                      Obx(() => Text(_memberController.attribute.value != 128 ? '加入黑名单' : '移除黑名单')),
+                      Obx(() => Text(_memberController.attribute.value != 128
+                          ? '加入黑名单'
+                          : '移除黑名单')),
                     ],
                   ),
                 ),
@@ -221,7 +305,8 @@ class _MemberPageState extends State<MemberPage> with TickerProviderStateMixin {
       pinned: true,
       snap: true,
       expandedHeight: 280,
-      flexibleSpace: FlexibleSpaceBar(background: _buildHeaderWithUserInfo(theme)),
+      flexibleSpace:
+          FlexibleSpaceBar(background: _buildHeaderWithUserInfo(theme)),
     );
   }
 
@@ -283,7 +368,9 @@ class _MemberPageState extends State<MemberPage> with TickerProviderStateMixin {
         ),
         boxShadow: [
           BoxShadow(
-            color: hasCover ? Colors.black.withAlpha(80) : theme.colorScheme.shadow.withAlpha(50),
+            color: hasCover
+                ? Colors.black.withAlpha(80)
+                : theme.colorScheme.shadow.withAlpha(50),
             blurRadius: 10,
             spreadRadius: 2,
           ),
@@ -293,7 +380,8 @@ class _MemberPageState extends State<MemberPage> with TickerProviderStateMixin {
         final face = _memberController.face.value;
         if (face.isNotEmpty) {
           return ClipOval(
-            child: NetworkImgLayer(src: face, width: 70, height: 70, type: 'avatar'),
+            child: NetworkImgLayer(
+                src: face, width: 70, height: 70, type: 'avatar'),
           );
         }
         return CircleAvatar(
@@ -307,8 +395,9 @@ class _MemberPageState extends State<MemberPage> with TickerProviderStateMixin {
 
   Widget _buildUserDetails(ThemeData theme, bool hasCover) {
     final textColor = hasCover ? Colors.white : theme.colorScheme.onSurface;
-    final subTextColor = hasCover ? Colors.white70 : theme.colorScheme.onSurfaceVariant;
-    
+    final subTextColor =
+        hasCover ? Colors.white70 : theme.colorScheme.onSurfaceVariant;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
@@ -326,9 +415,18 @@ class _MemberPageState extends State<MemberPage> with TickerProviderStateMixin {
         const SizedBox(height: 8),
         Obx(() => Row(
               children: [
-                _buildStatItem('关注', _memberController.memberInfo.value.attention?.toString() ?? '0', textColor, subTextColor),
+                _buildStatItem(
+                    '关注',
+                    _memberController.memberInfo.value.attention?.toString() ??
+                        '0',
+                    textColor,
+                    subTextColor),
                 const SizedBox(width: 16),
-                _buildStatItem('粉丝', _memberController.memberInfo.value.fans?.toString() ?? '0', textColor, subTextColor),
+                _buildStatItem(
+                    '粉丝',
+                    _memberController.memberInfo.value.fans?.toString() ?? '0',
+                    textColor,
+                    subTextColor),
               ],
             )),
         if (!_memberController.isOwner.value) ...[
@@ -360,11 +458,14 @@ class _MemberPageState extends State<MemberPage> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildStatItem(String label, String value, Color valueColor, Color labelColor) {
+  Widget _buildStatItem(
+      String label, String value, Color valueColor, Color labelColor) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(value, style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: valueColor)),
+        Text(value,
+            style: TextStyle(
+                fontSize: 15, fontWeight: FontWeight.bold, color: valueColor)),
         Text(label, style: TextStyle(fontSize: 12, color: labelColor)),
       ],
     );
@@ -383,8 +484,10 @@ class _SliverTabBarDelegate extends SliverPersistentHeaderDelegate {
   double get maxExtent => tabBar.preferredSize.height;
 
   @override
-  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
-    return Container(color: Theme.of(context).colorScheme.surface, child: tabBar);
+  Widget build(
+      BuildContext context, double shrinkOffset, bool overlapsContent) {
+    return Container(
+        color: Theme.of(context).colorScheme.surface, child: tabBar);
   }
 
   @override
@@ -400,7 +503,8 @@ class _VideoTabPage extends StatefulWidget {
   State<_VideoTabPage> createState() => _VideoTabPageState();
 }
 
-class _VideoTabPageState extends State<_VideoTabPage> with AutomaticKeepAliveClientMixin {
+class _VideoTabPageState extends State<_VideoTabPage>
+    with AutomaticKeepAliveClientMixin {
   late MemberController _controller;
 
   @override
@@ -416,13 +520,34 @@ class _VideoTabPageState extends State<_VideoTabPage> with AutomaticKeepAliveCli
   Widget build(BuildContext context) {
     super.build(context);
     return Obx(() {
-      if (_controller.isLoadingArchive.value && _controller.archiveList.isEmpty) {
-        return ListView.builder(itemCount: 10, itemBuilder: (_, __) => const VideoCardHSkeleton());
+      if (_controller.isLoadingArchive.value &&
+          _controller.archiveList.isEmpty) {
+        return GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: _controller.crossAxisCount.value,
+            mainAxisSpacing: 16,
+            crossAxisSpacing: 16,
+            childAspectRatio: 3 / 1,
+          ),
+          itemCount: 10,
+          itemBuilder: (_, __) => const VideoCardHSkeleton(),
+        );
       }
       if (_controller.archiveList.isEmpty) {
         return const NoData();
       }
-      return ListView.builder(
+      return GridView.builder(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        padding: EdgeInsets.zero,
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: _controller.crossAxisCount.value,
+          mainAxisSpacing: 16,
+          crossAxisSpacing: 16,
+          childAspectRatio: 3 / 1,
+        ),
         itemCount: _controller.archiveList.length,
         itemBuilder: (context, index) => VideoCardH(
           videoItem: _controller.archiveList[index],
@@ -443,19 +568,27 @@ class _DynamicsTabPage extends StatefulWidget {
   State<_DynamicsTabPage> createState() => _DynamicsTabPageState();
 }
 
-class _DynamicsTabPageState extends State<_DynamicsTabPage> with AutomaticKeepAliveClientMixin {
+class _DynamicsTabPageState extends State<_DynamicsTabPage>
+    with AutomaticKeepAliveClientMixin {
   @override
   bool get wantKeepAlive => true;
 
   @override
   Widget build(BuildContext context) {
     super.build(context);
+    double screenWidth = MediaQuery.of(context).size.width;
+    bool isWideScreen = ResponsiveUtil.isMd;
+    double maxContentWidth = 800;
+
     return Obx(() {
       final list = widget.controller.dynamicsList;
       if (list.isEmpty) {
         return const NoData();
       }
       return ListView.builder(
+        padding: EdgeInsets.symmetric(
+          horizontal: isWideScreen ? (screenWidth - maxContentWidth) / 2 : 0,
+        ),
         itemCount: list.length,
         itemBuilder: (context, index) => DynamicPanel(item: list[index]),
       );
@@ -470,7 +603,8 @@ class _FavoriteTabPage extends StatefulWidget {
   State<_FavoriteTabPage> createState() => _FavoriteTabPageState();
 }
 
-class _FavoriteTabPageState extends State<_FavoriteTabPage> with AutomaticKeepAliveClientMixin {
+class _FavoriteTabPageState extends State<_FavoriteTabPage>
+    with AutomaticKeepAliveClientMixin {
   FavController? _controller;
 
   @override
@@ -490,15 +624,36 @@ class _FavoriteTabPageState extends State<_FavoriteTabPage> with AutomaticKeepAl
     }
     return Obx(() {
       if (_controller!.isLoading.value && _controller!.favoriteList.isEmpty) {
-        return ListView.builder(itemCount: 10, itemBuilder: (_, __) => const VideoCardHSkeleton());
+        return GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: _controller!.crossAxisCount.value,
+            mainAxisSpacing: 16,
+            crossAxisSpacing: 16,
+            childAspectRatio: 3 / 1,
+          ),
+          itemCount: 10,
+          itemBuilder: (_, __) => const VideoCardHSkeleton(),
+        );
       }
       if (_controller!.favoriteList.isEmpty) {
         return const NoData();
       }
-      return ListView.builder(
+      return GridView.builder(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        padding: EdgeInsets.zero,
         controller: _controller!.scrollController,
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: _controller!.crossAxisCount.value,
+          mainAxisSpacing: 16,
+          crossAxisSpacing: 16,
+          childAspectRatio: 3 / 1,
+        ),
         itemCount: _controller!.favoriteList.length,
-        itemBuilder: (context, index) => VideoCardH(videoItem: _controller!.favoriteList[index]),
+        itemBuilder: (context, index) =>
+            VideoCardH(videoItem: _controller!.favoriteList[index]),
       );
     });
   }

@@ -6,6 +6,7 @@ import 'package:piliotto/api/services/old_api_service.dart';
 import 'package:piliotto/http/video.dart';
 import 'package:piliotto/models/member/archive.dart';
 import 'package:piliotto/models/member/info.dart';
+import 'package:piliotto/utils/responsive_util.dart';
 import 'package:piliotto/utils/storage.dart';
 import 'package:share_plus/share_plus.dart';
 
@@ -23,6 +24,7 @@ class MemberController extends GetxController {
   dynamic userInfo;
   RxInt attribute = (-1).obs;
   RxString attributeText = '关注'.obs;
+  RxInt crossAxisCount = 1.obs;
 
   RxBool isOwner = false.obs;
 
@@ -35,7 +37,21 @@ class MemberController extends GetxController {
     isOwner.value = mid == ownerMid;
     face.value = Get.arguments['face'] ?? '';
     heroTag = Get.arguments['heroTag'] ?? '';
+    updateCrossAxisCount();
     relationSearch();
+  }
+
+  void updateCrossAxisCount() {
+    try {
+      int baseCount = ResponsiveUtil.calculateCrossAxisCount(
+        baseCount: 1,
+        minCount: 1,
+        maxCount: 3,
+      );
+      crossAxisCount.value = baseCount;
+    } catch (e) {
+      crossAxisCount.value = 1;
+    }
   }
 
   Future<Map<String, dynamic>> getInfo() async {

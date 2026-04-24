@@ -21,6 +21,11 @@ class _DynamicsPageState extends State<DynamicsPage>
     with AutomaticKeepAliveClientMixin, TickerProviderStateMixin {
   final DynamicsController _dynamicsController = Get.put(DynamicsController());
   late TabController _tabController;
+  final List<ScrollController> _tabScrollControllers = [
+    ScrollController(),
+    ScrollController(),
+  ];
+  int _previousTabIndex = 0;
 
   @override
   bool get wantKeepAlive => true;
@@ -29,7 +34,6 @@ class _DynamicsPageState extends State<DynamicsPage>
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
-    _tabController.addListener(_onTabChanged);
     _dynamicsController.queryFollowDynamic();
   }
 
@@ -43,16 +47,35 @@ class _DynamicsPageState extends State<DynamicsPage>
 
   @override
   void dispose() {
-    _tabController.removeListener(_onTabChanged);
+    for (final ctrl in _tabScrollControllers) {
+      ctrl.dispose();
+    }
     _tabController.dispose();
     super.dispose();
   }
 
-  void _onTabChanged() {
-    if (_tabController.indexIsChanging) return;
+  void _onTapTab(int index) {
+    feedBack();
     final tabs = ['latest', 'popular'];
-    final tab = tabs[_tabController.index];
-    _dynamicsController.onTabChanged(tab);
+    if (index == _previousTabIndex) {
+      _scrollToTop(index);
+    }
+    _previousTabIndex = index;
+    _tabController.animateTo(index);
+    _dynamicsController.onTabChanged(tabs[index]);
+  }
+
+  void _scrollToTop(int index) {
+    final ctrl = _tabScrollControllers[index];
+    if (ctrl.hasClients) {
+      if (ctrl.offset >= MediaQuery.of(context).size.height * 3) {
+        ctrl.jumpTo(0);
+      } else {
+        ctrl.animateTo(0,
+            duration: const Duration(milliseconds: 500),
+            curve: Curves.easeInOut);
+      }
+    }
   }
 
   @override
@@ -85,11 +108,7 @@ class _DynamicsPageState extends State<DynamicsPage>
                 enableFeedback: true,
                 splashBorderRadius: BorderRadius.circular(10),
                 tabAlignment: TabAlignment.center,
-                onTap: (value) {
-                  feedBack();
-                  final tabs = ['latest', 'popular'];
-                  _dynamicsController.onTabChanged(tabs[value]);
-                },
+                onTap: _onTapTab,
               ),
             ),
           ),
@@ -100,10 +119,12 @@ class _DynamicsPageState extends State<DynamicsPage>
                 _TabPage(
                   tab: 'latest',
                   dynamicsController: _dynamicsController,
+                  scrollController: _tabScrollControllers[0],
                 ),
                 _TabPage(
                   tab: 'popular',
                   dynamicsController: _dynamicsController,
+                  scrollController: _tabScrollControllers[1],
                 ),
               ],
             ),
@@ -156,10 +177,12 @@ class _DynamicsPageState extends State<DynamicsPage>
 class _TabPage extends StatefulWidget {
   final String tab;
   final DynamicsController dynamicsController;
+  final ScrollController scrollController;
 
   const _TabPage({
     required this.tab,
     required this.dynamicsController,
+    required this.scrollController,
   });
 
   @override
@@ -167,26 +190,18 @@ class _TabPage extends StatefulWidget {
 }
 
 class _TabPageState extends State<_TabPage> with AutomaticKeepAliveClientMixin {
-  final ScrollController _scrollController = ScrollController();
-
   @override
   bool get wantKeepAlive => true;
 
   @override
   void initState() {
     super.initState();
-    _scrollController.addListener(_onScroll);
-  }
-
-  @override
-  void dispose() {
-    _scrollController.dispose();
-    super.dispose();
+    widget.scrollController.addListener(_onScroll);
   }
 
   void _onScroll() {
-    if (_scrollController.position.pixels >=
-        _scrollController.position.maxScrollExtent - 200) {
+    if (widget.scrollController.position.pixels >=
+        widget.scrollController.position.maxScrollExtent - 200) {
       EasyThrottle.throttle(
           'queryFollowDynamic_${widget.tab}', const Duration(seconds: 1), () {
         widget.dynamicsController.queryFollowDynamic(type: 'onLoad');
@@ -255,7 +270,7 @@ class _TabPageState extends State<_TabPage> with AutomaticKeepAliveClientMixin {
     const contentMaxWidth = 600.0;
 
     return ListView.builder(
-      controller: _scrollController,
+      controller: widget.scrollController,
       padding:
           _buildCenteredListPadding(isWideScreen, screenWidth, contentMaxWidth),
       itemCount: cachedList.length + 1,
@@ -295,7 +310,7 @@ class _TabPageState extends State<_TabPage> with AutomaticKeepAliveClientMixin {
     }
 
     return MasonryGridView.count(
-      controller: _scrollController,
+      controller: widget.scrollController,
       padding: const EdgeInsets.only(
         left: 12,
         right: 12,

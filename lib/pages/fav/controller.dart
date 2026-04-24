@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:piliotto/api/models/video.dart';
 import 'package:piliotto/services/ottohub_service.dart';
 import 'package:piliotto/services/loggeer.dart';
+import 'package:piliotto/utils/responsive_util.dart';
 
 final _logger = getLogger();
 
@@ -13,6 +14,7 @@ class FavController extends GetxController {
   RxBool isLoading = false.obs;
   RxBool isLoadingMore = false.obs;
   RxBool hasMore = true.obs;
+  RxInt crossAxisCount = 1.obs;
 
   int _currentPage = 0;
   final int _pageSize = 20;
@@ -20,7 +22,21 @@ class FavController extends GetxController {
   @override
   void onInit() {
     super.onInit();
+    updateCrossAxisCount();
     queryFavorites();
+  }
+
+  void updateCrossAxisCount() {
+    try {
+      int baseCount = ResponsiveUtil.calculateCrossAxisCount(
+        baseCount: 1,
+        minCount: 1,
+        maxCount: 3,
+      );
+      crossAxisCount.value = baseCount;
+    } catch (e) {
+      crossAxisCount.value = 1;
+    }
   }
 
   Future<void> queryFavorites({bool isLoadMore = false}) async {

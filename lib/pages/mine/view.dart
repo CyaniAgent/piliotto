@@ -68,10 +68,10 @@ class _MinePageState extends State<MinePage> {
           onPressed: () => mineController.onChangeTheme(),
           icon: Obx(() => Icon(
                 mineController.themeType.value == ThemeType.light
-                    ? Icons.dark_mode
+                    ? Icons.light_mode
                     : mineController.themeType.value == ThemeType.dark
-                        ? Icons.brightness_auto
-                        : Icons.light_mode,
+                        ? Icons.dark_mode
+                        : Icons.brightness_auto,
                 size: 22,
                 color: _getIconColor(theme),
               )),
@@ -90,7 +90,8 @@ class _MinePageState extends State<MinePage> {
       pinned: true,
       snap: true,
       expandedHeight: 280,
-      flexibleSpace: FlexibleSpaceBar(background: _buildHeaderWithUserInfo(theme)),
+      flexibleSpace:
+          FlexibleSpaceBar(background: _buildHeaderWithUserInfo(theme)),
     );
   }
 
@@ -154,7 +155,9 @@ class _MinePageState extends State<MinePage> {
           ),
           boxShadow: [
             BoxShadow(
-              color: hasCover ? Colors.black.withAlpha(80) : theme.colorScheme.shadow.withAlpha(50),
+              color: hasCover
+                  ? Colors.black.withAlpha(80)
+                  : theme.colorScheme.shadow.withAlpha(50),
               blurRadius: 10,
               spreadRadius: 2,
             ),
@@ -188,8 +191,9 @@ class _MinePageState extends State<MinePage> {
 
   Widget _buildUserDetails(ThemeData theme, bool hasCover) {
     final textColor = hasCover ? Colors.white : theme.colorScheme.onSurface;
-    final subTextColor = hasCover ? Colors.white70 : theme.colorScheme.onSurfaceVariant;
-    
+    final subTextColor =
+        hasCover ? Colors.white70 : theme.colorScheme.onSurfaceVariant;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
@@ -251,7 +255,8 @@ class _MinePageState extends State<MinePage> {
     );
   }
 
-  Widget _buildStatItem(String label, String value, VoidCallback onTap, Color valueColor, Color labelColor) {
+  Widget _buildStatItem(String label, String value, VoidCallback onTap,
+      Color valueColor, Color labelColor) {
     return GestureDetector(
       onTap: onTap,
       child: Column(
@@ -259,7 +264,8 @@ class _MinePageState extends State<MinePage> {
         children: [
           Text(
             value,
-            style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: valueColor),
+            style: TextStyle(
+                fontSize: 15, fontWeight: FontWeight.bold, color: valueColor),
           ),
           Text(
             label,

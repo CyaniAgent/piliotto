@@ -37,11 +37,6 @@ class VideoCardV extends StatelessWidget {
 
     return InkWell(
       onTap: () => onPushDetail(heroTag),
-      onLongPress: () => imageSaveDialog(
-        context,
-        videoItem,
-        SmartDialog.dismiss,
-      ),
       borderRadius: BorderRadius.circular(16),
       child: Column(
         children: [
