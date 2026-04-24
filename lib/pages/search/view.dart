@@ -75,10 +75,12 @@ class _SearchPageState extends State<SearchPage> {
     _historyBox.put('searchHistory', <String>[]);
   }
 
-  void _onSearch(String keyword) {
+  void _onSearch(String keyword, {bool closeView = true}) {
     if (keyword.trim().isEmpty) return;
     _saveSearchHistory(keyword.trim());
-    _searchController.closeView(null);
+    if (closeView) {
+      _searchController.closeView(null);
+    }
     _videoSearchController.searchVideos(keyword.trim());
   }
 
@@ -86,6 +88,7 @@ class _SearchPageState extends State<SearchPage> {
   void dispose() {
     _searchController.dispose();
     _videoSearchController.scrollController.dispose();
+    Get.delete<VideoSearchController>();
     super.dispose();
   }
 
@@ -97,16 +100,25 @@ class _SearchPageState extends State<SearchPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: isWideScreen
-            ? Center(
-                child: SizedBox(
-                  width: 400,
-                  child: _buildSearchInput(),
-                ),
-              )
-            : _buildSearchInput(),
-        centerTitle: true,
         titleSpacing: 0,
+        title: LayoutBuilder(
+          builder: (context, constraints) {
+            return Row(
+              children: [
+                Expanded(
+                  child: Center(
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(
+                        maxWidth: isWideScreen ? 500 : double.infinity,
+                      ),
+                      child: _buildSearchInput(),
+                    ),
+                  ),
+                ),
+              ],
+            );
+          },
+        ),
       ),
       body: Obx(
           () => _buildSearchResult(screenWidth, isWideScreen, maxContentWidth)),
@@ -241,7 +253,7 @@ class _SearchPageState extends State<SearchPage> {
               ),
               onTap: () {
                 controller.closeView(item);
-                _onSearch(item);
+                _onSearch(item, closeView: false);
               },
               dense: true,
               visualDensity: VisualDensity.compact,
@@ -260,6 +272,39 @@ class _SearchPageState extends State<SearchPage> {
       return _buildLoadingSkeleton(screenWidth, isWideScreen, maxContentWidth);
     }
 
+    if (_videoSearchController.hasError.value) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.error_outline,
+                size: 64,
+                color: Theme.of(context).colorScheme.error,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                _videoSearchController.errorMessage.value,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurface,
+                  fontSize: 16,
+                ),
+              ),
+              const SizedBox(height: 24),
+              FilledButton.icon(
+                onPressed: _videoSearchController.retrySearch,
+                icon: const Icon(Icons.refresh),
+                label: const Text('重试'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     if (_videoSearchController.videoList.isEmpty) {
       return Center(
         child: Column(
@@ -272,7 +317,9 @@ class _SearchPageState extends State<SearchPage> {
             ),
             const SizedBox(height: 16),
             Text(
-              '输入关键词搜索视频',
+              _videoSearchController.currentKeyword.value.isEmpty
+                  ? '输入关键词搜索视频'
+                  : '未找到相关视频',
               style: TextStyle(
                 color: Theme.of(context).colorScheme.outline,
               ),

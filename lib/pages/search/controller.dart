@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:piliotto/services/ottohub_service.dart';
 import 'package:piliotto/api/models/video.dart';
+import 'package:piliotto/api/services/api_service.dart';
 import 'package:piliotto/utils/responsive_util.dart';
 import 'package:piliotto/services/loggeer.dart';
 
@@ -20,6 +21,8 @@ class VideoSearchController extends GetxController {
   RxBool hasMore = true.obs;
   RxString currentKeyword = ''.obs;
   RxInt crossAxisCount = 1.obs;
+  RxString errorMessage = ''.obs;
+  RxBool hasError = false.obs;
 
   @override
   void onInit() {
@@ -53,6 +56,16 @@ class VideoSearchController extends GetxController {
     return null;
   }
 
+  void _clearError() {
+    errorMessage.value = '';
+    hasError.value = false;
+  }
+
+  void _setError(String message) {
+    errorMessage.value = message;
+    hasError.value = true;
+  }
+
   Future<void> searchVideos(String keyword, {bool isLoadMore = false}) async {
     if (keyword.isEmpty) return;
 
@@ -72,6 +85,7 @@ class VideoSearchController extends GetxController {
       isLoading.value = true;
       _currentPage = 1;
       currentKeyword.value = keyword;
+      _clearError();
     } else {
       isLoadingMore.value = true;
     }
@@ -94,9 +108,18 @@ class VideoSearchController extends GetxController {
 
       hasMore.value = videos.length >= _count;
       _currentPage++;
+    } on ApiException catch (e) {
+      _logger.w('搜索失败: ${e.message}');
+      if (!isLoadMore) {
+        _setError(e.message);
+        videoList.clear();
+      }
     } catch (e) {
-      _logger.i('搜索失败: $e');
-      Get.snackbar('搜索失败', e.toString());
+      _logger.w('搜索失败: $e');
+      if (!isLoadMore) {
+        _setError('搜索失败，请稍后重试');
+        videoList.clear();
+      }
     } finally {
       isLoading.value = false;
       isLoadingMore.value = false;
@@ -118,6 +141,13 @@ class VideoSearchController extends GetxController {
     videoList.clear();
     currentKeyword.value = '';
     searchInputController.clear();
+    _clearError();
+  }
+
+  void retrySearch() {
+    if (currentKeyword.value.isNotEmpty) {
+      searchVideos(currentKeyword.value);
+    }
   }
 
   void animateToTop() async {

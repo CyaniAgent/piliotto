@@ -37,8 +37,8 @@ void main() async {
   if (UniversalPlatform.isDesktop) {
     await windowManager.ensureInitialized();
     const windowOptions = WindowOptions(
-      size: Size(1280, 720),
-      minimumSize: Size(640, 480),
+      // size: Size(1280, 720),
+      // minimumSize: Size(640, 480),
       center: true,
       // backgroundColor: Colors.transparent,
       skipTaskbar: false,
@@ -89,23 +89,33 @@ void main() async {
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
+  // 安全获取设置值
+  T _getSetting<T>(Box setting, String key, T defaultValue) {
+    try {
+      if (setting.isOpen) {
+        return setting.get(key, defaultValue: defaultValue) ?? defaultValue;
+      }
+    } catch (_) {}
+    return defaultValue;
+  }
+
   @override
   Widget build(BuildContext context) {
     Box setting = GStrorage.setting;
     // 主题色
     Color defaultColor =
-        colorThemeTypes[setting.get(SettingBoxKey.customColor, defaultValue: 0)]
+        colorThemeTypes[_getSetting(setting, SettingBoxKey.customColor, 0)]
             ['color'];
     Color brandColor = defaultColor;
     // 主题模式
-    ThemeType currentThemeValue = ThemeType.values[setting
-        .get(SettingBoxKey.themeMode, defaultValue: ThemeType.system.code)];
+    ThemeType currentThemeValue = ThemeType.values[
+        _getSetting(setting, SettingBoxKey.themeMode, ThemeType.system.code)];
     // 是否动态取色
     bool isDynamicColor =
-        setting.get(SettingBoxKey.dynamicColor, defaultValue: true);
+        _getSetting(setting, SettingBoxKey.dynamicColor, true);
     // 字体缩放大小
     double textScale =
-        setting.get(SettingBoxKey.defaultTextScale, defaultValue: 1.0);
+        _getSetting(setting, SettingBoxKey.defaultTextScale, 1.0);
 
     // 强制设置高帧率
     if (Platform.isAndroid) {
@@ -113,7 +123,8 @@ class MyApp extends StatelessWidget {
         late List modes;
         FlutterDisplayMode.supported.then((value) {
           modes = value;
-          var storageDisplay = setting.get(SettingBoxKey.displayMode);
+          var storageDisplay =
+              _getSetting(setting, SettingBoxKey.displayMode, null);
           DisplayMode f = DisplayMode.auto;
           if (storageDisplay != null) {
             f = modes.firstWhere((e) => e.toString() == storageDisplay);

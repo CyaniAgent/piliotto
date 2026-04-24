@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
 import 'package:hive/hive.dart';
@@ -95,28 +94,20 @@ class MineController extends GetxController {
   }
 
   onChangeTheme() {
-    Brightness currentBrightness =
-        MediaQuery.of(Get.context!).platformBrightness;
-    ThemeType currentTheme = themeType.value;
-    switch (currentTheme) {
-      case ThemeType.dark:
-        setting.put(SettingBoxKey.themeMode, ThemeType.light.code);
-        themeType.value = ThemeType.light;
-        break;
+    ThemeType nextTheme;
+    switch (themeType.value) {
       case ThemeType.light:
-        setting.put(SettingBoxKey.themeMode, ThemeType.dark.code);
-        themeType.value = ThemeType.dark;
+        nextTheme = ThemeType.dark;
+        break;
+      case ThemeType.dark:
+        nextTheme = ThemeType.system;
         break;
       case ThemeType.system:
-        if (currentBrightness == Brightness.light) {
-          setting.put(SettingBoxKey.themeMode, ThemeType.dark.code);
-          themeType.value = ThemeType.dark;
-        } else {
-          setting.put(SettingBoxKey.themeMode, ThemeType.light.code);
-          themeType.value = ThemeType.light;
-        }
+        nextTheme = ThemeType.light;
         break;
     }
+    setting.put(SettingBoxKey.themeMode, nextTheme.code);
+    themeType.value = nextTheme;
     Get.forceAppUpdate();
   }
 

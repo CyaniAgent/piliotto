@@ -89,8 +89,8 @@ class _MainAppState extends State<MainApp> with SingleTickerProviderStateMixin {
   }
 
   @override
-  void dispose() async {
-    await GStrorage.close();
+  void dispose() {
+    GStrorage.close();
     EventBus().off(EventName.loginEvent);
     super.dispose();
   }

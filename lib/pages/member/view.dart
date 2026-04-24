@@ -138,7 +138,6 @@ class _MemberPageState extends State<MemberPage> with TickerProviderStateMixin {
         controller: _scrollController,
         headerSliverBuilder: (context, innerBoxIsScrolled) => [
           _buildSliverAppBar(context, theme),
-          SliverToBoxAdapter(child: _buildUserInfoSection(theme)),
           SliverPersistentHeader(
             delegate: _SliverTabBarDelegate(
               TabBar(
@@ -177,15 +176,18 @@ class _MemberPageState extends State<MemberPage> with TickerProviderStateMixin {
 
   Widget _buildSliverAppBar(BuildContext context, ThemeData theme) {
     return SliverAppBar(
-      leading: IconButton(icon: const Icon(Icons.arrow_back), onPressed: () => Get.back()),
+      leading: IconButton(
+        icon: Obx(() => Icon(Icons.arrow_back, color: _getIconColor(theme))),
+        onPressed: () => Get.back(),
+      ),
       actions: [
         if (_memberController.memberInfo.value.name != null) ...[
           IconButton(
             onPressed: () => Get.toNamed('/memberSearch?mid=$mid&uname=${_memberController.memberInfo.value.name}'),
-            icon: const Icon(Icons.search_outlined),
+            icon: Obx(() => Icon(Icons.search_outlined, color: _getIconColor(theme))),
           ),
           PopupMenuButton(
-            icon: const Icon(Icons.more_vert),
+            icon: Obx(() => Icon(Icons.more_vert, color: _getIconColor(theme))),
             itemBuilder: (BuildContext context) => <PopupMenuEntry>[
               if (!_memberController.isOwner.value)
                 PopupMenuItem(
@@ -218,48 +220,70 @@ class _MemberPageState extends State<MemberPage> with TickerProviderStateMixin {
       floating: true,
       pinned: true,
       snap: true,
-      expandedHeight: 200,
-      flexibleSpace: FlexibleSpaceBar(background: _buildBanner(theme)),
+      expandedHeight: 280,
+      flexibleSpace: FlexibleSpaceBar(background: _buildHeaderWithUserInfo(theme)),
     );
   }
 
-  Widget _buildBanner(ThemeData theme) {
+  Color _getIconColor(ThemeData theme) {
+    final cover = _memberController.memberInfo.value.cover;
+    final hasCover = cover != null && cover.isNotEmpty;
+    return hasCover ? Colors.white : theme.colorScheme.onSurface;
+  }
+
+  Widget _buildHeaderWithUserInfo(ThemeData theme) {
     return Obx(() {
       final cover = _memberController.memberInfo.value.cover;
+      final hasCover = cover != null && cover.isNotEmpty;
       return Container(
-        height: 200,
+        height: 280,
         decoration: BoxDecoration(
           color: theme.colorScheme.secondaryContainer,
-          image: cover != null && cover.isNotEmpty
-              ? DecorationImage(image: NetworkImage(cover), fit: BoxFit.cover)
+          image: hasCover
+              ? DecorationImage(
+                  image: NetworkImage(cover),
+                  fit: BoxFit.cover,
+                  colorFilter: ColorFilter.mode(
+                    Colors.black.withAlpha(hasCover ? 100 : 0),
+                    BlendMode.darken,
+                  ),
+                )
               : null,
+        ),
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 60, 16, 16),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.end,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    _buildAvatar(theme, hasCover),
+                    const SizedBox(width: 16),
+                    Expanded(child: _buildUserDetails(theme, hasCover)),
+                  ],
+                ),
+              ],
+            ),
+          ),
         ),
       );
     });
   }
 
-  Widget _buildUserInfoSection(ThemeData theme) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildAvatar(theme),
-          const SizedBox(width: 16),
-          Expanded(child: _buildUserDetails(theme)),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildAvatar(ThemeData theme) {
+  Widget _buildAvatar(ThemeData theme, bool hasCover) {
     return Container(
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        border: Border.all(color: theme.colorScheme.surface, width: 3),
+        border: Border.all(
+          color: hasCover ? Colors.white : theme.colorScheme.primary,
+          width: 3,
+        ),
         boxShadow: [
           BoxShadow(
-            color: theme.colorScheme.shadow.withAlpha(50),
+            color: hasCover ? Colors.black.withAlpha(80) : theme.colorScheme.shadow.withAlpha(50),
             blurRadius: 10,
             spreadRadius: 2,
           ),
@@ -281,26 +305,30 @@ class _MemberPageState extends State<MemberPage> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildUserDetails(ThemeData theme) {
+  Widget _buildUserDetails(ThemeData theme, bool hasCover) {
+    final textColor = hasCover ? Colors.white : theme.colorScheme.onSurface;
+    final subTextColor = hasCover ? Colors.white70 : theme.colorScheme.onSurfaceVariant;
+    
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
       children: [
         Obx(() => Text(
               _memberController.memberInfo.value.name ?? '',
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
-                color: theme.colorScheme.onSurface,
+                color: textColor,
               ),
             )),
         const SizedBox(height: 4),
-        Text('UID: $mid', style: TextStyle(fontSize: 13, color: theme.colorScheme.onSurfaceVariant)),
+        Text('UID: $mid', style: TextStyle(fontSize: 13, color: subTextColor)),
         const SizedBox(height: 8),
         Obx(() => Row(
               children: [
-                _buildStatItem(theme, '关注', _memberController.memberInfo.value.attention?.toString() ?? '0'),
+                _buildStatItem('关注', _memberController.memberInfo.value.attention?.toString() ?? '0', textColor, subTextColor),
                 const SizedBox(width: 16),
-                _buildStatItem(theme, '粉丝', _memberController.memberInfo.value.fans?.toString() ?? '0'),
+                _buildStatItem('粉丝', _memberController.memberInfo.value.fans?.toString() ?? '0', textColor, subTextColor),
               ],
             )),
         if (!_memberController.isOwner.value) ...[
@@ -313,6 +341,10 @@ class _MemberPageState extends State<MemberPage> with TickerProviderStateMixin {
                   ),
                   const SizedBox(width: 8),
                   OutlinedButton(
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: textColor,
+                      side: BorderSide(color: subTextColor),
+                    ),
                     onPressed: () => Get.toNamed('/whisperDetail', parameters: {
                       'name': _memberController.memberInfo.value.name ?? '',
                       'face': _memberController.face.value,
@@ -328,12 +360,12 @@ class _MemberPageState extends State<MemberPage> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildStatItem(ThemeData theme, String label, String value) {
+  Widget _buildStatItem(String label, String value, Color valueColor, Color labelColor) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(value, style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface)),
-        Text(label, style: TextStyle(fontSize: 12, color: theme.colorScheme.onSurfaceVariant)),
+        Text(value, style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: valueColor)),
+        Text(label, style: TextStyle(fontSize: 12, color: labelColor)),
       ],
     );
   }

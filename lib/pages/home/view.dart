@@ -408,10 +408,12 @@ class _HomeSearchBarState extends State<HomeSearchBar> {
     _historyBox.put('searchHistory', <String>[]);
   }
 
-  void _onSearch(String keyword) {
+  void _onSearch(String keyword, {bool closeView = true}) {
     if (keyword.trim().isEmpty) return;
     _saveSearchHistory(keyword.trim());
-    _searchController.closeView(null);
+    if (closeView) {
+      _searchController.closeView(null);
+    }
     Future.delayed(const Duration(milliseconds: 100), () {
       Get.toNamed('/search', parameters: {'keyword': keyword.trim()});
     });
@@ -538,7 +540,7 @@ class _HomeSearchBarState extends State<HomeSearchBar> {
                       ),
                       onTap: () {
                         controller.closeView(item);
-                        _onSearch(item);
+                        _onSearch(item, closeView: false);
                       },
                       dense: true,
                       visualDensity: VisualDensity.compact,
