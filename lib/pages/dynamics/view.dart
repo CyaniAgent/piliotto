@@ -21,11 +21,6 @@ class _DynamicsPageState extends State<DynamicsPage>
     with AutomaticKeepAliveClientMixin, TickerProviderStateMixin {
   final DynamicsController _dynamicsController = Get.put(DynamicsController());
   late TabController _tabController;
-  final List<ScrollController> _tabScrollControllers = [
-    ScrollController(),
-    ScrollController(),
-  ];
-  int _previousTabIndex = 0;
 
   @override
   bool get wantKeepAlive => true;
@@ -47,9 +42,6 @@ class _DynamicsPageState extends State<DynamicsPage>
 
   @override
   void dispose() {
-    for (final ctrl in _tabScrollControllers) {
-      ctrl.dispose();
-    }
     _tabController.dispose();
     super.dispose();
   }
@@ -57,25 +49,8 @@ class _DynamicsPageState extends State<DynamicsPage>
   void _onTapTab(int index) {
     feedBack();
     final tabs = ['latest', 'popular'];
-    if (index == _previousTabIndex) {
-      _scrollToTop(index);
-    }
-    _previousTabIndex = index;
     _tabController.animateTo(index);
     _dynamicsController.onTabChanged(tabs[index]);
-  }
-
-  void _scrollToTop(int index) {
-    final ctrl = _tabScrollControllers[index];
-    if (ctrl.hasClients) {
-      if (ctrl.offset >= MediaQuery.of(context).size.height * 3) {
-        ctrl.jumpTo(0);
-      } else {
-        ctrl.animateTo(0,
-            duration: const Duration(milliseconds: 500),
-            curve: Curves.easeInOut);
-      }
-    }
   }
 
   @override
@@ -119,12 +94,10 @@ class _DynamicsPageState extends State<DynamicsPage>
                 _TabPage(
                   tab: 'latest',
                   dynamicsController: _dynamicsController,
-                  scrollController: _tabScrollControllers[0],
                 ),
                 _TabPage(
                   tab: 'popular',
                   dynamicsController: _dynamicsController,
-                  scrollController: _tabScrollControllers[1],
                 ),
               ],
             ),
@@ -177,12 +150,10 @@ class _DynamicsPageState extends State<DynamicsPage>
 class _TabPage extends StatefulWidget {
   final String tab;
   final DynamicsController dynamicsController;
-  final ScrollController scrollController;
 
   const _TabPage({
     required this.tab,
     required this.dynamicsController,
-    required this.scrollController,
   });
 
   @override
@@ -190,23 +161,24 @@ class _TabPage extends StatefulWidget {
 }
 
 class _TabPageState extends State<_TabPage> with AutomaticKeepAliveClientMixin {
+  late ScrollController _centeredScrollController;
+  late ScrollController _waterfallScrollController;
+
   @override
   bool get wantKeepAlive => true;
 
   @override
   void initState() {
     super.initState();
-    widget.scrollController.addListener(_onScroll);
+    _centeredScrollController = ScrollController();
+    _waterfallScrollController = ScrollController();
   }
 
-  void _onScroll() {
-    if (widget.scrollController.position.pixels >=
-        widget.scrollController.position.maxScrollExtent - 200) {
-      EasyThrottle.throttle(
-          'queryFollowDynamic_${widget.tab}', const Duration(seconds: 1), () {
-        widget.dynamicsController.queryFollowDynamic(type: 'onLoad');
-      });
-    }
+  @override
+  void dispose() {
+    _centeredScrollController.dispose();
+    _waterfallScrollController.dispose();
+    super.dispose();
   }
 
   @override
@@ -233,14 +205,27 @@ class _TabPageState extends State<_TabPage> with AutomaticKeepAliveClientMixin {
         }
       }
 
-      return RefreshIndicator(
-        onRefresh: () => widget.dynamicsController.onRefresh(),
-        child: _buildContentList(
-          cachedList,
-          colorScheme,
-          isWideScreen,
-          screenWidth,
-          wideScreenLayout,
+      return NotificationListener<ScrollNotification>(
+        onNotification: (notification) {
+          if (notification is ScrollUpdateNotification &&
+              notification.metrics.pixels >=
+                  notification.metrics.maxScrollExtent - 200) {
+            EasyThrottle.throttle(
+                'queryFollowDynamic_${widget.tab}', const Duration(seconds: 1), () {
+              widget.dynamicsController.queryFollowDynamic(type: 'onLoad');
+            });
+          }
+          return false;
+        },
+        child: RefreshIndicator(
+          onRefresh: () => widget.dynamicsController.onRefresh(),
+          child: _buildContentList(
+            cachedList,
+            colorScheme,
+            isWideScreen,
+            screenWidth,
+            wideScreenLayout,
+          ),
         ),
       );
     });
@@ -270,7 +255,7 @@ class _TabPageState extends State<_TabPage> with AutomaticKeepAliveClientMixin {
     const contentMaxWidth = 600.0;
 
     return ListView.builder(
-      controller: widget.scrollController,
+      controller: _centeredScrollController,
       padding:
           _buildCenteredListPadding(isWideScreen, screenWidth, contentMaxWidth),
       itemCount: cachedList.length + 1,
@@ -281,14 +266,11 @@ class _TabPageState extends State<_TabPage> with AutomaticKeepAliveClientMixin {
 
         return Container(
           margin: const EdgeInsets.symmetric(vertical: 6),
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              final itemWidth = isWideScreen ? 600.0 : constraints.maxWidth;
-              return SizedBox(
-                width: itemWidth,
-                child: DynamicPanel(item: cachedList[index]),
-              );
-            },
+          width: isWideScreen ? contentMaxWidth : null,
+          child: DynamicPanel(
+            item: cachedList[index],
+            onTap: () => widget.dynamicsController.pushDetail(cachedList[index], 1),
+            onCommentTap: () => widget.dynamicsController.pushDetail(cachedList[index], 1, action: 'comment'),
           ),
         );
       },
@@ -310,7 +292,7 @@ class _TabPageState extends State<_TabPage> with AutomaticKeepAliveClientMixin {
     }
 
     return MasonryGridView.count(
-      controller: widget.scrollController,
+      controller: _waterfallScrollController,
       padding: const EdgeInsets.only(
         left: 12,
         right: 12,
@@ -325,7 +307,11 @@ class _TabPageState extends State<_TabPage> with AutomaticKeepAliveClientMixin {
         if (index == cachedList.length) {
           return _buildLoadingIndicator(colorScheme);
         }
-        return DynamicPanel(item: cachedList[index]);
+        return DynamicPanel(
+          item: cachedList[index],
+          onTap: () => widget.dynamicsController.pushDetail(cachedList[index], 1),
+          onCommentTap: () => widget.dynamicsController.pushDetail(cachedList[index], 1, action: 'comment'),
+        );
       },
     );
   }

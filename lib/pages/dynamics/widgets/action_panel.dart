@@ -1,22 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:get/get.dart';
 import 'package:piliotto/api/services/old_api_service.dart';
 import 'package:piliotto/models/dynamics/result.dart';
-import 'package:piliotto/pages/dynamics/index.dart';
 
 class ActionPanel extends StatefulWidget {
   final DynamicItemModel item;
+  final VoidCallback? onCommentTap;
 
-  const ActionPanel({super.key, required this.item});
+  const ActionPanel({
+    super.key,
+    required this.item,
+    this.onCommentTap,
+  });
 
   @override
   State<ActionPanel> createState() => _ActionPanelState();
 }
 
 class _ActionPanelState extends State<ActionPanel> {
-  final DynamicsController _dynamicsController = Get.find();
   late ModuleStatModel stat;
   bool isProcessing = false;
   bool isLiked = false;
@@ -33,6 +35,7 @@ class _ActionPanelState extends State<ActionPanel> {
   Future<void> onLikeDynamic() async {
     if (isProcessing) return;
 
+    if (!mounted) return;
     setState(() => isProcessing = true);
 
     try {
@@ -40,6 +43,8 @@ class _ActionPanelState extends State<ActionPanel> {
       final res = await OldApiService.likeBlog(
         bid: int.tryParse(dynamicId) ?? 0,
       );
+
+      if (!mounted) return;
 
       if (res['status'] == 'success') {
         SmartDialog.showToast(isLiked ? '取消点赞' : '点赞成功');
@@ -52,9 +57,12 @@ class _ActionPanelState extends State<ActionPanel> {
         SmartDialog.showToast(res['message'] ?? '操作失败');
       }
     } catch (e) {
+      if (!mounted) return;
       SmartDialog.showToast('请求失败: $e');
     } finally {
-      setState(() => isProcessing = false);
+      if (mounted) {
+        setState(() => isProcessing = false);
+      }
     }
   }
 
@@ -67,8 +75,7 @@ class _ActionPanelState extends State<ActionPanel> {
         _ActionButton(
           icon: FontAwesomeIcons.comment,
           label: commentCount,
-          onTap: () =>
-              _dynamicsController.pushDetail(widget.item, 1, action: 'comment'),
+          onTap: widget.onCommentTap ?? () {},
         ),
         _ActionButton(
           icon: isLiked

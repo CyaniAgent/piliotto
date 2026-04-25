@@ -79,36 +79,41 @@ class _ReplyItemState extends State<ReplyItem> {
     final colorScheme = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.only(left: 45, top: 4),
-      child: TextButton.icon(
-        onPressed: () {
-          setState(() {
-            _isExpanded = !_isExpanded;
-          });
-        },
-        icon: AnimatedRotation(
-          turns: _isExpanded ? 0.5 : 0,
-          duration: const Duration(milliseconds: 200),
-          child: Icon(
-            Icons.keyboard_arrow_down_rounded,
-            size: 18,
-            color: colorScheme.primary,
-          ),
-        ),
-        label: AnimatedSwitcher(
-          duration: const Duration(milliseconds: 200),
-          child: Text(
-            _isExpanded ? '收起' : '展开全文',
-            key: ValueKey(_isExpanded),
-            style: TextStyle(
-              color: colorScheme.primary,
-              fontSize: 13,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () {
+            setState(() {
+              _isExpanded = !_isExpanded;
+            });
+          },
+          borderRadius: BorderRadius.circular(8),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                AnimatedRotation(
+                  turns: _isExpanded ? 0.5 : 0,
+                  duration: const Duration(milliseconds: 200),
+                  curve: Curves.easeInOut,
+                  child: Icon(
+                    Icons.keyboard_arrow_down_rounded,
+                    size: 18,
+                    color: colorScheme.primary,
+                  ),
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  _isExpanded ? '折叠' : '展开',
+                  style: TextStyle(
+                    color: colorScheme.primary,
+                    fontSize: 13,
+                  ),
+                ),
+              ],
             ),
           ),
-        ),
-        style: TextButton.styleFrom(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-          minimumSize: Size.zero,
-          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
         ),
       ),
     );
@@ -270,46 +275,88 @@ class _ReplyItemState extends State<ReplyItem> {
           ),
         ),
         // title
-        Container(
-          margin:
-              const EdgeInsets.only(top: 10, left: 45, right: 6, bottom: 4),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              if (widget.replyItem!.isTop == true)
-                const Padding(
-                  padding: EdgeInsets.only(bottom: 4),
-                  child: PBadge(
-                    text: 'TOP',
-                    size: 'small',
-                    stack: 'normal',
-                    type: 'line',
-                    fs: 9,
+        AnimatedCrossFade(
+          duration: const Duration(milliseconds: 200),
+          crossFadeState: _isExpanded
+              ? CrossFadeState.showSecond
+              : CrossFadeState.showFirst,
+          firstChild: Container(
+            margin:
+                const EdgeInsets.only(top: 10, left: 45, right: 6, bottom: 4),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (widget.replyItem!.isTop == true)
+                  const Padding(
+                    padding: EdgeInsets.only(bottom: 4),
+                    child: PBadge(
+                      text: 'TOP',
+                      size: 'small',
+                      stack: 'normal',
+                      type: 'line',
+                      fs: 9,
+                    ),
                   ),
+                MarkdownText(
+                  text: widget.replyItem!.content?.message ?? '',
+                  style: const TextStyle(height: 1.75),
+                  maxLines: widget.replyItem!.content?.isText == true &&
+                          widget.replyLevel == '1'
+                      ? 6
+                      : null,
+                  enableTimeJump: true,
+                  onTimeJump: (duration) {
+                    try {
+                      SmartDialog.showToast('跳转至：${duration.inSeconds}秒');
+                      Get.find<VideoDetailController>(
+                        tag: Get.arguments?['heroTag'] ?? 'default',
+                      ).plPlayerController.seekTo(duration);
+                    } catch (e) {
+                      SmartDialog.showToast('跳转失败: $e');
+                    }
+                  },
+                  atNameToMid: widget.replyItem!.content?.atNameToMid
+                      ?.cast<String, int>(),
                 ),
-              MarkdownText(
-                text: widget.replyItem!.content?.message ?? '',
-                style: const TextStyle(height: 1.75),
-                maxLines: widget.replyItem!.content?.isText == true &&
-                        widget.replyLevel == '1' &&
-                        !_isExpanded
-                    ? 6
-                    : null,
-                enableTimeJump: true,
-                onTimeJump: (duration) {
-                  try {
-                    SmartDialog.showToast('跳转至：${duration.inSeconds}秒');
-                    Get.find<VideoDetailController>(
-                            tag: Get.arguments?['heroTag'] ?? 'default',
-                        ).plPlayerController
-                        .seekTo(duration);
-                  } catch (e) {
-                    SmartDialog.showToast('跳转失败: $e');
-                  }
-                },
-                atNameToMid: widget.replyItem!.content?.atNameToMid?.cast<String, int>(),
-              ),
-            ],
+              ],
+            ),
+          ),
+          secondChild: Container(
+            margin:
+                const EdgeInsets.only(top: 10, left: 45, right: 6, bottom: 4),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (widget.replyItem!.isTop == true)
+                  const Padding(
+                    padding: EdgeInsets.only(bottom: 4),
+                    child: PBadge(
+                      text: 'TOP',
+                      size: 'small',
+                      stack: 'normal',
+                      type: 'line',
+                      fs: 9,
+                    ),
+                  ),
+                MarkdownText(
+                  text: widget.replyItem!.content?.message ?? '',
+                  style: const TextStyle(height: 1.75),
+                  enableTimeJump: true,
+                  onTimeJump: (duration) {
+                    try {
+                      SmartDialog.showToast('跳转至：${duration.inSeconds}秒');
+                      Get.find<VideoDetailController>(
+                        tag: Get.arguments?['heroTag'] ?? 'default',
+                      ).plPlayerController.seekTo(duration);
+                    } catch (e) {
+                      SmartDialog.showToast('跳转失败: $e');
+                    }
+                  },
+                  atNameToMid: widget.replyItem!.content?.atNameToMid
+                      ?.cast<String, int>(),
+                ),
+              ],
+            ),
           ),
         ),
         // 展开/折叠按钮
@@ -343,17 +390,6 @@ class _ReplyItemState extends State<ReplyItem> {
       case 'copyAll':
         await Clipboard.setData(ClipboardData(text: message));
         SmartDialog.showToast('已复制');
-        break;
-      case 'copyFreedom':
-        showDialog(
-          context: context,
-          builder: (ctx) {
-            return AlertDialog(
-              title: const Text('自由复制'),
-              content: SelectableText(message),
-            );
-          },
-        );
         break;
       case 'save':
         Navigator.push(
@@ -465,16 +501,6 @@ class _ReplyItemState extends State<ReplyItem> {
                     ],
                   ),
                 ),
-                const PopupMenuItem<String>(
-                  value: 'copyFreedom',
-                  child: Row(
-                    children: [
-                      Icon(Icons.copy_outlined, size: 19),
-                      SizedBox(width: 12),
-                      Text('自由复制'),
-                    ],
-                  ),
-                ),
                 if (widget.replyItem!.content!.pictures!.isEmpty)
                   const PopupMenuItem<String>(
                     value: 'save',
@@ -545,23 +571,11 @@ class ReplyItemRow extends StatelessWidget {
             if (replies!.isNotEmpty)
               for (int i = 0; i < replies!.length; i++) ...[
                 InkWell(
-                  // 一楼点击评论展开评论详情
                   onTap: () {
                     replyReply?.call(
                       replyItem,
                       replies![i],
                       replyItem!.replies!.isNotEmpty,
-                    );
-                  },
-                  onLongPress: () {
-                    feedBack();
-                    showModalBottomSheet(
-                      context: context,
-                      useRootNavigator: false,
-                      isScrollControlled: true,
-                      builder: (context) {
-                        return MorePanel(item: replies![i]);
-                      },
                     );
                   },
                   child: Container(
@@ -578,16 +592,15 @@ class ReplyItemRow extends StatelessWidget {
                         fontSize: textTheme.titleSmall!.fontSize,
                       ),
                       maxLines: 2,
-                      atNameToMid: replies![i].content.atNameToMid?.cast<String, int>(),
+                      atNameToMid:
+                          replies![i].content.atNameToMid?.cast<String, int>(),
                     ),
                   ),
                 )
               ],
             if (extraRow == 1)
               InkWell(
-                // 一楼点击【共xx条回复】展开评论详情
                 onTap: () => replyReply?.call(replyItem, null, true),
-                onLongPress: () => {},
                 child: Container(
                   width: double.infinity,
                   padding: const EdgeInsets.fromLTRB(8, 5, 8, 8),
@@ -637,20 +650,6 @@ class MorePanel extends StatelessWidget {
         SmartDialog.showToast('已复制');
         if (context.mounted) {
           Navigator.of(context).pop();
-        }
-        break;
-      case 'copyFreedom':
-        if (context.mounted) {
-          Navigator.of(context).pop();
-          showDialog(
-            context: context,
-            builder: (ctx) {
-              return AlertDialog(
-                title: const Text('自由复制'),
-                content: SelectableText(message),
-              );
-            },
-          );
         }
         break;
       case 'save':
@@ -738,12 +737,6 @@ class MorePanel extends StatelessWidget {
             minLeadingWidth: 0,
             leading: const Icon(Icons.copy_all_outlined, size: 19),
             title: Text('复制全部', style: textTheme.titleSmall),
-          ),
-          ListTile(
-            onTap: () async => await menuActionHandler(context, 'copyFreedom'),
-            minLeadingWidth: 0,
-            leading: const Icon(Icons.copy_outlined, size: 19),
-            title: Text('自由复制', style: textTheme.titleSmall),
           ),
           if (mainFloor && item.content.pictures.isEmpty)
             ListTile(

@@ -68,6 +68,7 @@ class PlPlayerController {
   final Rx<bool> _doubleSpeedStatus = false.obs;
   final Rx<bool> _controlsLock = false.obs;
   final Rx<bool> _isFullScreen = false.obs;
+  final Rx<bool> _isMouseHovering = false.obs;
 
   final Rx<String> _direction = 'horizontal'.obs;
 
@@ -160,6 +161,10 @@ class PlPlayerController {
   /// 是否展示控制条及监听
   Rx<bool> get showControls => _showControls;
   Stream<bool> get onShowControlsChanged => _showControls.stream;
+
+  /// 鼠标悬停状态
+  bool get isMouseHovering => _isMouseHovering.value;
+  set isMouseHovering(bool value) => _isMouseHovering.value = value;
 
   /// 音量控制条展示/隐藏
   Rx<bool> get showVolumeStatus => _showVolumeStatus;
@@ -675,8 +680,10 @@ class PlPlayerController {
       _timer!.cancel();
     }
     _timer = Timer(const Duration(milliseconds: 3000), () {
-      if (!isSliderMoving.value) {
+      if (!isSliderMoving.value && !isMouseHovering) {
         controls = false;
+      } else if (isMouseHovering) {
+        _hideTaskControls();
       }
       _timer = null;
     });

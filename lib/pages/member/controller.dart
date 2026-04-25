@@ -160,27 +160,13 @@ class MemberController extends GetxController {
     try {
       var res = await OldApiService.getFollowStatus(followingUid: mid);
       if (res['status'] == 'success') {
-        final followStatus = res['data']['follow_status'];
-        switch (followStatus) {
-          case 1:
-            attribute.value = 0;
-            attributeText.value = '关注';
-            break;
-          case 2:
-            attribute.value = 2;
-            attributeText.value = '已关注';
-            break;
-          case 3:
-            attribute.value = 1;
-            attributeText.value = '回关';
-            break;
-          case 4:
-            attribute.value = 6;
-            attributeText.value = '已互关';
-            break;
-          default:
-            attribute.value = -1;
-            attributeText.value = '关注';
+        final followStatus = res['follow_status'];
+        if (followStatus == 1) {
+          attribute.value = 2;
+          attributeText.value = '已关注';
+        } else {
+          attribute.value = 0;
+          attributeText.value = '关注';
         }
       }
     } catch (e) {

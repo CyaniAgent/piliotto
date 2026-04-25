@@ -556,132 +556,141 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
             top: 25,
             right: 15,
             bottom: 15,
-            child: GestureDetector(
-              onTap: () {
-                _.controls = !_.showControls.value;
+            child: MouseRegion(
+              onEnter: (_) {
+                widget.controller.isMouseHovering = true;
               },
-              onDoubleTapDown: (TapDownDetails details) {
-                // live模式下禁用 锁定时🔒禁用
-                if (_.videoType == 'live' || _.controlsLock.value) {
-                  return;
-                }
-                final double totalWidth = MediaQuery.sizeOf(context).width;
-                final double tapPosition = details.localPosition.dx;
-                final double sectionWidth = totalWidth / 3;
-                String type = 'left';
-                if (tapPosition < sectionWidth) {
-                  type = 'left';
-                } else if (tapPosition < sectionWidth * 2) {
-                  type = 'center';
-                } else {
-                  type = 'right';
-                }
-                doubleTapFuc(type);
+              onExit: (_) {
+                widget.controller.isMouseHovering = false;
               },
-              onLongPressStart: (LongPressStartDetails detail) {
-                feedBack();
-                _.setDoubleSpeedStatus(true);
-              },
-              onLongPressEnd: (LongPressEndDetails details) {
-                _.setDoubleSpeedStatus(false);
-              },
-
-              /// 水平位置 快进 live模式下禁用
-              onHorizontalDragStart: (DragStartDetails details) {
-                if (_.videoType == 'live' || _.controlsLock.value) {
-                  return;
-                }
-                _.onChangedSliderStart();
-              },
-              onHorizontalDragUpdate: (DragUpdateDetails details) {
-                // live模式下禁用 锁定时🔒禁用
-                if (_.videoType == 'live' || _.controlsLock.value) {
-                  return;
-                }
-                final int curSliderPosition =
-                    _.sliderPosition.value.inMilliseconds;
-                final double scale = 90000 / MediaQuery.sizeOf(context).width;
-                final Duration pos = Duration(
-                    milliseconds:
-                        curSliderPosition + (details.delta.dx * scale).round());
-                final Duration result =
-                    pos.clamp(Duration.zero, _.duration.value);
-                _.onUpdatedSliderProgress(result);
-              },
-              onHorizontalDragEnd: (DragEndDetails details) {
-                if (_.videoType == 'live' || _.controlsLock.value) {
-                  return;
-                }
-                _.onChangedSliderEnd();
-                _.seekTo(_.sliderPosition.value, type: 'slider');
-              },
-              // 垂直方向 音量/亮度调节
-              onVerticalDragUpdate: (DragUpdateDetails details) async {
-                final double totalWidth = MediaQuery.sizeOf(context).width;
-                final double tapPosition = details.localPosition.dx;
-                final double sectionWidth = totalWidth / 3;
-                final double delta = details.delta.dy;
-
-                /// 锁定时禁用
-                if (_.controlsLock.value) {
-                  return;
-                }
-                if (lastFullScreenToggleTime != null &&
-                    DateTime.now().difference(lastFullScreenToggleTime!) <
-                        const Duration(milliseconds: 500)) {
-                  return;
-                }
-                if (tapPosition < sectionWidth) {
-                  // 左边区域 👈
-                  final double level = (_.isFullScreen.value
-                          ? Get.size.height
-                          : screenWidth * 9 / 16) *
-                      3;
-                  final double brightness =
-                      _brightnessValue.value - delta / level;
-                  final double result = brightness.clamp(0.0, 1.0);
-                  setBrightness(result);
-                } else if (tapPosition < sectionWidth * 2) {
-                  // 全屏
-                  final double dy = details.delta.dy;
-                  const double threshold = 7.0; // 滑动阈值
-                  final bool flag = fullScreenGestureMode !=
-                      FullScreenGestureMode.values.last;
-                  if (dy > _distance.value &&
-                      dy > threshold &&
-                      !_.controlsLock.value) {
-                    if (_.isFullScreen.value ^ flag) {
-                      lastFullScreenToggleTime = DateTime.now();
-                      // 下滑退出全屏
-                      await widget.controller.triggerFullScreen(status: flag);
-                    }
-                    _distance.value = 0.0;
-                  } else if (dy < _distance.value &&
-                      dy < -threshold &&
-                      !_.controlsLock.value) {
-                    if (!_.isFullScreen.value ^ flag) {
-                      lastFullScreenToggleTime = DateTime.now();
-                      // 上滑进入全屏
-                      await widget.controller.triggerFullScreen(status: !flag);
-                    }
-                    _distance.value = 0.0;
+              child: GestureDetector(
+                onTap: () {
+                  _.controls = !_.showControls.value;
+                },
+                onDoubleTapDown: (TapDownDetails details) {
+                  // live模式下禁用 锁定时🔒禁用
+                  if (_.videoType == 'live' || _.controlsLock.value) {
+                    return;
                   }
-                  _distance.value = dy;
-                } else {
-                  // 右边区域 👈
-                  EasyThrottle.throttle(
-                      'setVolume', const Duration(milliseconds: 20), () {
+                  final double totalWidth = MediaQuery.sizeOf(context).width;
+                  final double tapPosition = details.localPosition.dx;
+                  final double sectionWidth = totalWidth / 3;
+                  String type = 'left';
+                  if (tapPosition < sectionWidth) {
+                    type = 'left';
+                  } else if (tapPosition < sectionWidth * 2) {
+                    type = 'center';
+                  } else {
+                    type = 'right';
+                  }
+                  doubleTapFuc(type);
+                },
+                onLongPressStart: (LongPressStartDetails detail) {
+                  feedBack();
+                  _.setDoubleSpeedStatus(true);
+                },
+                onLongPressEnd: (LongPressEndDetails details) {
+                  _.setDoubleSpeedStatus(false);
+                },
+
+                /// 水平位置 快进 live模式下禁用
+                onHorizontalDragStart: (DragStartDetails details) {
+                  if (_.videoType == 'live' || _.controlsLock.value) {
+                    return;
+                  }
+                  _.onChangedSliderStart();
+                },
+                onHorizontalDragUpdate: (DragUpdateDetails details) {
+                  // live模式下禁用 锁定时🔒禁用
+                  if (_.videoType == 'live' || _.controlsLock.value) {
+                    return;
+                  }
+                  final int curSliderPosition =
+                      _.sliderPosition.value.inMilliseconds;
+                  final double scale = 90000 / MediaQuery.sizeOf(context).width;
+                  final Duration pos = Duration(
+                      milliseconds: curSliderPosition +
+                          (details.delta.dx * scale).round());
+                  final Duration result =
+                      pos.clamp(Duration.zero, _.duration.value);
+                  _.onUpdatedSliderProgress(result);
+                },
+                onHorizontalDragEnd: (DragEndDetails details) {
+                  if (_.videoType == 'live' || _.controlsLock.value) {
+                    return;
+                  }
+                  _.onChangedSliderEnd();
+                  _.seekTo(_.sliderPosition.value, type: 'slider');
+                },
+                // 垂直方向 音量/亮度调节
+                onVerticalDragUpdate: (DragUpdateDetails details) async {
+                  final double totalWidth = MediaQuery.sizeOf(context).width;
+                  final double tapPosition = details.localPosition.dx;
+                  final double sectionWidth = totalWidth / 3;
+                  final double delta = details.delta.dy;
+
+                  /// 锁定时禁用
+                  if (_.controlsLock.value) {
+                    return;
+                  }
+                  if (lastFullScreenToggleTime != null &&
+                      DateTime.now().difference(lastFullScreenToggleTime!) <
+                          const Duration(milliseconds: 500)) {
+                    return;
+                  }
+                  if (tapPosition < sectionWidth) {
+                    // 左边区域 👈
                     final double level = (_.isFullScreen.value
-                        ? Get.size.height
-                        : screenWidth * 9 / 16);
-                    final double volume = _volumeValue.value -
-                        double.parse(delta.toStringAsFixed(1)) / level;
-                    final double result = volume.clamp(0.0, 1.0);
-                    setVolume(result);
-                  });
-                }
-              },
-              onVerticalDragEnd: (DragEndDetails details) {},
+                            ? Get.size.height
+                            : screenWidth * 9 / 16) *
+                        3;
+                    final double brightness =
+                        _brightnessValue.value - delta / level;
+                    final double result = brightness.clamp(0.0, 1.0);
+                    setBrightness(result);
+                  } else if (tapPosition < sectionWidth * 2) {
+                    // 全屏
+                    final double dy = details.delta.dy;
+                    const double threshold = 7.0; // 滑动阈值
+                    final bool flag = fullScreenGestureMode !=
+                        FullScreenGestureMode.values.last;
+                    if (dy > _distance.value &&
+                        dy > threshold &&
+                        !_.controlsLock.value) {
+                      if (_.isFullScreen.value ^ flag) {
+                        lastFullScreenToggleTime = DateTime.now();
+                        // 下滑退出全屏
+                        await widget.controller.triggerFullScreen(status: flag);
+                      }
+                      _distance.value = 0.0;
+                    } else if (dy < _distance.value &&
+                        dy < -threshold &&
+                        !_.controlsLock.value) {
+                      if (!_.isFullScreen.value ^ flag) {
+                        lastFullScreenToggleTime = DateTime.now();
+                        // 上滑进入全屏
+                        await widget.controller
+                            .triggerFullScreen(status: !flag);
+                      }
+                      _distance.value = 0.0;
+                    }
+                    _distance.value = dy;
+                  } else {
+                    // 右边区域 👈
+                    EasyThrottle.throttle(
+                        'setVolume', const Duration(milliseconds: 20), () {
+                      final double level = (_.isFullScreen.value
+                          ? Get.size.height
+                          : screenWidth * 9 / 16);
+                      final double volume = _volumeValue.value -
+                          double.parse(delta.toStringAsFixed(1)) / level;
+                      final double result = volume.clamp(0.0, 1.0);
+                      setVolume(result);
+                    });
+                  }
+                },
+                onVerticalDragEnd: (DragEndDetails details) {},
+              ),
             ),
           ),
 

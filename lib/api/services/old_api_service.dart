@@ -109,9 +109,7 @@ class OldApiService {
     if (token == null || token.isEmpty) {
       return {
         'status': 'success',
-        'data': {
-          'follow_status': 1,
-        },
+        'follow_status': 0,
       };
     }
 

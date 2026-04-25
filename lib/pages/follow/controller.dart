@@ -28,8 +28,16 @@ class FollowController extends GetxController {
         ? int.parse(Get.parameters['mid']!)
         : userInfo?.mid ?? 0;
     name = Get.parameters['name'] != null
-        ? Uri.decodeComponent(Get.parameters['name']!)
+        ? _safeDecodeUri(Get.parameters['name']!)
         : userInfo?.uname ?? '';
+  }
+
+  String _safeDecodeUri(String value) {
+    try {
+      return Uri.decodeComponent(value);
+    } catch (e) {
+      return value;
+    }
   }
 
   Future<void> queryFollowings({bool isLoadMore = false}) async {

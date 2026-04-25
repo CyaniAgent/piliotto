@@ -21,6 +21,7 @@ import '../pages/media/index.dart';
 import '../pages/member/index.dart';
 import '../pages/member_archive/index.dart';
 import '../pages/member_dynamics/index.dart';
+import '../pages/message/index.dart';
 import '../pages/mine/index.dart';
 
 import '../pages/setting/extra_setting.dart';
@@ -40,6 +41,7 @@ import '../pages/video/detail/index.dart';
 import '../pages/video/detail/reply_reply/index.dart';
 import '../pages/webview/index.dart';
 import '../pages/search/index.dart';
+import '../pages/whisper_detail/index.dart';
 import '../utils/storage.dart';
 
 Box<dynamic> setting = GStrorage.setting;
@@ -89,6 +91,9 @@ class Routes {
         name: '/navbarSetting', page: () => const NavigationBarSetPage()),
     CustomGetPage(
         name: '/actionMenuSet', page: () => const ActionMenuSetPage()),
+    CustomGetPage(
+        name: '/whisperDetail', page: () => const WhisperDetailPage()),
+    CustomGetPage(name: '/message', page: () => const MessagePage()),
   ];
 }
 

@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
-import 'package:piliotto/pages/dynamics/index.dart';
 import 'action_panel.dart';
 import 'author_panel.dart';
 import 'content_panel.dart';
@@ -8,10 +6,14 @@ import 'content_panel.dart';
 class DynamicPanel extends StatelessWidget {
   final dynamic item;
   final String? source;
+  final VoidCallback? onTap;
+  final VoidCallback? onCommentTap;
 
   const DynamicPanel({
     required this.item,
     this.source,
+    this.onTap,
+    this.onCommentTap,
     super.key,
   });
 
@@ -19,7 +21,6 @@ class DynamicPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final controller = Get.find<DynamicsController>();
 
     return Card(
       elevation: 0,
@@ -32,7 +33,7 @@ class DynamicPanel extends StatelessWidget {
         ),
       ),
       child: InkWell(
-        onTap: () => controller.pushDetail(item, 1),
+        onTap: onTap,
         borderRadius: BorderRadius.circular(16),
         child: Padding(
           padding: const EdgeInsets.all(16),
@@ -47,7 +48,8 @@ class DynamicPanel extends StatelessWidget {
                 Content(item: item, source: source),
               ],
               const SizedBox(height: 8),
-              if (source == null) ActionPanel(item: item),
+              if (source == null)
+                ActionPanel(item: item, onCommentTap: onCommentTap),
             ],
           ),
         ),

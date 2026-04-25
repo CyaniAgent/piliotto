@@ -5,7 +5,6 @@ import 'package:piliotto/common/skeleton/video_card_h.dart';
 import 'package:piliotto/common/widgets/http_error.dart';
 import 'package:piliotto/common/widgets/no_data.dart';
 import 'package:piliotto/pages/history/index.dart';
-import 'package:piliotto/utils/responsive_util.dart';
 import 'package:piliotto/utils/route_push.dart';
 
 import 'widgets/item.dart';

@@ -43,6 +43,7 @@ class _VideoDetailPageState extends State<VideoDetailPage>
   late StreamController<double> appbarStream;
   late VideoIntroController videoIntroController;
   late String heroTag;
+  final FocusNode _keyboardFocusNode = FocusNode();
 
   Rx<PlayerStatus> playerStatus = PlayerStatus.playing.obs;
   double doubleOffset = 0;
@@ -210,6 +211,7 @@ class _VideoDetailPageState extends State<VideoDetailPage>
     appbarStream.close();
     WidgetsBinding.instance.removeObserver(this);
     _lifecycleListener.dispose();
+    _keyboardFocusNode.dispose();
     super.dispose();
   }
 
@@ -905,6 +907,42 @@ class _VideoDetailPageState extends State<VideoDetailPage>
       });
     }
 
-    return isWideScreen ? buildWideScreenLayout() : buildNarrowScreenLayout();
+    return KeyboardListener(
+      focusNode: _keyboardFocusNode,
+      autofocus: true,
+      onKeyEvent: (KeyEvent event) {
+        if (event is KeyDownEvent) {
+          _handleKeyEvent(event.logicalKey);
+        }
+      },
+      child: isWideScreen ? buildWideScreenLayout() : buildNarrowScreenLayout(),
+    );
+  }
+
+  void _handleKeyEvent(LogicalKeyboardKey key) {
+    if (plPlayerController == null) return;
+
+    if (key == LogicalKeyboardKey.space) {
+      plPlayerController!.togglePlay();
+    } else if (key == LogicalKeyboardKey.arrowLeft) {
+      final current = plPlayerController!.position.value;
+      plPlayerController!.seekTo(current - const Duration(seconds: 5));
+    } else if (key == LogicalKeyboardKey.arrowRight) {
+      final current = plPlayerController!.position.value;
+      plPlayerController!.seekTo(current + const Duration(seconds: 5));
+    } else if (key == LogicalKeyboardKey.arrowUp) {
+      plPlayerController!
+          .setVolume((plPlayerController!.volume.value + 0.1).clamp(0.0, 1.0));
+    } else if (key == LogicalKeyboardKey.arrowDown) {
+      plPlayerController!
+          .setVolume((plPlayerController!.volume.value - 0.1).clamp(0.0, 1.0));
+    } else if (key == LogicalKeyboardKey.keyF) {
+      plPlayerController!
+          .triggerFullScreen(status: !plPlayerController!.isFullScreen.value);
+    } else if (key == LogicalKeyboardKey.escape) {
+      if (plPlayerController!.isFullScreen.value) {
+        plPlayerController!.triggerFullScreen(status: false);
+      }
+    }
   }
 }

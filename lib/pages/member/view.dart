@@ -176,6 +176,7 @@ class _MemberPageState extends State<MemberPage> with TickerProviderStateMixin {
                 tabs: _tabs.map((t) => Tab(text: t)).toList(),
                 isScrollable: true,
                 dividerColor: Colors.transparent,
+                splashBorderRadius: BorderRadius.circular(10),
                 tabAlignment: TabAlignment.center,
                 onTap: _onTapTab,
               ),
@@ -217,51 +218,68 @@ class _MemberPageState extends State<MemberPage> with TickerProviderStateMixin {
         builder: (context, _) {
           final name = _memberController.memberInfo.value.name;
           if (name == null || name.isEmpty) return const SizedBox();
-          // 只在折叠状态（已滚动超过工具栏高度）时显示 title
-          final isCollapsed = _scrollController.hasClients &&
-              _scrollController.offset > kToolbarHeight;
-          if (!isCollapsed) return const SizedBox();
-          return Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ClipOval(
-                child: NetworkImgLayer(
-                  src: _memberController.face.value,
-                  width: 32,
-                  height: 32,
-                  type: 'avatar',
+          
+          const maxOffset = kToolbarHeight + 50.0;
+          final currentOffset = _scrollController.hasClients
+              ? _scrollController.offset.clamp(0.0, maxOffset)
+              : 0.0;
+          final opacity = (currentOffset / maxOffset).clamp(0.0, 1.0);
+          
+          return Opacity(
+            opacity: opacity,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ClipOval(
+                  child: NetworkImgLayer(
+                    src: _memberController.face.value,
+                    width: 32,
+                    height: 32,
+                    type: 'avatar',
+                  ),
                 ),
-              ),
-              const SizedBox(width: 10),
-              Flexible(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      name,
-                      style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w500,
-                        color: theme.colorScheme.onSurface,
+                const SizedBox(width: 10),
+                Flexible(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        name,
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w500,
+                          color: theme.colorScheme.onSurface,
+                        ),
+                        overflow: TextOverflow.ellipsis,
                       ),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    Text(
-                      'UID: $mid',
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: theme.colorScheme.onSurface.withAlpha(180),
+                      Text(
+                        'UID: $mid',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: theme.colorScheme.onSurface.withAlpha(180),
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           );
         },
       ),
       actions: [
         if (_memberController.memberInfo.value.name != null) ...[
+          if (!_memberController.isOwner.value &&
+              MediaQuery.of(context).size.width < 600)
+            IconButton(
+              onPressed: () => Get.toNamed('/message', parameters: {
+                'mid': mid.toString(),
+                'name': _memberController.memberInfo.value.name ?? '',
+                'face': _memberController.face.value,
+              }),
+              icon: Obx(
+                  () => Icon(Icons.mail_outline, color: _getIconColor(theme))),
+            ),
           IconButton(
             onPressed: () => Get.toNamed(
                 '/memberSearch?mid=$mid&uname=${_memberController.memberInfo.value.name}'),
@@ -317,11 +335,13 @@ class _MemberPageState extends State<MemberPage> with TickerProviderStateMixin {
   }
 
   Widget _buildHeaderWithUserInfo(ThemeData theme) {
+    final isNarrowScreen = MediaQuery.of(context).size.width < 600;
+
     return Obx(() {
       final cover = _memberController.memberInfo.value.cover;
       final hasCover = cover != null && cover.isNotEmpty;
       return Container(
-        height: 280,
+        height: 240,
         decoration: BoxDecoration(
           color: theme.colorScheme.secondaryContainer,
           image: hasCover
@@ -336,22 +356,32 @@ class _MemberPageState extends State<MemberPage> with TickerProviderStateMixin {
               : null,
         ),
         child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 60, 16, 16),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.end,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.end,
+          child: Stack(
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 60, 16, 16),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildAvatar(theme, hasCover),
-                    const SizedBox(width: 16),
-                    Expanded(child: _buildUserDetails(theme, hasCover)),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildAvatar(theme, hasCover),
+                        const SizedBox(width: 16),
+                        Expanded(child: _buildUserDetails(theme, hasCover)),
+                      ],
+                    ),
                   ],
                 ),
-              ],
-            ),
+              ),
+              if (!_memberController.isOwner.value)
+                Positioned(
+                  right: 16,
+                  bottom: 16,
+                  child: _buildActionButtons(theme, hasCover, isNarrowScreen),
+                ),
+            ],
           ),
         ),
       );
@@ -429,33 +459,46 @@ class _MemberPageState extends State<MemberPage> with TickerProviderStateMixin {
                     subTextColor),
               ],
             )),
-        if (!_memberController.isOwner.value) ...[
-          const SizedBox(height: 12),
-          Obx(() => Row(
-                children: [
-                  FilledButton(
-                    onPressed: _memberController.actionRelationMod,
-                    child: Text(_memberController.attributeText.value),
-                  ),
-                  const SizedBox(width: 8),
-                  OutlinedButton(
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: textColor,
-                      side: BorderSide(color: subTextColor),
-                    ),
-                    onPressed: () => Get.toNamed('/whisperDetail', parameters: {
-                      'name': _memberController.memberInfo.value.name ?? '',
-                      'face': _memberController.face.value,
-                      'mid': mid.toString(),
-                      'heroTag': heroTag,
-                    }),
-                    child: const Text('发消息'),
-                  ),
-                ],
-              )),
-        ],
       ],
     );
+  }
+
+  Widget _buildActionButtons(
+      ThemeData theme, bool hasCover, bool isNarrowScreen) {
+    final textColor = hasCover ? Colors.white : theme.colorScheme.onSurface;
+    final subTextColor =
+        hasCover ? Colors.white70 : theme.colorScheme.onSurfaceVariant;
+
+    return Obx(() {
+      if (isNarrowScreen) {
+        return FilledButton(
+          onPressed: _memberController.actionRelationMod,
+          child: Text(_memberController.attributeText.value),
+        );
+      }
+      return Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          FilledButton(
+            onPressed: _memberController.actionRelationMod,
+            child: Text(_memberController.attributeText.value),
+          ),
+          const SizedBox(width: 8),
+          OutlinedButton(
+            style: OutlinedButton.styleFrom(
+              foregroundColor: textColor,
+              side: BorderSide(color: subTextColor),
+            ),
+            onPressed: () => Get.toNamed('/message', parameters: {
+              'mid': mid.toString(),
+              'name': _memberController.memberInfo.value.name ?? '',
+              'face': _memberController.face.value,
+            }),
+            child: const Text('发消息'),
+          ),
+        ],
+      );
+    });
   }
 
   Widget _buildStatItem(
@@ -478,16 +521,25 @@ class _SliverTabBarDelegate extends SliverPersistentHeaderDelegate {
   _SliverTabBarDelegate(this.tabBar);
 
   @override
-  double get minExtent => tabBar.preferredSize.height;
+  double get minExtent => 42;
 
   @override
-  double get maxExtent => tabBar.preferredSize.height;
+  double get maxExtent => 42;
 
   @override
   Widget build(
       BuildContext context, double shrinkOffset, bool overlapsContent) {
     return Container(
-        color: Theme.of(context).colorScheme.surface, child: tabBar);
+      color: Theme.of(context).colorScheme.surface,
+      child: SizedBox(
+        width: double.infinity,
+        height: 42,
+        child: Align(
+          alignment: Alignment.center,
+          child: tabBar,
+        ),
+      ),
+    );
   }
 
   @override
@@ -577,8 +629,8 @@ class _DynamicsTabPageState extends State<_DynamicsTabPage>
   Widget build(BuildContext context) {
     super.build(context);
     double screenWidth = MediaQuery.of(context).size.width;
-    bool isWideScreen = ResponsiveUtil.isMd;
-    double maxContentWidth = 800;
+    bool isWideScreen = ResponsiveUtil.isLg || ResponsiveUtil.isXl;
+    const maxContentWidth = 600.0;
 
     return Obx(() {
       final list = widget.controller.dynamicsList;
@@ -586,13 +638,48 @@ class _DynamicsTabPageState extends State<_DynamicsTabPage>
         return const NoData();
       }
       return ListView.builder(
-        padding: EdgeInsets.symmetric(
-          horizontal: isWideScreen ? (screenWidth - maxContentWidth) / 2 : 0,
-        ),
+        controller: widget.controller.scrollController,
+        padding: _buildPadding(isWideScreen, screenWidth, maxContentWidth),
         itemCount: list.length,
-        itemBuilder: (context, index) => DynamicPanel(item: list[index]),
+        itemBuilder: (context, index) {
+          return Container(
+            margin: const EdgeInsets.symmetric(vertical: 6),
+            width: isWideScreen ? maxContentWidth : null,
+            child: DynamicPanel(
+              item: list[index],
+              onTap: () => Get.toNamed('/dynamicDetail', arguments: {
+                'item': list[index],
+                'floor': 1,
+              }),
+              onCommentTap: () => Get.toNamed('/dynamicDetail', arguments: {
+                'item': list[index],
+                'floor': 1,
+                'action': 'comment',
+              }),
+            ),
+          );
+        },
       );
     });
+  }
+
+  EdgeInsets _buildPadding(
+      bool isWideScreen, double screenWidth, double maxWidth) {
+    if (isWideScreen) {
+      final horizontalPadding = (screenWidth - maxWidth) / 2;
+      return EdgeInsets.only(
+        left: horizontalPadding,
+        right: horizontalPadding,
+        top: 8,
+        bottom: MediaQuery.of(context).padding.bottom + 80,
+      );
+    }
+    return const EdgeInsets.only(
+      left: 12,
+      right: 12,
+      top: 8,
+      bottom: 80,
+    );
   }
 }
 

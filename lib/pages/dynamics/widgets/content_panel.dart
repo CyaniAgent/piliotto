@@ -34,6 +34,7 @@ class _ContentState extends State<Content> {
   }
 
   void onPreviewImg(int initIndex) {
+    if (!mounted) return;
     Navigator.of(context).push(
       HeroDialogRoute<void>(
         builder: (context) => InteractiveviewerGallery(

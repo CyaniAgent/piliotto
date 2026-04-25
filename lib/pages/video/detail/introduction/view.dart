@@ -1,4 +1,3 @@
-import 'package:flutter/services.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:get/get.dart';
@@ -177,23 +176,12 @@ class _VideoInfoState extends State<VideoInfo>
           child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          GestureDetector(
-            behavior: HitTestBehavior.translucent,
-            onLongPress: () async {
-              feedBack();
-              await Clipboard.setData(
-                  ClipboardData(text: widget.videoDetail.title!));
-              SmartDialog.showToast('标题已复制');
-            },
-            child: Text(
-              widget.videoDetail.title!,
-              softWrap: true,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
+          SelectableText(
+            widget.videoDetail.title!,
+            maxLines: 2,
+            style: const TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
             ),
           ),
           Padding(
@@ -249,72 +237,93 @@ class _VideoInfoState extends State<VideoInfo>
           Material(child: actionGrid(context, videoIntroController)),
 
           // 作者信息
-          GestureDetector(
-            onTap: () {
-              if (widget.videoDetail.uid != null) {
-                mid = widget.videoDetail.uid!;
-                memberHeroTag = Utils.makeHeroTag(mid);
-                String face = widget.videoDetail.avatarUrl ?? '';
-                Get.toNamed('/member?mid=$mid',
-                    arguments: {'face': face, 'heroTag': memberHeroTag});
-              }
-            },
-            child: Container(
-              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
-              child: Row(
-                children: [
-                  NetworkImgLayer(
-                    type: 'avatar',
-                    src: widget.videoDetail.avatarUrl,
-                    width: 34,
-                    height: 34,
-                    fadeInDuration: Duration.zero,
-                    fadeOutDuration: Duration.zero,
-                  ),
-                  const SizedBox(width: 10),
-                  Text(widget.videoDetail.username!,
-                      style: const TextStyle(fontSize: 13)),
-                  const SizedBox(width: 6),
-                  Obx(
-                    () => Text(
-                      Utils.numFormat(videoIntroController.follower.value),
-                      style: TextStyle(
-                        fontSize: t.textTheme.labelSmall!.fontSize,
-                        color: outline,
+          Container(
+            margin: const EdgeInsets.symmetric(vertical: 8),
+            decoration: BoxDecoration(
+              color: t.colorScheme.surfaceContainerHighest.withAlpha(100),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: () {
+                  if (widget.videoDetail.uid != null) {
+                    mid = widget.videoDetail.uid!;
+                    memberHeroTag = Utils.makeHeroTag(mid);
+                    String face = widget.videoDetail.avatarUrl ?? '';
+                    Get.toNamed('/member?mid=$mid',
+                        arguments: {'face': face, 'heroTag': memberHeroTag});
+                  }
+                },
+                borderRadius: BorderRadius.circular(12),
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Row(
+                    children: [
+                      NetworkImgLayer(
+                        type: 'avatar',
+                        src: widget.videoDetail.avatarUrl,
+                        width: 40,
+                        height: 40,
+                        fadeInDuration: Duration.zero,
+                        fadeOutDuration: Duration.zero,
                       ),
-                    ),
-                  ),
-                  const Spacer(),
-                  Obx(
-                    () {
-                      final bool isFollowed =
-                          videoIntroController.followStatus.value;
-                      return SizedBox(
-                        height: 32,
-                        child: TextButton(
-                          onPressed: videoIntroController.actionRelationMod,
-                          style: TextButton.styleFrom(
-                            padding: const EdgeInsets.only(
-                              left: 8,
-                              right: 8,
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              widget.videoDetail.username!,
+                              style: const TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                              ),
                             ),
-                            foregroundColor:
-                                isFollowed ? outline : t.colorScheme.onPrimary,
-                            backgroundColor: isFollowed
-                                ? t.colorScheme.onInverseSurface
-                                : t.colorScheme.primary,
-                          ),
-                          child: Text(
-                            isFollowed ? '已关注' : '关注',
-                            style: TextStyle(
-                              fontSize: t.textTheme.labelMedium!.fontSize,
+                            const SizedBox(height: 2),
+                            Obx(
+                              () => Text(
+                                '${Utils.numFormat(videoIntroController.follower.value)} 粉丝',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: outline,
+                                ),
+                              ),
                             ),
-                          ),
+                          ],
                         ),
-                      );
-                    },
-                  )
-                ],
+                      ),
+                      Obx(
+                        () {
+                          final bool isFollowed =
+                              videoIntroController.followStatus.value;
+                          return SizedBox(
+                            height: 32,
+                            child: FilledButton.tonal(
+                              onPressed: videoIntroController.actionRelationMod,
+                              style: FilledButton.styleFrom(
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 16),
+                                backgroundColor: isFollowed
+                                    ? t.colorScheme.surfaceContainerHighest
+                                    : null,
+                              ),
+                              child: Text(
+                                isFollowed ? '已关注' : '关注',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: isFollowed
+                                      ? t.colorScheme.onSurfaceVariant
+                                      : null,
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      )
+                    ],
+                  ),
+                ),
               ),
             ),
           ),

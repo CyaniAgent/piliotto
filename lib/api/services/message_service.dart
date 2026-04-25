@@ -8,7 +8,7 @@ class MessageService {
     if (token == null) return 0;
 
     final response = await OldApiService.request(
-      'message',
+      'im',
       'new_message_num',
       {'token': token},
     );
@@ -27,7 +27,7 @@ class MessageService {
     if (token == null) return [];
 
     final response = await OldApiService.request(
-      'message',
+      'im',
       'read_message_list',
       {'token': token, 'offset': offset.toString(), 'num': num.toString()},
     );
@@ -47,7 +47,7 @@ class MessageService {
     if (token == null) return [];
 
     final response = await OldApiService.request(
-      'message',
+      'im',
       'unread_message_list',
       {'token': token, 'offset': offset.toString(), 'num': num.toString()},
     );
@@ -67,7 +67,7 @@ class MessageService {
     if (token == null) return [];
 
     final response = await OldApiService.request(
-      'message',
+      'im',
       'sent_message_list',
       {'token': token, 'offset': offset.toString(), 'num': num.toString()},
     );
@@ -87,7 +87,7 @@ class MessageService {
     if (token == null) return false;
 
     final response = await OldApiService.request(
-      'message',
+      'im',
       'send_message',
       {'token': token, 'receiver': receiver.toString(), 'message': message},
     );
@@ -100,7 +100,7 @@ class MessageService {
     if (token == null) return null;
 
     final response = await OldApiService.request(
-      'message',
+      'im',
       'read_message',
       {'token': token, 'msg_id': msgId.toString()},
     );
@@ -116,7 +116,7 @@ class MessageService {
     if (token == null) return false;
 
     final response = await OldApiService.request(
-      'message',
+      'im',
       'read_all_system_message',
       {'token': token},
     );
@@ -129,7 +129,7 @@ class MessageService {
     if (token == null) return false;
 
     final response = await OldApiService.request(
-      'message',
+      'im',
       'delete_message',
       {'token': token, 'msg_id': msgId.toString()},
     );
@@ -146,7 +146,7 @@ class MessageService {
     if (token == null) return [];
 
     final response = await OldApiService.request(
-      'message',
+      'im',
       'friend_list',
       {
         'token': token,
@@ -173,7 +173,7 @@ class MessageService {
     if (token == null) return [];
 
     final response = await OldApiService.request(
-      'message',
+      'im',
       'friend_message',
       {
         'token': token,

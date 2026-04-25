@@ -79,6 +79,9 @@ class _HotPageState extends State<HotPage> with AutomaticKeepAliveClientMixin {
       child: CustomScrollView(
         controller: _hotController.scrollController,
         slivers: [
+          SliverToBoxAdapter(
+            child: _buildTabBar(context),
+          ),
           SliverPadding(
             padding: const EdgeInsets.fromLTRB(StyleString.safeSpace,
                 StyleString.safeSpace - 5, StyleString.safeSpace, 0),
@@ -167,5 +170,27 @@ class _HotPageState extends State<HotPage> with AutomaticKeepAliveClientMixin {
         ],
       ),
     );
+  }
+
+  Widget _buildTabBar(BuildContext context) {
+    return Obx(() => Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: List.generate(_hotController.tabs.length, (index) {
+          final isSelected = _hotController.currentTabIndex.value == index;
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            child: FilterChip(
+              label: Text(_hotController.tabs[index]['label'] as String),
+              selected: isSelected,
+              onSelected: (_) {
+                _hotController.onTabChanged(index);
+              },
+            ),
+          );
+        }),
+      ),
+    ));
   }
 }

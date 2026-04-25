@@ -17,6 +17,15 @@ class HotController extends GetxController {
   OverlayEntry? popupDialog;
   RxInt crossAxisCount = 1.obs;
 
+  final List<Map<String, dynamic>> tabs = [
+    {'label': '热门', 'timeLimit': 1},
+    {'label': '周榜', 'timeLimit': 7},
+    {'label': '月榜', 'timeLimit': 30},
+  ];
+  RxInt currentTabIndex = 0.obs;
+
+  int get currentTimeLimit => tabs[currentTabIndex.value]['timeLimit'] as int;
+
   @override
   void onInit() {
     super.onInit();
@@ -34,6 +43,15 @@ class HotController extends GetxController {
     } catch (e) {
       crossAxisCount.value = 1;
     }
+  }
+
+  void onTabChanged(int index) {
+    if (currentTabIndex.value == index) return;
+    currentTabIndex.value = index;
+    videoList.clear();
+    currentPage = 0;
+    noMore = '';
+    queryHotFeed(type: 'init');
   }
 
   Future queryHotFeed({String type = 'init'}) async {
@@ -55,7 +73,7 @@ class HotController extends GetxController {
 
     try {
       final response = await OttohubService.getPopularVideos(
-        timeLimit: 7,
+        timeLimit: currentTimeLimit,
         offset: currentPage * pageSize,
         num: pageSize,
       );

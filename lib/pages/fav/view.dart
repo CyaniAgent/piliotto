@@ -4,7 +4,6 @@ import 'package:get/get.dart';
 import 'package:piliotto/common/skeleton/video_card_h.dart';
 import 'package:piliotto/common/widgets/video_card_h.dart';
 import 'package:piliotto/pages/fav/index.dart';
-import 'package:piliotto/utils/responsive_util.dart';
 
 class FavPage extends StatefulWidget {
   const FavPage({super.key});
