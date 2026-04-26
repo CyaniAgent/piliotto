@@ -45,7 +45,7 @@ class SettingController extends GetxController {
         setting.get(SettingBoxKey.defaultHomePage, defaultValue: 0);
   }
 
-  loginOut() async {
+  Future<void> loginOut() async {
     SmartDialog.show(
       useSystem: true,
       animationType: SmartAnimationType.centerFade_otherSlide,
@@ -77,14 +77,14 @@ class SettingController extends GetxController {
   }
 
   // 开启关闭震动反馈
-  onOpenFeedBack() {
+  void onOpenFeedBack() {
     feedBack();
     feedBackEnable.value = !feedBackEnable.value;
     setting.put(SettingBoxKey.feedBackEnable, feedBackEnable.value);
   }
 
   // 设置动态未读标记
-  setDynamicBadgeMode(BuildContext context) async {
+  Future<void> setDynamicBadgeMode(BuildContext context) async {
     DynamicBadgeMode? result = await showDialog(
       context: context,
       builder: (context) {
@@ -108,7 +108,7 @@ class SettingController extends GetxController {
   }
 
   // 设置默认启动页
-  seteDefaultHomePage(BuildContext context) async {
+  Future<void> seteDefaultHomePage(BuildContext context) async {
     int? result = await showDialog(
       context: context,
       builder: (context) {

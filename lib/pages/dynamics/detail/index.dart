@@ -1,4 +1,4 @@
-library dynamic_detail;
+library;
 
 export './controller.dart';
 export './view.dart';

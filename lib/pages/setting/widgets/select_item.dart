@@ -11,8 +11,8 @@ class SetSelectItem extends StatefulWidget {
     this.title,
     this.subTitle,
     this.setKey,
-    Key? key,
-  }) : super(key: key);
+    super.key,
+  });
 
   @override
   State<SetSelectItem> createState() => _SetSelectItemState();

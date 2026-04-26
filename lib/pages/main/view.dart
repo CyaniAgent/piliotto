@@ -172,7 +172,7 @@ class _MainAppState extends State<MainApp> with SingleTickerProviderStateMixin {
                                   selectedIcon: e['selectIcon'],
                                   label: e['label'],
                                 );
-                              }).toList(),
+                              }),
                             ],
                           ),
                         )
@@ -204,7 +204,7 @@ class _MainAppState extends State<MainApp> with SingleTickerProviderStateMixin {
                                   activeIcon: e['selectIcon'],
                                   label: e['label'],
                                 );
-                              }).toList(),
+                              }),
                             ],
                           ),
                         ),

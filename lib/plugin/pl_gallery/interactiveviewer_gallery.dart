@@ -1,4 +1,4 @@
-library interactiveviewer_gallery;
+library;
 
 import 'dart:io';
 
@@ -39,8 +39,8 @@ class InteractiveviewerGallery<T> extends StatefulWidget {
     this.minScale = 1.0,
     this.onPageChanged,
     this.onDismissed,
-    Key? key,
-  }) : super(key: key);
+    super.key,
+  });
 
   /// The sources to show.
   final List<T> sources;
@@ -113,7 +113,7 @@ class _InteractiveviewerGalleryState extends State<InteractiveviewerGallery>
     setStatusBar();
   }
 
-  setStatusBar() async {
+  Future<void> setStatusBar() async {
     if (Platform.isIOS || Platform.isAndroid) {
       await StatusBarControlPlus.setHidden(true,
           animation: StatusBarAnimation.FADE);
@@ -367,7 +367,7 @@ class _InteractiveviewerGalleryState extends State<InteractiveviewerGallery>
     });
   }
 
-  Widget _itemBuilder(sources, index) {
+  Widget _itemBuilder(List<dynamic> sources, int index) {
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: () {
@@ -388,7 +388,7 @@ class _InteractiveviewerGalleryState extends State<InteractiveviewerGallery>
     );
   }
 
-  onDoubleTap() {
+  void onDoubleTap() {
     Matrix4 matrix = _transformationController!.value.clone();
     double currentScale = matrix.row0.x;
 
@@ -435,7 +435,7 @@ class _InteractiveviewerGalleryState extends State<InteractiveviewerGallery>
         .whenComplete(() => _onScaleChanged(targetScale));
   }
 
-  onLongPress() {
+  void onLongPress() {
     showModalBottomSheet(
       context: context,
       useRootNavigator: true,

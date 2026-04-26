@@ -5,7 +5,7 @@ import 'package:piliotto/common/widgets/badge.dart';
 import 'package:piliotto/common/widgets/network_img_layer.dart';
 import 'package:piliotto/plugin/pl_gallery/index.dart';
 
-void onPreviewImg(currentUrl, picList, initIndex, context) {
+void onPreviewImg(String currentUrl, List<String> picList, int initIndex, BuildContext context) {
   Navigator.of(context).push(
     HeroDialogRoute<void>(
       builder: (BuildContext context) => InteractiveviewerGallery(
@@ -17,7 +17,7 @@ void onPreviewImg(currentUrl, picList, initIndex, context) {
   );
 }
 
-Widget picWidget(item, context) {
+Widget picWidget(dynamic item, BuildContext context) {
   String type = item.modules.moduleDynamic.major.type;
   List pictures = [];
   if (type == 'MAJOR_TYPE_OPUS') {

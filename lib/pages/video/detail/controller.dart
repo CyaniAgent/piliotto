@@ -134,7 +134,7 @@ class VideoDetailController extends GetxController
     tabCtr.addListener(() {});
   }
 
-  showReplyReplyPanel(oid, fRpid, firstFloor, currentReply, loadMore) {
+  void showReplyReplyPanel(int oid, int fRpid, dynamic firstFloor, dynamic currentReply, bool loadMore) {
     // 判断是否为宽屏模式
     final bool isWideScreen = Get.size.width > 768;
     // 宽屏模式使用右侧内容区域的 Scaffold，窄屏使用主 Scaffold
@@ -199,10 +199,10 @@ class VideoDetailController extends GetxController
     }
   }
 
-  Future playerInit({
-    video,
-    seekToTime,
-    duration,
+  Future<void> playerInit({
+    String? video,
+    Duration? seekToTime,
+    Duration? duration,
     bool? autoplay,
   }) async {
     final logger = getLogger();
@@ -238,7 +238,7 @@ class VideoDetailController extends GetxController
   }
 
   // mob端全屏状态关闭二级回复
-  hiddenReplyReplyPanel() {
+  void hiddenReplyReplyPanel() {
     if (replyReplyBottomSheetCtr != null) {
       replyReplyBottomSheetCtr!.close();
     }

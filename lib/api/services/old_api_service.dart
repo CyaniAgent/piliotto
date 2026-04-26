@@ -123,6 +123,24 @@ class OldApiService {
     );
   }
 
+  static Future<Map<String, dynamic>> getFollowingList({
+    required int uid,
+    int offset = 0,
+    int num = 18,
+  }) async {
+    final token = getToken();
+    return request(
+      'following',
+      'following_list',
+      {
+        'uid': uid.toString(),
+        'offset': offset.toString(),
+        'num': num.toString(),
+        'token': token ?? '',
+      },
+    );
+  }
+
   static Future<Map<String, dynamic>> followUser(
       {required int followingUid}) async {
     return request(

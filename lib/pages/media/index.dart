@@ -1,4 +1,4 @@
-library media;
+library;
 
 export './controller.dart';
 export './view.dart';

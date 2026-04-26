@@ -29,7 +29,7 @@ class DynamicDetailController extends GetxController {
         int.tryParse(item?.modules?.moduleStat?.comment?.count ?? '0') ?? 0;
   }
 
-  Future queryReplyList({reqType = 'init'}) async {
+  Future<Map<String, dynamic>> queryReplyList({String reqType = 'init'}) async {
     if (reqType == 'init') {
       currentOffset = 0;
       replyList.clear();

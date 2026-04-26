@@ -1,4 +1,4 @@
-library fav_detail;
+library;
 
 export './controller.dart';
 export './view.dart';

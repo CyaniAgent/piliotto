@@ -12,8 +12,8 @@ class BottomControl extends StatelessWidget implements PreferredSizeWidget {
     this.controller,
     this.triggerFullScreen,
     this.buildBottomControl,
-    Key? key,
-  }) : super(key: key);
+    super.key,
+  });
 
   @override
   Size get preferredSize => const Size(double.infinity, kToolbarHeight);
@@ -21,7 +21,7 @@ class BottomControl extends StatelessWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context) {
     Color colorTheme = Theme.of(context).colorScheme.primary;
-    final _ = controller!;
+    final playerController = controller!;
     return Container(
       color: Colors.transparent,
       height: 90,
@@ -31,9 +31,9 @@ class BottomControl extends StatelessWidget implements PreferredSizeWidget {
         children: [
           Obx(
             () {
-              final int value = _.sliderPositionSeconds.value;
-              final int max = _.durationSeconds.value;
-              final int buffer = _.bufferedSeconds.value;
+              final int value = playerController.sliderPositionSeconds.value;
+              final int max = playerController.durationSeconds.value;
+              final int buffer = playerController.bufferedSeconds.value;
               if (value > max || max <= 0) {
                 return const SizedBox();
               }
@@ -52,15 +52,15 @@ class BottomControl extends StatelessWidget implements PreferredSizeWidget {
                   thumbRadius: 7,
                   onDragStart: (duration) {
                     feedBack();
-                    _.onChangedSliderStart();
+                    playerController.onChangedSliderStart();
                   },
                   onDragUpdate: (duration) {
-                    _.onUpdatedSliderProgress(duration.timeStamp);
+                    playerController.onUpdatedSliderProgress(duration.timeStamp);
                   },
                   onSeek: (duration) {
-                    _.onChangedSliderEnd();
-                    _.onChangedSlider(duration.inSeconds.toDouble());
-                    _.seekTo(Duration(seconds: duration.inSeconds),
+                    playerController.onChangedSliderEnd();
+                    playerController.onChangedSlider(duration.inSeconds.toDouble());
+                    playerController.seekTo(Duration(seconds: duration.inSeconds),
                         type: 'slider');
                   },
                 ),

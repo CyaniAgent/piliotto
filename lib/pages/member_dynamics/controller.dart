@@ -17,7 +17,7 @@ class MemberDynamicsController extends GetxController {
     mid = int.parse(Get.parameters['mid']!);
   }
 
-  Future getMemberDynamic(type) async {
+  Future<Map<String, dynamic>> getMemberDynamic(String type) async {
     if (type == 'onRefresh') {
       offset = 0;
       dynamicsList.clear();
@@ -25,7 +25,7 @@ class MemberDynamicsController extends GetxController {
       hasMore = true;
     }
     if (!hasMore) {
-      return;
+      return {};
     }
     var res = await OldApiService.getUserBlogList(
       uid: mid,

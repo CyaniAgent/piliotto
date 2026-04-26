@@ -6,8 +6,8 @@ class AppBarAni extends StatelessWidget implements PreferredSizeWidget {
     required this.controller,
     required this.visible,
     this.position,
-    Key? key,
-  }) : super(key: key);
+    super.key,
+  });
 
   final PreferredSizeWidget child;
   final AnimationController controller;

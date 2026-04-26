@@ -29,7 +29,7 @@ class UrlUtils {
     }
   }
 
-  static matchUrlPush(
+  static Future<void> matchUrlPush(
     String pathSegment,
     String title,
     String redirectUrl,

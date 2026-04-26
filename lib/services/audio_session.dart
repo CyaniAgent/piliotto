@@ -3,7 +3,7 @@ import 'package:audio_session/audio_session.dart';
 class AudioSessionHandler {
   late AudioSession session;
 
-  setActive(bool active) {
+  void setActive(bool active) {
     session.setActive(active);
   }
 

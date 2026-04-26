@@ -1,3 +1,3 @@
-library video_reply_new;
+library;
 
 export './view.dart';

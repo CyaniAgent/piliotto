@@ -47,9 +47,9 @@ class RcmdController extends GetxController {
   }
 
   // 获取推荐
-  Future queryRcmdFeed(type) async {
+  Future<Map<String, dynamic>> queryRcmdFeed(String type) async {
     if (isLoadingMore.value == false) {
-      return;
+      return {'status': false, 'msg': '正在加载中'};
     }
     try {
       final response = await OttohubService.getRandomVideos(num: 20);

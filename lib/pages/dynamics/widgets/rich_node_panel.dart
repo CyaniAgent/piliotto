@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-InlineSpan richNode(item, context) {
+InlineSpan richNode(dynamic item, BuildContext context) {
   final spacer = _VerticalSpaceSpan(0.0);
   try {
     final desc = item.modules?.moduleDynamic?.desc;

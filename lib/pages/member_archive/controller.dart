@@ -25,7 +25,7 @@ class MemberArchiveController extends GetxController {
     currentOrder.value = orderList.first;
   }
 
-  Future getMemberArchive(type) async {
+  Future<void> getMemberArchive(String type) async {
     if (isLoading.value) {
       return;
     }
@@ -61,7 +61,7 @@ class MemberArchiveController extends GetxController {
     isLoading.value = false;
   }
 
-  toggleSort() async {
+  Future<void> toggleSort() async {
     List<String> typeList = orderList.map((e) => e['type']!).toList();
     int index = typeList.indexOf(currentOrder['type']!);
     if (index == orderList.length - 1) {

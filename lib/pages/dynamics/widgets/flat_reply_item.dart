@@ -94,7 +94,7 @@ class FlatReplyItem extends StatelessWidget {
                                     ),
                                   ),
                                 ))
-                            .toList(),
+                            ,
                     ],
                   ),
                 ),

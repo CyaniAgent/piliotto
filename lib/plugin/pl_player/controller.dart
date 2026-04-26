@@ -690,7 +690,7 @@ class PlPlayerController {
   }
 
   /// 调整播放时间
-  onChangedSlider(double v) {
+  void onChangedSlider(double v) {
     _sliderPosition.value = Duration(seconds: v.floor());
     updateSliderPositionSecond();
   }
@@ -981,13 +981,13 @@ class PlPlayerController {
     }
   }
 
-  setPlayRepeat(PlayRepeat type) {
+  void setPlayRepeat(PlayRepeat type) {
     playRepeat = type;
     videoStorage.put(VideoBoxKey.playRepeat, type.value);
   }
 
   /// 缓存本次弹幕选项
-  cacheDanmakuOption() {
+  void cacheDanmakuOption() {
     localCache.put(LocalCacheKey.danmakuBlockType, blockTypes);
     localCache.put(LocalCacheKey.danmakuShowArea, showArea);
     localCache.put(LocalCacheKey.danmakuOpacity, opacityVal);

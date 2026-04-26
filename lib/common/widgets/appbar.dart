@@ -5,8 +5,8 @@ class AppBarWidget extends StatelessWidget implements PreferredSizeWidget {
     required this.child,
     required this.controller,
     required this.visible,
-    Key? key,
-  }) : super(key: key);
+    super.key,
+  });
 
   final PreferredSizeWidget child;
   final AnimationController controller;

@@ -5,7 +5,7 @@ import 'package:piliotto/common/constants.dart';
 import 'package:piliotto/common/widgets/network_img_layer.dart';
 import 'package:piliotto/utils/download.dart';
 
-Future imageSaveDialog(context, videoItem, closeFn) {
+Future<dynamic> imageSaveDialog(BuildContext context, dynamic videoItem, Function closeFn) {
   final double imgWidth =
       MediaQuery.sizeOf(context).width - StyleString.safeSpace * 2;
   return SmartDialog.show(
@@ -44,7 +44,7 @@ Future imageSaveDialog(context, videoItem, closeFn) {
                     style: ButtonStyle(
                       padding: WidgetStateProperty.all(EdgeInsets.zero),
                     ),
-                    onPressed: () => closeFn!(),
+                    onPressed: () => closeFn(),
                     icon: const Icon(
                       Icons.close,
                       size: 18,
@@ -80,7 +80,7 @@ Future imageSaveDialog(context, videoItem, closeFn) {
                     bool saveStatus = await DownloadUtils.downloadImg(imageUrl);
                     // 保存成功，自动关闭弹窗
                     if (saveStatus) {
-                      closeFn?.call();
+                      closeFn();
                     }
                   },
                   icon: const Icon(Icons.download, size: 20),

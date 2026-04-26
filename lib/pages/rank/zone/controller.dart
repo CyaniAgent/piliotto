@@ -38,7 +38,7 @@ class ZoneController extends GetxController {
   }
 
   // 获取推荐
-  Future queryRankFeed(type, rid) async {
+  Future<dynamic> queryRankFeed(String type, int rid) async {
     zoneID = rid;
     var res = await VideoHttp.getRankVideoList(zoneID);
     if (res['status']) {

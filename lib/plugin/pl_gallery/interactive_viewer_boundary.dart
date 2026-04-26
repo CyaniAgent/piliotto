@@ -20,8 +20,8 @@ class InteractiveViewerBoundary extends StatefulWidget {
     this.onNoBoundaryHit,
     this.maxScale,
     this.minScale,
-    Key? key,
-  }) : super(key: key);
+    super.key,
+  });
 
   final Widget child;
 

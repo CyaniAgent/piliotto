@@ -27,7 +27,7 @@ import '../../../services/shutdown_timer_service.dart';
 import 'widgets/app_bar.dart';
 
 class VideoDetailPage extends StatefulWidget {
-  const VideoDetailPage({Key? key}) : super(key: key);
+  const VideoDetailPage({super.key});
 
   @override
   State<VideoDetailPage> createState() => _VideoDetailPageState();
@@ -99,7 +99,7 @@ class _VideoDetailPageState extends State<VideoDetailPage>
   }
 
   // 流
-  appbarStreamListen() {
+  void appbarStreamListen() {
     appbarStream = StreamController<double>.broadcast();
     _extendNestCtr.addListener(
       () {
@@ -182,7 +182,7 @@ class _VideoDetailPageState extends State<VideoDetailPage>
     });
   }
 
-  getStatusHeight() async {
+  Future<void> getStatusHeight() async {
     // 只在移动平台上使用StatusBarControl
     if (UniversalPlatform.isAndroid || UniversalPlatform.isIOS) {
       try {

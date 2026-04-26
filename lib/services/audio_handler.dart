@@ -27,7 +27,7 @@ class VideoPlayerServiceHandler extends BaseAudioHandler with SeekHandler {
     revalidateSetting();
   }
 
-  revalidateSetting() {
+  void revalidateSetting() {
     enableBackgroundPlay =
         setting.get(SettingBoxKey.enableBackgroundPlay, defaultValue: false);
   }
@@ -37,7 +37,7 @@ class VideoPlayerServiceHandler extends BaseAudioHandler with SeekHandler {
     mediaItem.add(newMediaItem);
   }
 
-  clear() {
+  void clear() {
     if (!enableBackgroundPlay) return;
 
     mediaItem.add(null);
@@ -48,7 +48,7 @@ class VideoPlayerServiceHandler extends BaseAudioHandler with SeekHandler {
     _item.clear();
   }
 
-  onPositionChange(Duration position) {
+  void onPositionChange(Duration position) {
     if (!enableBackgroundPlay) return;
 
     playbackState.add(playbackState.value.copyWith(

@@ -215,7 +215,7 @@ class Utils {
     return 0;
   }
 
-  static String makeHeroTag(v) {
+  static String makeHeroTag(dynamic v) {
     return v.toString() + random.nextInt(9999).toString();
   }
 
@@ -271,7 +271,7 @@ class Utils {
   }
 
   // 版本对比
-  static bool needUpdate(localVersion, remoteVersion) {
+  static bool needUpdate(String localVersion, String remoteVersion) {
     List<String> localVersionList = localVersion.split('.');
     List<String> remoteVersionList = remoteVersion.split('v')[1].split('.');
     for (int i = 0; i < localVersionList.length; i++) {
@@ -354,7 +354,7 @@ class Utils {
   }
 
   // 下载适用于当前系统的安装包
-  static Future matchVersion(data) async {
+  static Future<void> matchVersion(dynamic data) async {
     await SmartDialog.dismiss();
     // 获取设备信息
     DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
@@ -379,7 +379,7 @@ class Utils {
   }
 
   // 时间戳转时间
-  static tampToSeektime(number) {
+  static String tampToSeektime(int number) {
     int hours = number ~/ 60;
     int minutes = number % 60;
 

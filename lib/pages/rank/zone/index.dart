@@ -1,4 +1,4 @@
-library rank.zone;
+library;
 
 export './controller.dart';
 export './view.dart';

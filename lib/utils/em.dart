@@ -1,5 +1,5 @@
 class Em {
-  static regCate(String origin) {
+  static String regCate(String origin) {
     String str = origin;
     RegExp exp = RegExp('<[^>]*>([^<]*)</[^>]*>');
     Iterable<Match> matches = exp.allMatches(origin);
@@ -9,7 +9,7 @@ class Em {
     return str;
   }
 
-  static regTitle(String origin) {
+  static List<dynamic> regTitle(String origin) {
     RegExp exp = RegExp('<[^>]*>([^<]*)</[^>]*>');
     List res = [];
     origin.splitMapJoin(exp, onMatch: (Match match) {

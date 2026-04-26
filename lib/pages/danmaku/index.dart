@@ -1,4 +1,4 @@
-library pldanmaku;
+library;
 
 export './controller.dart';
 export 'view.dart';

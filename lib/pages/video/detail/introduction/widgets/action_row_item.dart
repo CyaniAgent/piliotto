@@ -11,7 +11,7 @@ class ActionRowItem extends StatelessWidget {
   final Function? onLongPress;
 
   const ActionRowItem({
-    Key? key,
+    super.key,
     this.icon,
     this.selectIcon,
     this.onTap,
@@ -19,7 +19,7 @@ class ActionRowItem extends StatelessWidget {
     this.text,
     this.selectStatus = false,
     this.onLongPress,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

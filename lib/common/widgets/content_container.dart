@@ -7,12 +7,11 @@ class ContentContainer extends StatelessWidget {
   final Clip? childClipBehavior;
 
   const ContentContainer(
-      {Key? key,
+      {super.key,
       this.contentWidget,
       this.bottomWidget,
       this.isScrollable = true,
-      this.childClipBehavior})
-      : super(key: key);
+      this.childClipBehavior});
 
   @override
   Widget build(BuildContext context) {

@@ -9,8 +9,8 @@ class CustomDismissible extends StatefulWidget {
     this.onDismissed,
     this.dismissThreshold = 0.2,
     this.enabled = true,
-    Key? key,
-  }) : super(key: key);
+    super.key,
+  });
 
   final Widget child;
   final double dismissThreshold;

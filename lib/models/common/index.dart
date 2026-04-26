@@ -1,4 +1,4 @@
-library commonn_model;
+library;
 
 export './business_type.dart';
 export './gesture_mode.dart';

@@ -93,7 +93,7 @@ class FavDetailItemData {
     }
   }
 
-  String resolveEpId(url) {
+  String resolveEpId(String url) {
     RegExp regex = RegExp(r'\d+');
     Iterable<Match> matches = regex.allMatches(url);
     List<String> numbers = [];

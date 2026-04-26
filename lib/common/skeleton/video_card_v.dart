@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'skeleton.dart';
 
 class VideoCardVSkeleton extends StatelessWidget {
-  const VideoCardVSkeleton({Key? key}) : super(key: key);
+  const VideoCardVSkeleton({super.key});
 
   @override
   Widget build(BuildContext context) {

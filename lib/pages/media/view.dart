@@ -96,7 +96,7 @@ class _MediaPageState extends State<MediaPage>
     );
   }
 
-  Widget favFolder(mediaController, context) {
+  Widget favFolder(MediaController mediaController, BuildContext context) {
     return Column(
       children: [
         Divider(

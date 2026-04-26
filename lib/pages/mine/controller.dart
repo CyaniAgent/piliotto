@@ -69,7 +69,7 @@ class MineController extends GetxController {
     }
   }
 
-  onLogin() async {
+  Future<void> onLogin() async {
     if (!userLogin.value) {
       Get.toNamed('/loginPage', preventDuplicates: false);
     } else {
@@ -93,7 +93,7 @@ class MineController extends GetxController {
     userLogin.value = false;
   }
 
-  onChangeTheme() {
+  void onChangeTheme() {
     ThemeType nextTheme;
     switch (themeType.value) {
       case ThemeType.light:
@@ -111,7 +111,7 @@ class MineController extends GetxController {
     Get.forceAppUpdate();
   }
 
-  pushFollow() {
+  void pushFollow() {
     if (!userLogin.value) {
       SmartDialog.showToast('账号未登录');
       return;
@@ -122,7 +122,7 @@ class MineController extends GetxController {
     );
   }
 
-  pushFans() {
+  void pushFans() {
     if (!userLogin.value) {
       SmartDialog.showToast('账号未登录');
       return;
@@ -133,7 +133,7 @@ class MineController extends GetxController {
     );
   }
 
-  pushDynamic() {
+  void pushDynamic() {
     if (!userLogin.value) {
       SmartDialog.showToast('账号未登录');
       return;

@@ -1,4 +1,4 @@
-library recm_panel;
+library;
 
 export './controller.dart';
 export './view.dart';

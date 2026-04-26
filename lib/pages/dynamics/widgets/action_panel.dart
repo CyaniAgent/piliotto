@@ -96,7 +96,7 @@ class _ActionPanelState extends State<ActionPanel> {
 }
 
 class _ActionButton extends StatelessWidget {
-  final IconData icon;
+  final dynamic icon;
   final String label;
   final bool isActive;
   final VoidCallback onTap;
@@ -125,7 +125,10 @@ class _ActionButton extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(icon, size: 16, color: color),
+                if (icon is FaIconData)
+                  FaIcon(icon, size: 16, color: color)
+                else if (icon is IconData)
+                  Icon(icon, size: 16, color: color),
                 const SizedBox(width: 8),
                 Text(
                   label,

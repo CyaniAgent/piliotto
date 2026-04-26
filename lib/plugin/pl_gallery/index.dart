@@ -1,4 +1,4 @@
-library pl_gallery;
+library;
 
 export './hero_dialog_route.dart';
 export './custom_dismissible.dart';

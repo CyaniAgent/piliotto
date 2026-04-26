@@ -12,7 +12,7 @@ import 'package:piliotto/utils/responsive_util.dart';
 import '../widgets/dynamic_panel.dart';
 
 class DynamicDetailPage extends StatefulWidget {
-  const DynamicDetailPage({Key? key}) : super(key: key);
+  const DynamicDetailPage({super.key});
 
   @override
   State<DynamicDetailPage> createState() => _DynamicDetailPageState();

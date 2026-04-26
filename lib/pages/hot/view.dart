@@ -12,7 +12,7 @@ import 'package:piliotto/utils/main_stream.dart';
 import 'package:piliotto/utils/responsive_util.dart';
 
 class HotPage extends StatefulWidget {
-  const HotPage({Key? key}) : super(key: key);
+  const HotPage({super.key});
 
   @override
   State<HotPage> createState() => _HotPageState();

@@ -1,4 +1,4 @@
-library releated_video_panel;
+library;
 
 export './controller.dart';
 export './view.dart';

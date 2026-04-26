@@ -1,25 +1,49 @@
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:get/get.dart';
 import 'package:piliotto/common/constants.dart';
 import 'package:piliotto/utils/feed_back.dart';
 
 class ActionItem extends StatelessWidget {
   final dynamic icon;
-  final Icon? selectIcon;
+  final dynamic selectIcon;
   final Function? onTap;
   final Function? onLongPress;
   final String? text;
   final bool selectStatus;
 
   const ActionItem({
-    Key? key,
+    super.key,
     this.icon,
     this.selectIcon,
     this.onTap,
     this.onLongPress,
     this.text,
     this.selectStatus = false,
-  }) : super(key: key);
+  });
+
+  Widget _buildIcon(dynamic iconData, Color color) {
+    if (iconData is FaIconData) {
+      return FaIcon(
+        iconData,
+        color: color,
+        size: 20,
+      );
+    } else if (iconData is Icon) {
+      return Icon(
+        iconData.icon,
+        color: color,
+        size: 20,
+      );
+    } else if (iconData is IconData) {
+      return Icon(
+        iconData,
+        color: color,
+        size: 20,
+      );
+    }
+    return const SizedBox.shrink();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -43,14 +67,13 @@ class ActionItem extends StatelessWidget {
               transitionBuilder: (Widget child, Animation<double> animation) {
                 return ScaleTransition(scale: animation, child: child);
               },
-              child: Icon(
+              child: _buildIcon(
                 selectStatus
-                    ? selectIcon?.icon ?? (icon is Icon ? icon.icon : null)
-                    : (icon is Icon ? icon.icon : null),
-                color: selectStatus
+                    ? (selectIcon ?? icon)
+                    : icon,
+                selectStatus
                     ? Theme.of(context).colorScheme.primary
                     : Theme.of(context).colorScheme.outline,
-                size: 20,
               ),
             ),
             const SizedBox(height: 6),

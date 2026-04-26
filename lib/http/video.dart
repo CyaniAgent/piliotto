@@ -357,7 +357,7 @@ class VideoHttp {
   }
 
   // 兼容：视频播放进度（使用 saveWatchHistory）
-  static Future heartBeat({bvid, cid, progress, realtime}) async {
+  static Future<void> heartBeat({String? bvid, int? cid, int? progress, int? realtime}) async {
     // 不执行任何操作，使用 saveWatchHistory 替代
   }
 
@@ -382,7 +382,7 @@ class VideoHttp {
   }
 
   // 兼容：获取字幕内容（Ottohub 不支持）
-  static Future<Map<String, dynamic>> getSubtitleContent(url) async {
+  static Future<Map<String, dynamic>> getSubtitleContent(String url) async {
     return {'status': false, 'msg': 'Ottohub API 不支持字幕功能'};
   }
 

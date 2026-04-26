@@ -34,10 +34,10 @@ class PiliSchame {
     }
   }
 
-  static void _routePush(value) async {
-    final String scheme = value.scheme;
-    final String host = value.host;
-    final String path = value.path;
+  static void _routePush(SchemeEntity value) async {
+    final String scheme = value.scheme ?? '';
+    final String host = value.host ?? '';
+    final String path = value.path ?? '';
     if (scheme == 'ottohub') {
       switch (host) {
         case 'root':

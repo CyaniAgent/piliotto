@@ -162,7 +162,7 @@ class VideoDetailData {
         : null;
   }
 
-  String resolveEpId(url) {
+  String resolveEpId(String url) {
     RegExp regex = RegExp(r'\d+');
     Iterable<Match> matches = regex.allMatches(url);
     List<String> numbers = [];
@@ -224,7 +224,7 @@ class DescV2 {
     this.bizId,
   });
 
-  fromRawJson(String str) {
+  DescV2 fromRawJson(String str) {
     return DescV2.fromJson(json.decode(str));
   }
 
@@ -258,7 +258,7 @@ class Dimension {
     this.rotate,
   });
 
-  fromRawJson(String str) => Dimension.fromJson(json.decode(str));
+  Dimension fromRawJson(String str) => Dimension.fromJson(json.decode(str));
 
   String toRawJson() => json.encode(toJson());
 
@@ -287,7 +287,7 @@ class HonorReply {
     this.honor,
   });
 
-  fromRawJson(String str) => HonorReply.fromJson(json.decode(str));
+  HonorReply fromRawJson(String str) => HonorReply.fromJson(json.decode(str));
 
   String toRawJson() => json.encode(toJson());
 
@@ -319,7 +319,7 @@ class Honor {
     this.weeklyRecommendNum,
   });
 
-  fromRawJson(String str) => Honor.fromJson(json.decode(str));
+  Honor fromRawJson(String str) => Honor.fromJson(json.decode(str));
 
   String toRawJson() => json.encode(toJson());
 
@@ -353,7 +353,7 @@ class Owner {
     this.face,
   });
 
-  fromRawJson(String str) => Owner.fromJson(json.decode(str));
+  Owner fromRawJson(String str) => Owner.fromJson(json.decode(str));
 
   String toRawJson() => json.encode(toJson());
 
@@ -397,7 +397,7 @@ class Part {
     this.cover,
   });
 
-  fromRawJson(String str) => Part.fromJson(json.decode(str));
+  Part fromRawJson(String str) => Part.fromJson(json.decode(str));
 
   String toRawJson() => json.encode(toJson());
 
@@ -462,7 +462,7 @@ class Stat {
     this.argueMsg,
   });
 
-  fromRawJson(String str) => Stat.fromJson(json.decode(str));
+  Stat fromRawJson(String str) => Stat.fromJson(json.decode(str));
 
   String toRawJson() => json.encode(toJson());
 
@@ -511,7 +511,7 @@ class Subtitle {
     this.list,
   });
 
-  fromRawJson(String str) => Subtitle.fromJson(json.decode(str));
+  Subtitle fromRawJson(String str) => Subtitle.fromJson(json.decode(str));
 
   String toRawJson() => json.encode(toJson());
 
@@ -538,7 +538,7 @@ class UserGarb {
     this.urlImageAniCut,
   });
 
-  fromRawJson(String str) => UserGarb.fromJson(json.decode(str));
+  UserGarb fromRawJson(String str) => UserGarb.fromJson(json.decode(str));
 
   String toRawJson() => json.encode(toJson());
 

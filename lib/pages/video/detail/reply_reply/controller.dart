@@ -108,7 +108,7 @@ class VideoReplyReplyController extends GetxController {
     );
   }
 
-  Future queryReplyList({type = 'init', currentReply}) async {
+  Future<void> queryReplyList({String type = 'init', dynamic currentReply}) async {
     if (type == 'init') {
       currentPage = 0;
     }

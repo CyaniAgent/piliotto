@@ -19,8 +19,8 @@ class SetSwitchItem extends StatefulWidget {
     this.defaultVal,
     this.callFn,
     this.needReboot,
-    Key? key,
-  }) : super(key: key);
+    super.key,
+  });
 
   @override
   State<SetSwitchItem> createState() => _SetSwitchItemState();
@@ -37,7 +37,7 @@ class _SetSwitchItemState extends State<SetSwitchItem> {
     val = Setting.get(widget.setKey, defaultValue: widget.defaultVal ?? false);
   }
 
-  void switchChange(value) async {
+  void switchChange(bool? value) async {
     val = value ?? !val;
     await Setting.put(widget.setKey, val);
     if (widget.setKey == SettingBoxKey.autoUpdate && value == true) {

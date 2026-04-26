@@ -42,7 +42,7 @@ class HistoryController extends GetxController {
     }
   }
 
-  Future queryHistoryList({type = 'init'}) async {
+  Future<Map<String, dynamic>> queryHistoryList({String type = 'init'}) async {
     if (userInfo == null) {
       return {'status': false, 'msg': '账号未登录', 'code': -101};
     }
@@ -80,7 +80,7 @@ class HistoryController extends GetxController {
     SmartDialog.showToast('Ottohub API 不支持清空历史记录');
   }
 
-  Future delHistory(kid, business) async {
+  Future<void> delHistory(int kid, String business) async {
     SmartDialog.showToast('Ottohub API 不支持删除历史记录');
   }
 

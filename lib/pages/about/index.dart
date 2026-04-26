@@ -154,28 +154,28 @@ class AboutController extends GetxController {
     Utils.matchVersion(data);
   }
 
-  githubUrl() {
+  void githubUrl() {
     launchUrl(
       Uri.parse('https://github.com/CyaniAgent/piliotto'),
       mode: LaunchMode.externalApplication,
     );
   }
 
-  githubRelease() {
+  void githubRelease() {
     launchUrl(
       Uri.parse('https://github.com/CyaniAgent/piliotto/releases'),
       mode: LaunchMode.externalApplication,
     );
   }
 
-  feedback() {
+  void feedback() {
     launchUrl(
       Uri.parse('https://github.com/CyaniAgent/piliotto/issues'),
       mode: LaunchMode.externalApplication,
     );
   }
 
-  logs() {
+  void logs() {
     Get.toNamed('/logs');
   }
 }

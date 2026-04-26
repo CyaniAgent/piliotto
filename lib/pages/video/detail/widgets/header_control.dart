@@ -817,7 +817,7 @@ class _HeaderControlState extends State<HeaderControl> {
         title: Row(
           children: [
             ComBtn(
-              icon: const Icon(
+              icon: const FaIcon(
                 FontAwesomeIcons.arrowLeft,
                 size: 15,
                 color: Colors.white,
@@ -830,7 +830,7 @@ class _HeaderControlState extends State<HeaderControl> {
         ),
       );
     }
-    final _ = widget.controller!;
+    final playerController = widget.controller!;
     const TextStyle textStyle = TextStyle(
       color: Colors.white,
       fontSize: 12,
@@ -849,7 +849,7 @@ class _HeaderControlState extends State<HeaderControl> {
       title: Row(
         children: [
           ComBtn(
-            icon: const Icon(
+            icon: const FaIcon(
               FontAwesomeIcons.arrowLeft,
               size: 15,
               color: Colors.white,
@@ -893,7 +893,7 @@ class _HeaderControlState extends State<HeaderControl> {
             )
           ] else ...[
             ComBtn(
-              icon: const Icon(
+              icon: const FaIcon(
                 FontAwesomeIcons.house,
                 size: 15,
                 color: Colors.white,
@@ -932,11 +932,12 @@ class _HeaderControlState extends State<HeaderControl> {
                     padding: WidgetStateProperty.all(EdgeInsets.zero),
                   ),
                   onPressed: () {
-                    _.isOpenDanmu.value = !_.isOpenDanmu.value;
+                    playerController.isOpenDanmu.value =
+                        !playerController.isOpenDanmu.value;
                     _saveDanmakuStatus();
                   },
                   icon: Icon(
-                    _.isOpenDanmu.value
+                    playerController.isOpenDanmu.value
                         ? Icons.subtitles_outlined
                         : Icons.subtitles_off_outlined,
                     size: 19,
@@ -960,7 +961,7 @@ class _HeaderControlState extends State<HeaderControl> {
                   widget.controller!.hiddenControls(false);
                   try {
                     canUsePiP = await widget.floating?.isPipAvailable ?? false;
-                  } on PlatformException catch (_) {
+                  } on PlatformException {
                     canUsePiP = false;
                   }
                   if (canUsePiP && widget.floating != null) {
@@ -993,7 +994,7 @@ class _HeaderControlState extends State<HeaderControl> {
                 ),
                 onPressed: () => showSetSpeedSheet(),
                 child: Text(
-                  '${_.playbackSpeed}X',
+                  '${playerController.playbackSpeed}X',
                   style: textStyle,
                 ),
               ),

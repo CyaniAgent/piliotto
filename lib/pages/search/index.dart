@@ -1,4 +1,4 @@
-library search;
+library;
 
 export './view.dart';
 export './controller.dart';

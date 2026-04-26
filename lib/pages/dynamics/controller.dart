@@ -102,7 +102,7 @@ class DynamicsController extends GetxController {
     }
   }
 
-  Future queryFollowDynamic({type = 'init'}) async {
+  Future<void> queryFollowDynamic({String type = 'init'}) async {
     final tab = currentTab.value;
 
     if (type == 'init') {
@@ -149,7 +149,7 @@ class DynamicsController extends GetxController {
     }
   }
 
-  Future<List<DynamicItemModel>> _queryLatestBlogs({type = 'init'}) async {
+  Future<List<DynamicItemModel>> _queryLatestBlogs({String type = 'init'}) async {
     final res = await OldApiService.getNewBlogList(
       offset: _tabOffsetCache['latest']!,
       num: 10,
@@ -165,7 +165,7 @@ class DynamicsController extends GetxController {
     }
   }
 
-  Future<List<DynamicItemModel>> _queryPopularBlogs({type = 'init'}) async {
+  Future<List<DynamicItemModel>> _queryPopularBlogs({String type = 'init'}) async {
     final res = await OldApiService.getPopularBlogList(
       offset: _tabOffsetCache['popular']!,
       num: 10,
@@ -201,7 +201,7 @@ class DynamicsController extends GetxController {
     return _tabHasLoadedCache[tab] ?? false;
   }
 
-  onSelectType(value) async {
+  Future<void> onSelectType(dynamic value) async {
     dynamicsType.value = filterTypeList[value]['value'];
     dynamicsList.value = <DynamicItemModel>[];
     page = 1;
@@ -210,7 +210,7 @@ class DynamicsController extends GetxController {
     scrollController.jumpTo(0);
   }
 
-  pushDetail(item, floor, {action = 'all'}) async {
+  Future<bool> pushDetail(DynamicItemModel? item, int floor, {String action = 'all'}) async {
     feedBack();
     if (action == 'comment') {
       Get.toNamed('/dynamicDetail',
@@ -229,9 +229,10 @@ class DynamicsController extends GetxController {
       default:
         SmartDialog.showToast('暂不支持的动态类型');
     }
+    return false;
   }
 
-  onRefresh() async {
+  Future<void> onRefresh() async {
     page = 1;
     await queryFollowDynamic();
   }

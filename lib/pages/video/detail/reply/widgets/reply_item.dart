@@ -223,7 +223,7 @@ class _ReplyItemState extends State<ReplyItem> {
                                     ),
                                   ),
                                 ))
-                            .toList(),
+                            ,
                       if (widget.replyItem!.isUp!)
                         const Padding(
                           padding: EdgeInsets.only(left: 6),

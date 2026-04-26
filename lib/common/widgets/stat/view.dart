@@ -7,11 +7,11 @@ class StatView extends StatelessWidget {
   final String? size;
 
   const StatView({
-    Key? key,
+    super.key,
     this.theme = 'gray',
     this.view,
     this.size,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -38,12 +38,12 @@ class StatIconText extends StatelessWidget {
   final String? size;
 
   const StatIconText({
-    Key? key,
+    super.key,
     required this.icon,
     required this.text,
     required this.color,
     this.size,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

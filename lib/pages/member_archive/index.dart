@@ -1,4 +1,4 @@
-library member_archive;
+library;
 
 export './controller.dart';
 export './view.dart';

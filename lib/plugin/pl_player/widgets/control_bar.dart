@@ -6,11 +6,11 @@ class ControlBar extends StatelessWidget {
   final double value;
 
   const ControlBar({
-    Key? key,
+    super.key,
     required this.visible,
     required this.icon,
     required this.value,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

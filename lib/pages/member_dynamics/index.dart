@@ -1,4 +1,4 @@
-library member_dynamics;
+library;
 
 export './controller.dart';
 export './view.dart';

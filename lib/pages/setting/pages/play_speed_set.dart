@@ -164,7 +164,7 @@ class _PlaySpeedPageState extends State<PlaySpeedPage> {
   }
 
   //
-  void menuAction(type, int index, id) async {
+  void menuAction(String type, int index, int id) async {
     double chooseSpeed = 1.0;
     // 获取当前选中的倍速值
     chooseSpeed =

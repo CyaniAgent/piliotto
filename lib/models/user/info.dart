@@ -1,8 +1,5 @@
 import 'package:hive/hive.dart';
 
-part 'info.g.dart';
-
-@HiveType(typeId: 4)
 class UserInfoData {
   UserInfoData({
     this.isLogin,
@@ -31,55 +28,30 @@ class UserInfoData {
     this.hasShop,
     this.shopUrl,
   });
-  @HiveField(0)
   bool? isLogin;
-  @HiveField(1)
   int? emailVerified;
-  @HiveField(2)
   String? face;
-  @HiveField(24)
   String? cover;
-  @HiveField(3)
   LevelInfo? levelInfo;
-  @HiveField(4)
   int? mid;
-  @HiveField(5)
   int? mobileVerified;
-  @HiveField(6)
   double? money;
-  @HiveField(7)
   int? moral;
-  @HiveField(8)
   Map? official;
-  @HiveField(9)
   Map? officialVerify;
-  @HiveField(10)
   Map? pendant;
-  @HiveField(11)
   int? scores;
-  @HiveField(12)
   String? uname;
-  @HiveField(13)
   int? vipDueDate;
-  @HiveField(14)
   int? vipStatus;
-  @HiveField(15)
   int? vipType;
-  @HiveField(16)
   int? vipPayType;
-  @HiveField(17)
   int? vipThemeType;
-  @HiveField(18)
   Map? vipLabel;
-  @HiveField(19)
   int? vipAvatarSub;
-  @HiveField(20)
   String? vipNicknameColor;
-  @HiveField(21)
   Map? wallet;
-  @HiveField(22)
   bool? hasShop;
-  @HiveField(23)
   String? shopUrl;
 
   UserInfoData.fromJson(Map<String, dynamic> json) {
@@ -113,7 +85,6 @@ class UserInfoData {
   }
 }
 
-@HiveType(typeId: 5)
 class LevelInfo {
   LevelInfo({
     this.currentLevel,
@@ -121,13 +92,9 @@ class LevelInfo {
     this.currentExp,
     this.nextExp,
   });
-  @HiveField(0)
   int? currentLevel;
-  @HiveField(1)
   int? currentMin;
-  @HiveField(2)
   int? currentExp;
-  @HiveField(3)
   int? nextExp;
 
   LevelInfo.fromJson(Map<String, dynamic> json) {
@@ -137,4 +104,153 @@ class LevelInfo {
     nextExp =
         json['current_level'] == 6 ? json['current_exp'] : json['next_exp'];
   }
+}
+
+class UserInfoDataAdapter extends TypeAdapter<UserInfoData> {
+  @override
+  final int typeId = 4;
+
+  @override
+  UserInfoData read(BinaryReader reader) {
+    final numOfFields = reader.readByte();
+    final fields = <int, dynamic>{
+      for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
+    };
+    return UserInfoData(
+      isLogin: fields[0] as bool?,
+      emailVerified: fields[1] as int?,
+      face: fields[2] as String?,
+      cover: fields[24] as String?,
+      levelInfo: fields[3] as LevelInfo?,
+      mid: fields[4] as int?,
+      mobileVerified: fields[5] as int?,
+      money: fields[6] as double?,
+      moral: fields[7] as int?,
+      official: (fields[8] as Map?)?.cast<dynamic, dynamic>(),
+      officialVerify: (fields[9] as Map?)?.cast<dynamic, dynamic>(),
+      pendant: (fields[10] as Map?)?.cast<dynamic, dynamic>(),
+      scores: fields[11] as int?,
+      uname: fields[12] as String?,
+      vipDueDate: fields[13] as int?,
+      vipStatus: fields[14] as int?,
+      vipType: fields[15] as int?,
+      vipPayType: fields[16] as int?,
+      vipThemeType: fields[17] as int?,
+      vipLabel: (fields[18] as Map?)?.cast<dynamic, dynamic>(),
+      vipAvatarSub: fields[19] as int?,
+      vipNicknameColor: fields[20] as String?,
+      wallet: (fields[21] as Map?)?.cast<dynamic, dynamic>(),
+      hasShop: fields[22] as bool?,
+      shopUrl: fields[23] as String?,
+    );
+  }
+
+  @override
+  void write(BinaryWriter writer, UserInfoData obj) {
+    writer
+      ..writeByte(25)
+      ..writeByte(0)
+      ..write(obj.isLogin)
+      ..writeByte(1)
+      ..write(obj.emailVerified)
+      ..writeByte(2)
+      ..write(obj.face)
+      ..writeByte(24)
+      ..write(obj.cover)
+      ..writeByte(3)
+      ..write(obj.levelInfo)
+      ..writeByte(4)
+      ..write(obj.mid)
+      ..writeByte(5)
+      ..write(obj.mobileVerified)
+      ..writeByte(6)
+      ..write(obj.money)
+      ..writeByte(7)
+      ..write(obj.moral)
+      ..writeByte(8)
+      ..write(obj.official)
+      ..writeByte(9)
+      ..write(obj.officialVerify)
+      ..writeByte(10)
+      ..write(obj.pendant)
+      ..writeByte(11)
+      ..write(obj.scores)
+      ..writeByte(12)
+      ..write(obj.uname)
+      ..writeByte(13)
+      ..write(obj.vipDueDate)
+      ..writeByte(14)
+      ..write(obj.vipStatus)
+      ..writeByte(15)
+      ..write(obj.vipType)
+      ..writeByte(16)
+      ..write(obj.vipPayType)
+      ..writeByte(17)
+      ..write(obj.vipThemeType)
+      ..writeByte(18)
+      ..write(obj.vipLabel)
+      ..writeByte(19)
+      ..write(obj.vipAvatarSub)
+      ..writeByte(20)
+      ..write(obj.vipNicknameColor)
+      ..writeByte(21)
+      ..write(obj.wallet)
+      ..writeByte(22)
+      ..write(obj.hasShop)
+      ..writeByte(23)
+      ..write(obj.shopUrl);
+  }
+
+  @override
+  int get hashCode => typeId.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is UserInfoDataAdapter &&
+          runtimeType == other.runtimeType &&
+          typeId == other.typeId;
+}
+
+class LevelInfoAdapter extends TypeAdapter<LevelInfo> {
+  @override
+  final int typeId = 5;
+
+  @override
+  LevelInfo read(BinaryReader reader) {
+    final numOfFields = reader.readByte();
+    final fields = <int, dynamic>{
+      for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
+    };
+    return LevelInfo(
+      currentLevel: fields[0] as int?,
+      currentMin: fields[1] as int?,
+      currentExp: fields[2] as int?,
+      nextExp: fields[3] as int?,
+    );
+  }
+
+  @override
+  void write(BinaryWriter writer, LevelInfo obj) {
+    writer
+      ..writeByte(4)
+      ..writeByte(0)
+      ..write(obj.currentLevel)
+      ..writeByte(1)
+      ..write(obj.currentMin)
+      ..writeByte(2)
+      ..write(obj.currentExp)
+      ..writeByte(3)
+      ..write(obj.nextExp);
+  }
+
+  @override
+  int get hashCode => typeId.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is LevelInfoAdapter &&
+          runtimeType == other.runtimeType &&
+          typeId == other.typeId;
 }

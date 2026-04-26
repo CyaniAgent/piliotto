@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 
 class AnimatedDialog extends StatefulWidget {
-  const AnimatedDialog({Key? key, required this.child, this.closeFn})
-      : super(key: key);
+  const AnimatedDialog({super.key, required this.child, this.closeFn});
 
   final Widget child;
   final Function? closeFn;

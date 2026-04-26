@@ -85,11 +85,11 @@ class VideoInfo extends StatefulWidget {
   final int vid;
 
   const VideoInfo({
-    Key? key,
+    super.key,
     this.videoDetail,
     this.heroTag,
     required this.vid,
-  }) : super(key: key);
+  });
 
   @override
   State<VideoInfo> createState() => _VideoInfoState();
@@ -141,7 +141,7 @@ class _VideoInfoState extends State<VideoInfo>
   }
 
   // 收藏
-  showFavBottomSheet({type = 'tap'}) {
+  void showFavBottomSheet({String type = 'tap'}) {
     if (videoIntroController.userInfo == null) {
       SmartDialog.showToast('账号未登录');
       return;
@@ -150,7 +150,7 @@ class _VideoInfoState extends State<VideoInfo>
   }
 
   // 用户主页
-  onPushMember() {
+  void onPushMember() {
     feedBack();
     if (widget.videoDetail.uid != null) {
       mid = widget.videoDetail.uid!;
@@ -338,8 +338,8 @@ class _VideoInfoState extends State<VideoInfo>
     Map<String, Widget> menuListWidgets = {
       'like': Obx(
         () => ActionItem(
-          icon: const Icon(FontAwesomeIcons.thumbsUp),
-          selectIcon: const Icon(FontAwesomeIcons.solidThumbsUp),
+          icon: FontAwesomeIcons.thumbsUp,
+          selectIcon: FontAwesomeIcons.solidThumbsUp,
           onTap: handleState(videoIntroController.actionLikeVideo),
           onLongPress: () => videoIntroController.oneThreeDialog(),
           selectStatus: videoIntroController.hasLike.value,
@@ -348,8 +348,8 @@ class _VideoInfoState extends State<VideoInfo>
       ),
       'collect': Obx(
         () => ActionItem(
-          icon: const Icon(FontAwesomeIcons.star),
-          selectIcon: const Icon(FontAwesomeIcons.solidStar),
+          icon: FontAwesomeIcons.star,
+          selectIcon: FontAwesomeIcons.solidStar,
           onTap: () => showFavBottomSheet(),
           onLongPress: () => showFavBottomSheet(type: 'longPress'),
           selectStatus: videoIntroController.hasFav.value,
@@ -357,7 +357,7 @@ class _VideoInfoState extends State<VideoInfo>
         ),
       ),
       'share': ActionItem(
-        icon: const Icon(FontAwesomeIcons.shareFromSquare),
+        icon: FontAwesomeIcons.shareFromSquare,
         onTap: () => videoIntroController.actionShareVideo(),
         selectStatus: false,
         text: '分享',

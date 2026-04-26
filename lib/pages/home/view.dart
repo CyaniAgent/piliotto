@@ -14,7 +14,7 @@ import 'package:piliotto/utils/storage.dart';
 import './controller.dart';
 
 class HomePage extends StatefulWidget {
-  const HomePage({Key? key}) : super(key: key);
+  const HomePage({super.key});
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -42,7 +42,7 @@ class _HomePageState extends State<HomePage>
         'homePageDidChange', const Duration(milliseconds: 100), () {});
   }
 
-  showUserBottomSheet() {
+  void showUserBottomSheet() {
     feedBack();
     // 不使用侧边栏时，跳转到"我的"页面
     final mainController = Get.find<MainController>();
@@ -191,14 +191,14 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
 
 class UserInfoWidget extends StatelessWidget {
   const UserInfoWidget({
-    Key? key,
+    super.key,
     required this.top,
     required this.userLogin,
     required this.userFace,
     required this.callback,
     required this.ctr,
     required this.isNarrowScreen,
-  }) : super(key: key);
+  });
 
   final double top;
   final RxBool userLogin;
@@ -207,7 +207,7 @@ class UserInfoWidget extends StatelessWidget {
   final HomeController? ctr;
   final bool isNarrowScreen;
 
-  Widget buildLoggedInWidget(context) {
+  Widget buildLoggedInWidget(BuildContext context) {
     return Stack(
       children: [
         NetworkImgLayer(
@@ -363,9 +363,9 @@ class _CustomTabsState extends State<CustomTabs> {
 
 class HomeSearchBar extends StatefulWidget {
   const HomeSearchBar({
-    Key? key,
+    super.key,
     required this.ctr,
-  }) : super(key: key);
+  });
 
   final HomeController? ctr;
 

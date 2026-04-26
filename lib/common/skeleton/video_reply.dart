@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'skeleton.dart';
 
 class VideoReplySkeleton extends StatelessWidget {
-  const VideoReplySkeleton({Key? key}) : super(key: key);
+  const VideoReplySkeleton({super.key});
 
   @override
   Widget build(BuildContext context) {

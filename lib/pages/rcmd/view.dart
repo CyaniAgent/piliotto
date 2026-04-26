@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:easy_debounce/easy_throttle.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:piliotto/api/models/video.dart';
 import 'package:piliotto/common/constants.dart';
 import 'package:piliotto/common/skeleton/video_card_v.dart';
 import 'package:piliotto/common/widgets/http_error.dart';
@@ -123,7 +124,7 @@ class _RcmdPageState extends State<RcmdPage>
     );
   }
 
-  Widget contentGrid(ctr, videoList) {
+  Widget contentGrid(RcmdController ctr, List<Video> videoList) {
     int crossAxisCount = ctr.crossAxisCount.value;
     double mainAxisExtent = ResponsiveUtil.calculateMainAxisExtent(
       crossAxisCount: crossAxisCount,
@@ -143,7 +144,7 @@ class _RcmdPageState extends State<RcmdPage>
         mainAxisExtent: mainAxisExtent,
       ),
       itemBuilder: (BuildContext context, int index) {
-        return videoList!.isNotEmpty
+        return videoList.isNotEmpty
             ? VideoCardV(
                 videoItem: videoList[index],
                 crossAxisCount: crossAxisCount,
@@ -151,7 +152,7 @@ class _RcmdPageState extends State<RcmdPage>
               )
             : const VideoCardVSkeleton();
       },
-      itemCount: videoList!.isNotEmpty ? videoList!.length : 10,
+      itemCount: videoList.isNotEmpty ? videoList.length : 10,
       padding: const EdgeInsets.fromLTRB(
           0, StyleString.safeSpace, 0, StyleString.safeSpace),
     );

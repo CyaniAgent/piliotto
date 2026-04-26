@@ -6,8 +6,7 @@ class StatDanMu extends StatelessWidget {
   final dynamic danmu;
   final String? size;
 
-  const StatDanMu({Key? key, this.theme = 'gray', this.danmu, this.size})
-      : super(key: key);
+  const StatDanMu({super.key, this.theme = 'gray', this.danmu, this.size});
 
   @override
   Widget build(BuildContext context) {
@@ -34,12 +33,12 @@ class StatIconText extends StatelessWidget {
   final String? size;
 
   const StatIconText({
-    Key? key,
+    super.key,
     required this.icon,
     required this.text,
     required this.color,
     this.size,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

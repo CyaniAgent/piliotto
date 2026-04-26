@@ -12,11 +12,11 @@ class ResponsiveLayout extends StatelessWidget {
   final bool centered;
 
   const ResponsiveLayout({
-    Key? key,
+    super.key,
     required this.child,
     this.maxWidth = 1200,
     this.centered = true,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -54,7 +54,7 @@ class ResponsiveGridView extends StatefulWidget {
   final bool centered;
 
   const ResponsiveGridView({
-    Key? key,
+    super.key,
     required this.children,
     this.baseCount = 2,
     this.minCount = 1,
@@ -64,7 +64,7 @@ class ResponsiveGridView extends StatefulWidget {
     this.aspectRatio = 16 / 9,
     this.maxWidth = 1200,
     this.centered = true,
-  }) : super(key: key);
+  });
 
   @override
   ResponsiveGridViewState createState() => ResponsiveGridViewState();
@@ -148,11 +148,11 @@ class ResponsiveGridItem extends StatelessWidget {
   final double aspectRatio;
 
   const ResponsiveGridItem({
-    Key? key,
+    super.key,
     required this.child,
     required this.crossAxisCount,
     this.aspectRatio = 16 / 9,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -174,13 +174,13 @@ class ResponsiveText extends StatelessWidget {
 
   const ResponsiveText(
     this.text, {
-    Key? key,
+    super.key,
     this.style,
     this.textAlign,
     this.maxLines,
     this.overflow,
     this.baseSize = 16,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

@@ -26,7 +26,7 @@ class _FontSizeSelectPageState extends State<FontSizeSelectPage> {
         setting.get(SettingBoxKey.defaultTextScale, defaultValue: 1.0);
   }
 
-  setFontSize() {
+  void setFontSize() {
     setting.put(SettingBoxKey.defaultTextScale, currentSize);
     Get.forceAppUpdate();
     Get.back();

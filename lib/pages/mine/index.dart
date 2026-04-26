@@ -1,4 +1,4 @@
-library mine;
+library;
 
 export './controller.dart';
 export './view.dart';

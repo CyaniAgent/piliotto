@@ -173,7 +173,7 @@ class VideoIntroController extends GetxController {
   }
 
   // （取消）收藏
-  Future actionFavVideo({type = 'choose'}) async {
+  Future<void> actionFavVideo({String type = 'choose'}) async {
     if (userInfo == null) {
       SmartDialog.showToast('账号未登录');
       return;
@@ -310,7 +310,7 @@ class VideoIntroController extends GetxController {
   }
 
   //
-  oneThreeDialog() {
+  void oneThreeDialog() {
     showDialog(
       context: Get.context!,
       builder: (context) {

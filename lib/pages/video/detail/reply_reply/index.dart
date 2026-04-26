@@ -1,4 +1,4 @@
-library video_reply_reply_panel;
+library;
 
 export './controller.dart';
 export './view.dart';

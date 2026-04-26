@@ -18,12 +18,12 @@ class FavVideoCardH extends StatelessWidget {
   final String isOwner;
 
   const FavVideoCardH({
-    Key? key,
+    super.key,
     required this.videoItem,
     this.callFn,
     this.searchType,
     required this.isOwner,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

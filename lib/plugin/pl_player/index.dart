@@ -1,4 +1,4 @@
-library pl_player;
+library;
 
 export './controller.dart';
 export './view.dart';

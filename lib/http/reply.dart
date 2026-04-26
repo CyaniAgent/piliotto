@@ -68,8 +68,8 @@ class ReplyHttp {
   }
 
   // 删除评论（Ottohub 不支持）
-  static Future replyDel({
-    required type,
+  static Future<Map<String, dynamic>> replyDel({
+    required String type,
     required int oid,
     required int rpid,
   }) async {

@@ -131,7 +131,7 @@ class UserHttp {
   }
 
   // 删除历史记录（Ottohub 不支持）
-  static Future delHistory(kid) async {
+  static Future<void> delHistory(int kid) async {
     throw UnimplementedError('Ottohub API 不支持删除历史记录');
   }
 
