@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
-import 'package:piliotto/api/services/old_api_service.dart';
+import 'package:piliotto/repositories/i_video_repository.dart';
 import 'package:piliotto/models/member/archive.dart';
 
 class MemberArchiveController extends GetxController {
+  final IVideoRepository _videoRepo = Get.find<IVideoRepository>();
   final ScrollController scrollController = ScrollController();
   late int mid;
   int offset = 0;
@@ -35,26 +36,14 @@ class MemberArchiveController extends GetxController {
       archivesList.clear();
     }
     try {
-      final res = await OldApiService.getUserVideoList(
-        uid: mid,
-        offset: offset,
-        num: 20,
-      );
-      if (res['status'] == 'success') {
-        final List<dynamic> videoList = res['video_list'] as List;
-        final items = videoList.map((video) {
-          return VListItemModel.fromJson(video);
-        }).toList();
-        if (type == 'init') {
-          archivesList.value = items;
-        } else {
-          archivesList.addAll(items);
-        }
-        offset += 20;
-        count = res['total_count'] ?? items.length;
+      final items = await _videoRepo.getUserVideoList(uid: mid, offset: offset, num: 20);
+      if (type == 'init') {
+        archivesList.value = items;
       } else {
-        SmartDialog.showToast(res['message'] ?? '获取投稿失败');
+        archivesList.addAll(items);
       }
+      offset += items.length;
+      count = items.length;
     } catch (e) {
       SmartDialog.showToast('请求失败: $e');
     }

@@ -5,7 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
 import 'package:hive/hive.dart';
-import 'package:piliotto/services/ottohub_service.dart';
+import 'package:piliotto/repositories/i_video_repository.dart';
+import 'package:piliotto/repositories/i_danmaku_repository.dart';
 
 import 'package:piliotto/models/video/reply/item.dart';
 import 'package:piliotto/models/common/reply_type.dart';
@@ -63,6 +64,9 @@ class VideoDetailController extends GetxController
   RxString bgCover = ''.obs;
   RxString cover = ''.obs;
   late PlPlayerController plPlayerController;
+
+  final IVideoRepository _videoRepo = Get.find<IVideoRepository>();
+  final IDanmakuRepository _danmakuRepo = Get.find<IDanmakuRepository>();
 
   late String videoUrl;
   late Duration defaultST;
@@ -167,8 +171,8 @@ class VideoDetailController extends GetxController
     final logger = getLogger();
     logger.d('开始获取视频详情，vid: $vid');
     try {
-      logger.d('调用 OttohubService.getVideoDetail($vid)');
-      videoItem = await OttohubService.getVideoDetail(vid);
+      logger.d('调用 OttohubVideoRepository.getVideoDetail($vid)');
+      videoItem = await _videoRepo.getVideoDetail(vid);
       logger.d('获取视频详情成功: ${videoItem.title}');
       updateCover(videoItem.coverUrl);
       videoUrl = videoItem.videoUrl ?? '';
@@ -224,6 +228,7 @@ class VideoDetailController extends GetxController
       ),
       seekTo: seekToTime ?? defaultST,
       duration: duration ?? Duration(seconds: (videoItem.duration ?? 0)),
+      vid: videoItem.vid,
       enableHeart: enableHeart,
       isFirstTime: isFirstTime,
       autoplay: autoplay ?? autoPlay.value,
@@ -250,7 +255,7 @@ class VideoDetailController extends GetxController
     try {
       final logger = getLogger();
       logger.d('开始获取弹幕，vid: $vid');
-      final danmakus = await OttohubService.getDanmakus(vid);
+      final danmakus = await _danmakuRepo.getDanmakus(vid);
       _danmakuCount.value = danmakus.length;
       logger.d('获取弹幕成功，数量: ${danmakus.length}');
       if (plPlayerController.danmakuController != null) {
@@ -422,7 +427,7 @@ class VideoDetailController extends GetxController
                                       isSending = true;
                                     });
                                     try {
-                                      await OttohubService.sendDanmaku(
+                                      await _danmakuRepo.sendDanmaku(
                                         vid: vid,
                                         text: msg,
                                         time: plPlayerController

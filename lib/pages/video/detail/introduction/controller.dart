@@ -4,18 +4,21 @@ import 'package:flutter/material.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
 import 'package:hive/hive.dart';
-import 'package:piliotto/services/ottohub_service.dart';
+import 'package:piliotto/repositories/i_video_repository.dart';
+import 'package:piliotto/repositories/i_user_repository.dart';
 import 'package:piliotto/pages/video/detail/controller.dart';
 import 'package:piliotto/pages/video/detail/reply/index.dart';
 import 'package:piliotto/utils/feed_back.dart';
 import 'package:piliotto/utils/storage.dart';
+import 'package:piliotto/services/loggeer.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../../../api/models/video.dart';
 
 class VideoIntroController extends GetxController {
   VideoIntroController({required this.vid});
-  // 视频vid
+  final IVideoRepository _videoRepo = Get.find<IVideoRepository>();
+  final IUserRepository _userRepo = Get.find<IUserRepository>();
   int vid;
   // 视频详情 请求返回
   Rx<Video> videoDetail = Video(
@@ -62,7 +65,7 @@ class VideoIntroController extends GetxController {
   // 获取视频简介
   Future queryVideoIntro() async {
     try {
-      videoDetail.value = await OttohubService.getVideoDetail(vid);
+      videoDetail.value = await _videoRepo.getVideoDetail(vid);
       final VideoDetailController videoDetailCtr =
           Get.find<VideoDetailController>(tag: heroTag);
       videoDetailCtr.tabs.value = ['简介', '评论'];
@@ -97,14 +100,11 @@ class VideoIntroController extends GetxController {
   Future queryUserStat() async {
     if (videoDetail.value.uid == 0) return;
     try {
-      final response =
-          await OttohubService.getUserDetail(uid: videoDetail.value.uid);
-      if (response['status'] == 'success') {
-        follower.value =
-            int.tryParse(response['fans_count']?.toString() ?? '0') ?? 0;
-      }
+      final memberInfo =
+          await _userRepo.getUserDetail(uid: videoDetail.value.uid);
+      follower.value = memberInfo.fans ?? 0;
     } catch (e) {
-      // 静默失败
+      getLogger().e('获取用户粉丝数失败: $e');
     }
   }
 
@@ -135,12 +135,11 @@ class VideoIntroController extends GetxController {
     try {
       // 点赞
       if (!hasLike.value) {
-        await OttohubService.toggleLike(vid: vid);
+        await _videoRepo.toggleLike(vid: vid);
         hasLike.value = true;
       }
-      // 收藏
       if (!hasFav.value) {
-        await OttohubService.toggleFavorite(vid: vid);
+        await _videoRepo.toggleFavorite(vid: vid);
         hasFav.value = true;
       }
       SmartDialog.showToast('操作成功');
@@ -156,7 +155,7 @@ class VideoIntroController extends GetxController {
       return;
     }
     try {
-      await OttohubService.toggleLike(vid: vid);
+      await _videoRepo.toggleLike(vid: vid);
       if (!hasLike.value) {
         SmartDialog.showToast('点赞成功');
         hasLike.value = true;
@@ -165,8 +164,7 @@ class VideoIntroController extends GetxController {
         hasLike.value = false;
       }
       hasLike.refresh();
-      // 重新获取视频详情以更新点赞数
-      videoDetail.value = await OttohubService.getVideoDetail(vid);
+      videoDetail.value = await _videoRepo.getVideoDetail(vid);
     } catch (e) {
       SmartDialog.showToast('操作失败：${e.toString()}');
     }
@@ -179,7 +177,7 @@ class VideoIntroController extends GetxController {
       return;
     }
     try {
-      await OttohubService.toggleFavorite(vid: vid);
+      await _videoRepo.toggleFavorite(vid: vid);
       if (!hasFav.value) {
         SmartDialog.showToast('收藏成功');
         hasFav.value = true;
@@ -188,8 +186,7 @@ class VideoIntroController extends GetxController {
         hasFav.value = false;
       }
       hasFav.refresh();
-      // 重新获取视频详情以更新收藏数
-      videoDetail.value = await OttohubService.getVideoDetail(vid);
+      videoDetail.value = await _videoRepo.getVideoDetail(vid);
     } catch (e) {
       SmartDialog.showToast('操作失败：${e.toString()}');
     }
@@ -213,8 +210,8 @@ class VideoIntroController extends GetxController {
       return;
     }
     try {
-      var result = await OttohubService.getFollowStatus(
-          followingUid: videoDetail.value.uid);
+      var result =
+          await _userRepo.getFollowStatus(followingUid: videoDetail.value.uid);
       followStatus.value = result.followStatus == 1;
     } catch (e) {
       followStatus.value = false;
@@ -247,7 +244,7 @@ class VideoIntroController extends GetxController {
             TextButton(
               onPressed: () async {
                 try {
-                  await OttohubService.followUser(
+                  await _userRepo.followUser(
                       followingUid: videoDetail.value.uid);
                   followStatus.value = !currentStatus;
                   if (context.mounted) {

@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:piliotto/api/models/message.dart';
-import 'package:piliotto/api/services/message_service.dart';
+import 'package:piliotto/repositories/i_message_repository.dart';
 
 class WhisperDetailController extends GetxController {
+  final IMessageRepository _messageRepo = Get.find<IMessageRepository>();
   final int friendUid;
   final String friendName;
   final String? friendAvatar;
@@ -59,7 +60,7 @@ class WhisperDetailController extends GetxController {
     errorMessage.value = '';
 
     try {
-      final List<Message> newMessages = await MessageService.getFriendMessage(
+      final List<Message> newMessages = await _messageRepo.getFriendMessage(
         friendUid: friendUid,
         offset: _offset,
         num: _pageSize,
@@ -102,7 +103,7 @@ class WhisperDetailController extends GetxController {
     isSending.value = true;
 
     try {
-      final success = await MessageService.sendMessage(
+      final success = await _messageRepo.sendMessage(
         receiver: friendUid,
         message: text,
       );

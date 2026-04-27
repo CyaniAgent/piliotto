@@ -1,6 +1,5 @@
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
-import 'package:piliotto/http/video.dart';
 import 'package:piliotto/models/model_hot_video_item.dart';
 import 'package:piliotto/utils/responsive_util.dart';
 
@@ -40,16 +39,18 @@ class ZoneController extends GetxController {
   // 获取推荐
   Future<dynamic> queryRankFeed(String type, int rid) async {
     zoneID = rid;
-    var res = await VideoHttp.getRankVideoList(zoneID);
-    if (res['status']) {
+    // TODO: Ottohub API 暂不支持排行榜功能
+    // 暂时返回空数据
+    var res = {'status': true, 'data': <HotVideoItemModel>[]};
+    if (res['status'] == true) {
       if (type == 'init') {
-        videoList.value = res['data'];
+        videoList.value = res['data'] as List<HotVideoItemModel>;
       } else if (type == 'onRefresh') {
         videoList.clear();
-        videoList.addAll(res['data']);
+        videoList.addAll(res['data'] as List<HotVideoItemModel>);
       } else if (type == 'onLoad') {
         videoList.clear();
-        videoList.addAll(res['data']);
+        videoList.addAll(res['data'] as List<HotVideoItemModel>);
       }
     }
     isLoadingMore = false;

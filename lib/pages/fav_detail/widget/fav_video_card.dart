@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:piliotto/common/constants.dart';
 import 'package:piliotto/common/widgets/stat/danmu.dart';
 import 'package:piliotto/common/widgets/stat/view.dart';
-import 'package:piliotto/http/video.dart';
 import 'package:piliotto/utils/id_utils.dart';
 import 'package:piliotto/utils/image_save.dart';
 import 'package:piliotto/utils/utils.dart';
@@ -32,28 +31,13 @@ class FavVideoCardH extends StatelessWidget {
     String heroTag = Utils.makeHeroTag(id);
     return InkWell(
       onTap: () async {
-        String? epId;
-        if (videoItem.ogv != null &&
-            (videoItem.ogv['type_name'] == '番剧' ||
-                videoItem.ogv['type_name'] == '国创')) {
-          videoItem.cid = 0;
-          epId = videoItem.epId;
-        } else if (videoItem.page == 0 || videoItem.page > 1) {
-          var result = await VideoHttp.videoIntro(vid: id);
-          if (result['status']) {
-            epId = result['data'].epId;
-          }
-        }
-
         Map<String, String> parameters = {
           'bvid': bvid,
-          'cid': videoItem.cid.toString(),
-          'epId': epId ?? '',
         };
         Get.toNamed('/video', parameters: parameters, arguments: {
           'videoItem': videoItem,
           'heroTag': heroTag,
-          'videoType': epId != null ? 'media_bangumi' : 'video',
+          'videoType': 'video',
         });
       },
       onLongPress: () => imageSaveDialog(

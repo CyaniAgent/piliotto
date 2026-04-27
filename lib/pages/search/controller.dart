@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:piliotto/services/ottohub_service.dart';
+import 'package:piliotto/repositories/i_video_repository.dart';
 import 'package:piliotto/api/models/video.dart';
 import 'package:piliotto/api/services/api_service.dart';
 import 'package:piliotto/utils/responsive_util.dart';
@@ -9,6 +9,7 @@ import 'package:piliotto/services/loggeer.dart';
 final _logger = getLogger();
 
 class VideoSearchController extends GetxController {
+  final IVideoRepository _videoRepo = Get.find<IVideoRepository>();
   final ScrollController scrollController = ScrollController();
   final TextEditingController searchInputController = TextEditingController();
   final FocusNode searchFocusNode = FocusNode();
@@ -92,7 +93,7 @@ class VideoSearchController extends GetxController {
 
     try {
       int offset = (_currentPage - 1) * _count;
-      final response = await OttohubService.searchVideos(
+      final response = await _videoRepo.searchVideos(
         searchTerm: keyword,
         offset: offset,
         num: _count,

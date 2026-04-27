@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:piliotto/api/services/old_api_service.dart';
+import 'package:get/get.dart';
+import 'package:piliotto/repositories/i_dynamics_repository.dart';
 import 'package:piliotto/models/dynamics/result.dart';
 
 class ActionPanel extends StatefulWidget {
@@ -19,6 +20,7 @@ class ActionPanel extends StatefulWidget {
 }
 
 class _ActionPanelState extends State<ActionPanel> {
+  final IDynamicsRepository _dynamicsRepo = Get.find<IDynamicsRepository>();
   late ModuleStatModel stat;
   bool isProcessing = false;
   bool isLiked = false;
@@ -40,7 +42,7 @@ class _ActionPanelState extends State<ActionPanel> {
 
     try {
       final dynamicId = widget.item.idStr ?? '';
-      final res = await OldApiService.likeBlog(
+      final res = await _dynamicsRepo.likeBlog(
         bid: int.tryParse(dynamicId) ?? 0,
       );
 

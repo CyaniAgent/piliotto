@@ -1,10 +1,11 @@
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
-import 'package:piliotto/services/ottohub_service.dart';
+import 'package:piliotto/repositories/i_video_repository.dart';
 import 'package:piliotto/api/models/video.dart';
 import 'package:piliotto/utils/responsive_util.dart';
 
 class HotController extends GetxController {
+  final IVideoRepository _videoRepo = Get.find<IVideoRepository>();
   final ScrollController scrollController = ScrollController();
   final int pageSize = 20;
   
@@ -72,7 +73,7 @@ class HotController extends GetxController {
     }
 
     try {
-      final response = await OttohubService.getPopularVideos(
+      final response = await _videoRepo.getPopularVideos(
         timeLimit: currentTimeLimit,
         offset: currentPage * pageSize,
         num: pageSize,

@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:piliotto/api/services/old_api_service.dart';
+import 'package:piliotto/repositories/i_dynamics_repository.dart';
 import 'package:piliotto/models/dynamics/result.dart';
 
 class MemberDynamicsController extends GetxController {
+  final IDynamicsRepository _dynamicsRepo = Get.find<IDynamicsRepository>();
   final ScrollController scrollController = ScrollController();
   late int mid;
   int offset = 0;
@@ -27,26 +28,20 @@ class MemberDynamicsController extends GetxController {
     if (!hasMore) {
       return {};
     }
-    var res = await OldApiService.getUserBlogList(
-      uid: mid,
-      offset: offset,
-      num: 10,
-    );
-    if (res['status'] == 'success') {
-      final blogList = res['blog_list'] ?? [];
+    try {
+      final blogList = await _dynamicsRepo.getUserBlogs(uid: mid, offset: offset, num: 10);
       if (blogList.isNotEmpty) {
-        // 转换数据格式
-        for (var blog in blogList) {
-          dynamicsList.add(DynamicItemModel.fromJson(blog));
-        }
-        offset += blogList.length as int;
-        count += blogList.length as int;
-        hasMore = (blogList.length as int) == 10;
+        dynamicsList.addAll(blogList);
+        offset += blogList.length;
+        count += blogList.length;
+        hasMore = blogList.length == 10;
       } else {
         hasMore = false;
       }
+      return {'status': 'success'};
+    } catch (e) {
+      return {'status': 'fail', 'message': e.toString()};
     }
-    return res;
   }
 
   // 上拉加载

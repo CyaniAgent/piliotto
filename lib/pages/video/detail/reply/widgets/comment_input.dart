@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
-import 'package:piliotto/api/services/old_api_service.dart';
+import 'package:get/get.dart';
+import 'package:piliotto/repositories/i_comment_repository.dart';
 import 'package:piliotto/utils/feed_back.dart';
 import 'package:piliotto/utils/storage.dart';
 
@@ -28,6 +29,7 @@ class _CommentInputState extends State<CommentInput> {
   bool _isSubmitting = false;
   bool _hasText = false;
   String? _token;
+  final ICommentRepository _commentRepo = Get.find<ICommentRepository>();
 
   @override
   void initState() {
@@ -69,7 +71,7 @@ class _CommentInputState extends State<CommentInput> {
     });
 
     try {
-      final response = await OldApiService.commentVideo(
+      final response = await _commentRepo.commentVideo(
         vid: widget.vid,
         parentVcid: widget.parentVcid,
         content: content,

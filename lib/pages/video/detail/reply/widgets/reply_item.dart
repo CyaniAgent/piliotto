@@ -1,9 +1,9 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
 import 'package:hive/hive.dart';
-import 'package:piliotto/api/services/old_api_service.dart';
+import 'package:piliotto/repositories/i_comment_repository.dart';
 import 'package:piliotto/common/widgets/badge.dart';
 import 'package:piliotto/common/widgets/markdown_text.dart';
 import 'package:piliotto/common/widgets/network_img_layer.dart';
@@ -45,6 +45,7 @@ class ReplyItem extends StatefulWidget {
 
 class _ReplyItemState extends State<ReplyItem> {
   bool _isExpanded = false;
+  final ICommentRepository _commentRepo = Get.find<ICommentRepository>();
 
   bool get _needsExpandButton {
     if (widget.replyItem!.content?.isText == true && widget.replyLevel == '1') {
@@ -252,7 +253,7 @@ class _ReplyItemState extends State<ReplyItem> {
                                 .replyItem!.replyControl!.location!.isNotEmpty)
                           TextSpan(
                             text:
-                                ' • ${widget.replyItem!.replyControl!.location}',
+                                ' \u2022 ${widget.replyItem!.replyControl!.location}',
                             style: TextStyle(
                               fontSize: textTheme.labelSmall!.fontSize,
                               color: colorScheme.outline,
@@ -260,7 +261,7 @@ class _ReplyItemState extends State<ReplyItem> {
                           ),
                         if (widget.replyItem!.invisible == true)
                           TextSpan(
-                            text: ' • 隐藏的评论',
+                            text: ' \u2022 隐藏的评论',
                             style: TextStyle(
                               color: colorScheme.outline,
                               fontSize: textTheme.labelSmall!.fontSize,
@@ -422,7 +423,7 @@ class _ReplyItemState extends State<ReplyItem> {
             false;
         if (confirmed && context.mounted) {
           try {
-            final result = await OldApiService.deleteVideoComment(
+            final result = await _commentRepo.deleteVideoComment(
               vcid: item.rpid!,
             );
             if (result['status'] == 'success') {
@@ -679,7 +680,7 @@ class MorePanel extends StatelessWidget {
                   onPressed: () async {
                     Navigator.of(ctx).pop();
                     try {
-                      final result = await OldApiService.deleteVideoComment(
+                      final result = await Get.find<ICommentRepository>().deleteVideoComment(
                         vcid: item.rpid!,
                       );
                       if (result['status'] == 'success') {

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:piliotto/api/models/message.dart';
-import 'package:piliotto/api/services/message_service.dart';
+import 'package:piliotto/repositories/i_message_repository.dart';
 import 'package:piliotto/utils/storage.dart';
 import 'controller.dart';
 
@@ -312,7 +312,7 @@ class _ChatDetailPanelState extends State<_ChatDetailPanel> {
     errorMessage.value = '';
 
     try {
-      final List<Message> newMessages = await MessageService.getFriendMessage(
+      final List<Message> newMessages = await Get.find<IMessageRepository>().getFriendMessage(
         friendUid: widget.friendUid,
         offset: _offset,
         num: _pageSize,
@@ -355,7 +355,7 @@ class _ChatDetailPanelState extends State<_ChatDetailPanel> {
     isSending.value = true;
 
     try {
-      final success = await MessageService.sendMessage(
+      final success = await Get.find<IMessageRepository>().sendMessage(
         receiver: widget.friendUid,
         message: text,
       );

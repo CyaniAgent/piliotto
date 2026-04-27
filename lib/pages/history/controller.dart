@@ -3,12 +3,13 @@ import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
 import 'package:hive/hive.dart';
 import 'package:piliotto/api/models/video.dart';
-import 'package:piliotto/api/services/video_service.dart';
+import 'package:piliotto/repositories/i_video_repository.dart';
 import 'package:piliotto/models/user/info.dart';
 import 'package:piliotto/utils/responsive_util.dart';
 import 'package:piliotto/utils/storage.dart';
 
 class HistoryController extends GetxController {
+  final IVideoRepository _videoRepo = Get.find<IVideoRepository>();
   final ScrollController scrollController = ScrollController();
   RxList<Video> historyList = <Video>[].obs;
   RxBool isLoadingMore = false.obs;
@@ -50,7 +51,7 @@ class HistoryController extends GetxController {
     isLoadingMore.value = true;
 
     try {
-      final response = await VideoService.getHistoryVideos();
+      final response = await _videoRepo.getHistoryVideos();
       historyList.value = response.videoList;
     } catch (e) {
       SmartDialog.showToast('请求失败: $e');

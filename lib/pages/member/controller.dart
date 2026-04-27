@@ -1,9 +1,9 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
 import 'package:hive/hive.dart';
-import 'package:piliotto/api/services/old_api_service.dart';
-import 'package:piliotto/http/video.dart';
+import 'package:piliotto/repositories/i_user_repository.dart';
+import 'package:piliotto/repositories/i_video_repository.dart';
 import 'package:piliotto/models/member/archive.dart';
 import 'package:piliotto/models/member/info.dart';
 import 'package:piliotto/utils/responsive_util.dart';
@@ -11,6 +11,8 @@ import 'package:piliotto/utils/storage.dart';
 import 'package:share_plus/share_plus.dart';
 
 class MemberController extends GetxController {
+  final IUserRepository _userRepo = Get.find<IUserRepository>();
+  final IVideoRepository _videoRepo = Get.find<IVideoRepository>();
   late int mid;
   Rx<MemberInfoModel> memberInfo = MemberInfoModel().obs;
   late Map userStat;
@@ -55,23 +57,13 @@ class MemberController extends GetxController {
   }
 
   Future<Map<String, dynamic>> getInfo() async {
-    var res = await OldApiService.getUserDetail(uid: mid);
-    if (res['status'] == 'success') {
-      memberInfo.value = MemberInfoModel(
-        mid: int.tryParse(res['uid'].toString()) ?? 0,
-        name: res['username']?.toString() ?? '',
-        sign: res['intro']?.toString() ?? '',
-        face: res['avatar_url']?.toString() ?? '',
-        cover: res['cover_url']?.toString() ?? '',
-        sex: res['sex']?.toString() ?? '',
-        fans: int.tryParse(res['fans_count'].toString()) ?? 0,
-        attention: int.tryParse(res['followings_count'].toString()) ?? 0,
-        archiveCount: int.tryParse(res['video_num'].toString()) ?? 0,
-        articleCount: int.tryParse(res['blog_num'].toString()) ?? 0,
-      );
-      face.value = res['avatar_url']?.toString() ?? '';
+    try {
+      memberInfo.value = await _userRepo.getUserDetail(uid: mid);
+      face.value = memberInfo.value.face ?? '';
+      return {'status': 'success'};
+    } catch (e) {
+      return {'status': 'fail', 'message': e.toString()};
     }
-    return res;
   }
 
   Future<void> getMemberArchive(String type) async {
@@ -82,21 +74,14 @@ class MemberController extends GetxController {
       archiveList.clear();
     }
     try {
-      final res = await OldApiService.getUserVideoList(
-        uid: mid,
-        offset: _archiveOffset,
-        num: 20,
-      );
-      if (res['status'] == 'success') {
-        final List<dynamic> videoList = res['video_list'] as List;
-        final items = videoList.map((v) => VListItemModel.fromJson(v)).toList();
-        if (type == 'init') {
-          archiveList.value = items;
-        } else {
-          archiveList.addAll(items);
-        }
-        _archiveOffset += items.length;
+      final items = await _videoRepo.getUserVideoList(
+          uid: mid, offset: _archiveOffset, num: 20);
+      if (type == 'init') {
+        archiveList.value = items;
+      } else {
+        archiveList.addAll(items);
       }
+      _archiveOffset += items.length;
     } catch (e) {
       SmartDialog.showToast('获取投稿失败: $e');
     }
@@ -139,7 +124,7 @@ class MemberController extends GetxController {
             TextButton(
               onPressed: () async {
                 try {
-                  await OldApiService.followUser(followingUid: mid);
+                  await _userRepo.followUser(followingUid: mid);
                   await relationSearch();
                   SmartDialog.dismiss();
                 } catch (e) {
@@ -158,16 +143,13 @@ class MemberController extends GetxController {
     if (userInfo == null) return;
     if (mid == ownerMid) return;
     try {
-      var res = await OldApiService.getFollowStatus(followingUid: mid);
-      if (res['status'] == 'success') {
-        final followStatus = res['follow_status'];
-        if (followStatus == 1) {
-          attribute.value = 2;
-          attributeText.value = '已关注';
-        } else {
-          attribute.value = 0;
-          attributeText.value = '关注';
-        }
+      var res = await _userRepo.getFollowStatus(followingUid: mid);
+      if (res.followStatus == 1) {
+        attribute.value = 2;
+        attributeText.value = '已关注';
+      } else {
+        attribute.value = 0;
+        attributeText.value = '关注';
       }
     } catch (e) {
       attribute.value = -1;
@@ -197,18 +179,20 @@ class MemberController extends GetxController {
             ),
             TextButton(
               onPressed: () async {
-                var res = await VideoHttp.relationMod(
-                  mid: mid,
-                  act: attribute.value != 128 ? 5 : 6,
-                  reSrc: 11,
-                );
-                SmartDialog.dismiss();
-                if (res['status']) {
+                try {
+                  if (attribute.value != 128) {
+                    await _userRepo.blockUser(blockedId: mid);
+                  } else {
+                    await _userRepo.unblockUser(blockedId: mid);
+                  }
+                  SmartDialog.dismiss();
                   attribute.value = attribute.value != 128 ? 128 : 0;
                   attributeText.value = attribute.value == 128 ? '已拉黑' : '关注';
                   memberInfo.value.isFollowed = false;
                   relationSearch();
                   memberInfo.update((val) {});
+                } catch (e) {
+                  SmartDialog.showToast('操作失败，请重试');
                 }
               },
               child: const Text('确认'),

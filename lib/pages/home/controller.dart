@@ -5,9 +5,10 @@ import 'package:get/get.dart';
 import 'package:hive/hive.dart';
 import 'package:piliotto/models/common/tab_type.dart';
 import 'package:piliotto/utils/storage.dart';
-import 'package:piliotto/services/ottohub_service.dart';
+import 'package:piliotto/repositories/i_video_repository.dart';
 
 class HomeController extends GetxController with GetTickerProviderStateMixin {
+  final IVideoRepository _videoRepo = Get.find<IVideoRepository>();
   bool flag = false;
   late RxList tabs = [].obs;
   RxInt initialIndex = 1.obs;
@@ -110,7 +111,7 @@ class HomeController extends GetxController with GetTickerProviderStateMixin {
 
   void searchDefault() async {
     try {
-      final response = await OttohubService.getPopularVideos(
+      final response = await _videoRepo.getPopularVideos(
         timeLimit: 7,
         offset: 0,
         num: 10,

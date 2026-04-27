@@ -1,13 +1,15 @@
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
 import 'package:hive/hive.dart';
-import 'package:piliotto/api/services/old_api_service.dart';
+import 'package:piliotto/repositories/i_user_repository.dart';
 import 'package:piliotto/models/common/theme_type.dart';
 import 'package:piliotto/models/user/info.dart';
 import 'package:piliotto/models/user/stat.dart';
 import 'package:piliotto/utils/storage.dart';
+import 'package:piliotto/services/loggeer.dart';
 
 class MineController extends GetxController {
+  final IUserRepository _userRepo = Get.find<IUserRepository>();
   Rx<UserInfoData> userInfo = UserInfoData().obs;
   Rx<UserStat> userStat = UserStat().obs;
   RxBool userLogin = false.obs;
@@ -47,25 +49,17 @@ class MineController extends GetxController {
       final uid = userInfo.value.mid;
       if (uid == null) return;
 
-      final response = await OldApiService.getUserDetail(uid: uid);
-      if (response['status'] == 'success') {
-        // 旧版 API 直接返回数据，没有 data 包装
-        final coverUrl = response['cover_url']?.toString();
-        if (coverUrl != null && coverUrl.isNotEmpty) {
-          userInfo.value.cover = coverUrl;
-        }
-        // 更新关注和粉丝数量
-        userStat.value.following =
-            int.tryParse(response['followings_count']?.toString() ?? '0') ?? 0;
-        userStat.value.follower =
-            int.tryParse(response['fans_count']?.toString() ?? '0') ?? 0;
-        userInfo.refresh();
-        userStat.refresh();
-        // 同时更新缓存
-        userInfoCache.put('userInfoCache', userInfo.value);
+      final profileInfo = await _userRepo.getUserProfileInfo(uid: uid);
+      if (profileInfo.coverUrl != null && profileInfo.coverUrl!.isNotEmpty) {
+        userInfo.value.cover = profileInfo.coverUrl;
       }
+      userStat.value.following = profileInfo.followingCount;
+      userStat.value.follower = profileInfo.fansCount;
+      userInfo.refresh();
+      userStat.refresh();
+      userInfoCache.put('userInfoCache', userInfo.value);
     } catch (e) {
-      // 静默失败，不影响用户体验
+      getLogger().e('刷新用户信息失败: $e');
     }
   }
 

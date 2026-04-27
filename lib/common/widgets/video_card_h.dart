@@ -6,7 +6,7 @@ import 'package:piliotto/utils/feed_back.dart';
 import 'package:piliotto/utils/image_save.dart';
 
 import '../../api/models/video.dart';
-import '../../services/ottohub_service.dart';
+import '../../repositories/i_user_repository.dart';
 import '../../utils/utils.dart';
 import '../constants.dart';
 import 'badge.dart';
@@ -354,7 +354,7 @@ class MorePanel extends StatelessWidget {
             TextButton(
               onPressed: () async {
                 try {
-                  await OttohubService.blockUser(blockedId: _ownerId);
+                  await Get.find<IUserRepository>().blockUser(blockedId: _ownerId);
                   SmartDialog.dismiss();
                   SmartDialog.showToast('拉黑成功');
                 } catch (error) {

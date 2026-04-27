@@ -1,11 +1,12 @@
 import 'package:get/get.dart';
 import 'package:piliotto/api/models/video.dart';
-import 'package:piliotto/services/ottohub_service.dart';
+import 'package:piliotto/repositories/i_video_repository.dart';
 import 'package:piliotto/services/loggeer.dart';
 
 final _logger = getLogger();
 
 class FavDetailController extends GetxController {
+  final IVideoRepository _videoRepo = Get.find<IVideoRepository>();
   RxString title = ''.obs;
   RxList<Video> favList = <Video>[].obs;
   RxBool isLoading = false.obs;
@@ -35,7 +36,7 @@ class FavDetailController extends GetxController {
     }
 
     try {
-      final response = await OttohubService.getFavoriteVideos(
+      final response = await _videoRepo.getFavoriteVideos(
         offset: _currentPage,
         num: _pageSize,
       );
@@ -71,7 +72,7 @@ class FavDetailController extends GetxController {
 
   Future<void> removeFavorite(int vid) async {
     try {
-      await OttohubService.toggleFavorite(vid: vid);
+      await _videoRepo.toggleFavorite(vid: vid);
       favList.removeWhere((v) => v.vid == vid);
     } catch (e) {
       _logger.e('取消收藏失败: $e');

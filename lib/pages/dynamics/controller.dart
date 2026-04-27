@@ -2,8 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
 import 'package:hive/hive.dart';
-import 'package:piliotto/api/services/old_api_service.dart';
-import 'package:piliotto/api/services/api_service.dart';
+import 'package:piliotto/repositories/i_dynamics_repository.dart';
 import 'package:piliotto/models/common/dynamics_type.dart';
 import 'package:piliotto/models/dynamics/result.dart';
 import 'package:piliotto/utils/feed_back.dart';
@@ -12,6 +11,7 @@ import 'package:piliotto/utils/responsive_util.dart';
 import 'package:piliotto/utils/storage.dart';
 
 class DynamicsController extends GetxController {
+  final IDynamicsRepository _dynamicsRepo = Get.find<IDynamicsRepository>();
   int page = 1;
   String? offset = '';
   RxList<DynamicItemModel> dynamicsList = <DynamicItemModel>[].obs;
@@ -140,9 +140,6 @@ class DynamicsController extends GetxController {
           SmartDialog.showToast('没有更多了');
         }
       }
-    } on ApiException catch (e) {
-      isLoadingDynamic.value = false;
-      SmartDialog.showToast('请求失败: ${e.message}');
     } catch (e) {
       isLoadingDynamic.value = false;
       SmartDialog.showToast('请求失败: $e');
@@ -150,35 +147,17 @@ class DynamicsController extends GetxController {
   }
 
   Future<List<DynamicItemModel>> _queryLatestBlogs({String type = 'init'}) async {
-    final res = await OldApiService.getNewBlogList(
+    return _dynamicsRepo.getNewBlogs(
       offset: _tabOffsetCache['latest']!,
       num: 10,
     );
-
-    if (res['status'] == 'success') {
-      final List<dynamic> blogList = res['blog_list'] as List;
-      return blogList.map((blog) {
-        return DynamicItemModel.fromJson(blog);
-      }).toList();
-    } else {
-      throw Exception(res['message'] ?? '获取最新动态失败');
-    }
   }
 
   Future<List<DynamicItemModel>> _queryPopularBlogs({String type = 'init'}) async {
-    final res = await OldApiService.getPopularBlogList(
+    return _dynamicsRepo.getPopularBlogs(
       offset: _tabOffsetCache['popular']!,
       num: 10,
     );
-
-    if (res['status'] == 'success') {
-      final List<dynamic> blogList = res['blog_list'] as List;
-      return blogList.map((blog) {
-        return DynamicItemModel.fromJson(blog);
-      }).toList();
-    } else {
-      throw Exception(res['message'] ?? '获取热门动态失败');
-    }
   }
 
   void onTabChanged(String tab) {

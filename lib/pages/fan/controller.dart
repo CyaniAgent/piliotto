@@ -2,13 +2,14 @@ import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
 import 'package:hive/hive.dart';
 import 'package:piliotto/api/models/following.dart';
-import 'package:piliotto/services/ottohub_service.dart';
+import 'package:piliotto/repositories/i_user_repository.dart';
 import 'package:piliotto/services/loggeer.dart';
 import 'package:piliotto/utils/storage.dart';
 
 final _logger = getLogger();
 
 class FanController extends GetxController {
+  final IUserRepository _userRepo = Get.find<IUserRepository>();
   Box userInfoCache = GStrorage.userInfo;
   int offset = 0;
   final int num = 12; // API 限制每次最多获取 12 条
@@ -53,7 +54,7 @@ class FanController extends GetxController {
     isLoading.value = true;
 
     try {
-      final response = await OttohubService.getFansList(
+      final response = await _userRepo.getFansList(
         uid: mid,
         offset: offset,
         num: num,

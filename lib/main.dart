@@ -24,6 +24,18 @@ import 'package:piliotto/utils/data.dart';
 import 'package:piliotto/utils/global_data_cache.dart';
 import 'package:piliotto/utils/storage.dart';
 import 'package:media_kit/media_kit.dart';
+import 'package:piliotto/repositories/ottohub_video_repository.dart';
+import 'package:piliotto/repositories/i_video_repository.dart';
+import 'package:piliotto/repositories/i_user_repository.dart';
+import 'package:piliotto/repositories/ottohub_user_repository.dart';
+import 'package:piliotto/repositories/i_dynamics_repository.dart';
+import 'package:piliotto/repositories/ottohub_dynamics_repository.dart';
+import 'package:piliotto/repositories/ottohub_comment_repository.dart';
+import 'package:piliotto/repositories/i_comment_repository.dart';
+import 'package:piliotto/repositories/i_message_repository.dart';
+import 'package:piliotto/repositories/ottohub_message_repository.dart';
+import 'package:piliotto/repositories/ottohub_danmaku_repository.dart';
+import 'package:piliotto/repositories/i_danmaku_repository.dart';
 import 'package:piliotto/utils/recommend_filter.dart';
 import 'package:catcher_2/catcher_2.dart';
 
@@ -55,6 +67,13 @@ void main() async {
       [DeviceOrientation.portraitUp, DeviceOrientation.portraitDown]);
   await GStrorage.init();
   clearLogs();
+
+  Get.put<IVideoRepository>(OttohubVideoRepository());
+  Get.put<IUserRepository>(OttohubUserRepository());
+  Get.put<IDynamicsRepository>(OttohubDynamicsRepository());
+  Get.put<ICommentRepository>(OttohubCommentRepository());
+  Get.put<IMessageRepository>(OttohubMessageRepository());
+  Get.put<IDanmakuRepository>(OttohubDanmakuRepository());
 
   // 异常捕获 logo记录
   final Catcher2Options releaseConfig = Catcher2Options(

@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:hive/hive.dart';
-import 'package:piliotto/api/services/old_api_service.dart';
+import 'package:piliotto/repositories/i_video_repository.dart';
 import 'package:piliotto/models/user/fav_folder.dart';
 import 'package:piliotto/utils/storage.dart';
 
 class MediaController extends GetxController {
+  final IVideoRepository _videoRepo = Get.find<IVideoRepository>();
   Rx<FavFolderData> favFolderData = FavFolderData().obs;
   Box userInfoCache = GStrorage.userInfo;
   RxBool userLogin = false.obs;
@@ -37,12 +38,8 @@ class MediaController extends GetxController {
       return {'status': false, 'data': [], 'msg': '未登录'};
     }
     try {
-      final res = await OldApiService.getFavoriteVideoList(offset: 0, num: 5);
-      if (res['status'] == 'success') {
-        return {'status': true, 'data': res};
-      } else {
-        return {'status': false, 'msg': res['message'] ?? '获取收藏失败'};
-      }
+      final response = await _videoRepo.getFavoriteVideos(offset: 0, num: 5);
+      return {'status': true, 'data': response};
     } catch (e) {
       return {'status': false, 'msg': e.toString()};
     }

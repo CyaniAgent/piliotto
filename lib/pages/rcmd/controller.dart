@@ -2,13 +2,14 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
 import 'package:hive/hive.dart';
-import 'package:piliotto/services/ottohub_service.dart';
+import 'package:piliotto/repositories/i_video_repository.dart';
 import 'package:piliotto/api/models/video.dart';
 import 'package:piliotto/utils/responsive_util.dart';
 import 'package:piliotto/utils/storage.dart';
 import 'package:piliotto/services/loggeer.dart';
 
 class RcmdController extends GetxController {
+  final IVideoRepository _videoRepo = Get.find<IVideoRepository>();
   final ScrollController scrollController = ScrollController();
   RxBool isLoadingMore = true.obs;
   OverlayEntry? popupDialog;
@@ -52,7 +53,7 @@ class RcmdController extends GetxController {
       return {'status': false, 'msg': '正在加载中'};
     }
     try {
-      final response = await OttohubService.getRandomVideos(num: 20);
+      final response = await _videoRepo.getRandomVideos(num: 20);
       final List<Video> videos = response.videoList;
 
       if (type == 'init') {

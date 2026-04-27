@@ -7,7 +7,7 @@ import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:get/get.dart';
 import 'package:hive/hive.dart';
-import 'package:piliotto/services/ottohub_service.dart';
+import 'package:piliotto/repositories/i_danmaku_repository.dart';
 
 import 'package:piliotto/pages/video/detail/index.dart';
 import 'package:piliotto/pages/video/detail/introduction/controller.dart';
@@ -218,7 +218,7 @@ class _HeaderControlState extends State<HeaderControl> {
                           isSending = true; // 开始发送，更新状态
                         });
                         try {
-                          await OttohubService.sendDanmaku(
+                          await Get.find<IDanmakuRepository>().sendDanmaku(
                             vid: widget.vid!,
                             text: msg,
                             time: widget.controller!.position.value.inSeconds,

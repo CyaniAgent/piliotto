@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:piliotto/api/models/video.dart';
-import 'package:piliotto/services/ottohub_service.dart';
+import 'package:piliotto/repositories/i_video_repository.dart';
 import 'package:piliotto/services/loggeer.dart';
 import 'package:piliotto/utils/responsive_util.dart';
 
 final _logger = getLogger();
 
 class FavController extends GetxController {
+  final IVideoRepository _videoRepo = Get.find<IVideoRepository>();
   final ScrollController scrollController = ScrollController();
 
   RxList<Video> favoriteList = <Video>[].obs;
@@ -51,7 +52,7 @@ class FavController extends GetxController {
     }
 
     try {
-      final response = await OttohubService.getFavoriteVideos(
+      final response = await _videoRepo.getFavoriteVideos(
         offset: _currentPage,
         num: _pageSize,
       );
@@ -84,7 +85,7 @@ class FavController extends GetxController {
 
   Future<void> removeFavorite(int vid) async {
     try {
-      await OttohubService.toggleFavorite(vid: vid);
+      await _videoRepo.toggleFavorite(vid: vid);
       favoriteList.removeWhere((v) => v.vid == vid);
     } catch (e) {
       _logger.e('取消收藏失败: $e');

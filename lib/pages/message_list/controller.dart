@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:piliotto/api/models/message.dart';
-import 'package:piliotto/api/services/message_service.dart';
+import 'package:piliotto/repositories/i_message_repository.dart';
 
 class MessageListController extends GetxController {
+  final IMessageRepository _messageRepo = Get.find<IMessageRepository>();
   final ScrollController scrollController = ScrollController();
 
   RxList<Friend> friendList = <Friend>[].obs;
@@ -41,7 +42,7 @@ class MessageListController extends GetxController {
     errorMessage.value = '';
 
     try {
-      final List<Friend> newFriends = await MessageService.getFriendList(
+      final List<Friend> newFriends = await _messageRepo.getFriendList(
         offset: _offset,
         num: _pageSize,
       );

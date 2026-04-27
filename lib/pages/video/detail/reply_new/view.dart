@@ -2,7 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
-import 'package:piliotto/api/services/old_api_service.dart';
+import 'package:piliotto/repositories/i_comment_repository.dart';
 import 'package:piliotto/models/common/reply_type.dart';
 import 'package:piliotto/models/video/reply/item.dart';
 import 'package:piliotto/utils/feed_back.dart';
@@ -40,6 +40,7 @@ class _VideoReplyNewDialogState extends State<VideoReplyNewDialog>
   RxBool isForward = false.obs;
   RxBool showForward = false.obs;
   RxString message = ''.obs;
+  final ICommentRepository _commentRepo = Get.find<ICommentRepository>();
 
   @override
   void initState() {
@@ -77,7 +78,7 @@ class _VideoReplyNewDialogState extends State<VideoReplyNewDialog>
       return;
     }
     try {
-      final res = await OldApiService.commentVideo(
+      final res = await _commentRepo.commentVideo(
         vid: widget.oid!,
         parentVcid: widget.parent ?? 0,
         content: _replyContentController.text,

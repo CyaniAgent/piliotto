@@ -1,13 +1,13 @@
-import '../services/old_api_service.dart';
+﻿import '../services/legacy_api_service.dart';
 import '../models/message.dart';
 
 class MessageService {
   // 获取未读消息数
   static Future<int> getUnreadMessageNum() async {
-    final token = OldApiService.getToken();
+    final token = LegacyApiService.getToken();
     if (token == null) return 0;
 
-    final response = await OldApiService.request(
+    final response = await LegacyApiService.request(
       'im',
       'new_message_num',
       {'token': token},
@@ -23,10 +23,10 @@ class MessageService {
     int offset = 0,
     int num = 20,
   }) async {
-    final token = OldApiService.getToken();
+    final token = LegacyApiService.getToken();
     if (token == null) return [];
 
-    final response = await OldApiService.request(
+    final response = await LegacyApiService.request(
       'im',
       'read_message_list',
       {'token': token, 'offset': offset.toString(), 'num': num.toString()},
@@ -43,10 +43,10 @@ class MessageService {
     int offset = 0,
     int num = 20,
   }) async {
-    final token = OldApiService.getToken();
+    final token = LegacyApiService.getToken();
     if (token == null) return [];
 
-    final response = await OldApiService.request(
+    final response = await LegacyApiService.request(
       'im',
       'unread_message_list',
       {'token': token, 'offset': offset.toString(), 'num': num.toString()},
@@ -63,10 +63,10 @@ class MessageService {
     int offset = 0,
     int num = 20,
   }) async {
-    final token = OldApiService.getToken();
+    final token = LegacyApiService.getToken();
     if (token == null) return [];
 
-    final response = await OldApiService.request(
+    final response = await LegacyApiService.request(
       'im',
       'sent_message_list',
       {'token': token, 'offset': offset.toString(), 'num': num.toString()},
@@ -83,10 +83,10 @@ class MessageService {
     required int receiver,
     required String message,
   }) async {
-    final token = OldApiService.getToken();
+    final token = LegacyApiService.getToken();
     if (token == null) return false;
 
-    final response = await OldApiService.request(
+    final response = await LegacyApiService.request(
       'im',
       'send_message',
       {'token': token, 'receiver': receiver.toString(), 'message': message},
@@ -96,10 +96,10 @@ class MessageService {
 
   // 读取消息
   static Future<Message?> readMessage({required int msgId}) async {
-    final token = OldApiService.getToken();
+    final token = LegacyApiService.getToken();
     if (token == null) return null;
 
-    final response = await OldApiService.request(
+    final response = await LegacyApiService.request(
       'im',
       'read_message',
       {'token': token, 'msg_id': msgId.toString()},
@@ -112,10 +112,10 @@ class MessageService {
 
   // 系统消息一键已读
   static Future<bool> readAllSystemMessage() async {
-    final token = OldApiService.getToken();
+    final token = LegacyApiService.getToken();
     if (token == null) return false;
 
-    final response = await OldApiService.request(
+    final response = await LegacyApiService.request(
       'im',
       'read_all_system_message',
       {'token': token},
@@ -125,10 +125,10 @@ class MessageService {
 
   // 删除消息
   static Future<bool> deleteMessage({required int msgId}) async {
-    final token = OldApiService.getToken();
+    final token = LegacyApiService.getToken();
     if (token == null) return false;
 
-    final response = await OldApiService.request(
+    final response = await LegacyApiService.request(
       'im',
       'delete_message',
       {'token': token, 'msg_id': msgId.toString()},
@@ -142,10 +142,10 @@ class MessageService {
     int num = 20,
     int ifTimeDesc = 1,
   }) async {
-    final token = OldApiService.getToken();
+    final token = LegacyApiService.getToken();
     if (token == null) return [];
 
-    final response = await OldApiService.request(
+    final response = await LegacyApiService.request(
       'im',
       'friend_list',
       {
@@ -169,10 +169,10 @@ class MessageService {
     int num = 20,
     int ifTimeDesc = 1,
   }) async {
-    final token = OldApiService.getToken();
+    final token = LegacyApiService.getToken();
     if (token == null) return [];
 
-    final response = await OldApiService.request(
+    final response = await LegacyApiService.request(
       'im',
       'friend_message',
       {

@@ -1,5 +1,6 @@
+import 'package:get/get.dart';
 import 'package:piliotto/api/models/danmaku.dart';
-import 'package:piliotto/api/services/danmaku_service.dart';
+import 'package:piliotto/repositories/i_danmaku_repository.dart';
 import 'package:piliotto/services/loggeer.dart';
 
 class PlDanmakuController {
@@ -29,7 +30,7 @@ class PlDanmakuController {
     final logger = getLogger();
     try {
       logger.d('开始获取弹幕，vid: $vid');
-      final List<Danmaku> danmakus = await DanmakuService.getDanmakus(vid);
+      final List<Danmaku> danmakus = await Get.find<IDanmakuRepository>().getDanmakus(vid);
       logger.d('获取到弹幕数量: ${danmakus.length}');
       dmSegMap.clear();
       for (var danmaku in danmakus) {
