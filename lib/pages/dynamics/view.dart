@@ -265,7 +265,7 @@ class _TabPageState extends State<_TabPage> with AutomaticKeepAliveClientMixin {
         }
 
         return Container(
-          margin: const EdgeInsets.symmetric(vertical: 6),
+          margin: const EdgeInsets.symmetric(vertical: 8),
           width: isWideScreen ? contentMaxWidth : null,
           child: DynamicPanel(
             item: cachedList[index],

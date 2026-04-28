@@ -36,7 +36,7 @@ class DynamicPanel extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(16),
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(12),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
@@ -44,10 +44,10 @@ class DynamicPanel extends StatelessWidget {
               AuthorPanel(item: item),
               if (item.modules?.moduleDynamic?.desc != null ||
                   item.modules?.moduleDynamic?.major != null) ...[
-                const SizedBox(height: 12),
+                const SizedBox(height: 10),
                 Content(item: item, source: source),
               ],
-              const SizedBox(height: 8),
+              const SizedBox(height: 4),
               if (source == null)
                 ActionPanel(item: item, onCommentTap: onCommentTap),
             ],

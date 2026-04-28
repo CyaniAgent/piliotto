@@ -9,7 +9,7 @@ import 'package:piliotto/pages/dynamics/widgets/author_panel.dart';
 import 'package:piliotto/pages/dynamics/widgets/flat_reply_item.dart';
 import 'package:piliotto/utils/responsive_util.dart';
 
-import '../widgets/dynamic_panel.dart';
+import 'header.dart';
 
 class DynamicDetailPage extends StatefulWidget {
   const DynamicDetailPage({super.key});
@@ -172,9 +172,8 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
                 itemBuilder: (context, index) {
                   if (index == 0) {
                     if (action != 'comment') {
-                      return DynamicPanel(
+                      return DynamicDetailHeader(
                         item: _dynamicDetailController.item,
-                        source: 'detail',
                       );
                     }
                     return const SizedBox.shrink();

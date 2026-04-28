@@ -57,6 +57,7 @@ class _ContentState extends State<Content> {
         if (desc != null && desc.text != null && desc.text!.isNotEmpty)
           MarkdownText(
             text: desc.text!,
+            selectable: false,
             style: theme.textTheme.bodyMedium?.copyWith(
               color: colorScheme.onSurfaceVariant,
               height: 1.5,
