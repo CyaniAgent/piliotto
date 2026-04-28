@@ -4,7 +4,7 @@ import 'package:get/get.dart';
 import 'package:hive/hive.dart';
 import 'package:piliotto/repositories/i_dynamics_repository.dart';
 import 'package:piliotto/models/common/dynamics_type.dart';
-import 'package:piliotto/models/dynamics/result.dart';
+import 'package:piliotto/ottohub/models/dynamics/result.dart';
 import 'package:piliotto/utils/feed_back.dart';
 import 'package:piliotto/utils/responsive_util.dart';
 

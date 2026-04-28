@@ -1,7 +1,7 @@
 import '../api/services/danmaku_service.dart';
 import '../api/models/danmaku.dart';
-import 'base_repository.dart';
-import 'i_danmaku_repository.dart';
+import 'package:piliotto/repositories/base_repository.dart';
+import 'package:piliotto/repositories/i_danmaku_repository.dart';
 
 class OttohubDanmakuRepository extends BaseRepository implements IDanmakuRepository {
   @override

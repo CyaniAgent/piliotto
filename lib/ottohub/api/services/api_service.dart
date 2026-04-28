@@ -1,6 +1,6 @@
 import 'package:dio/dio.dart';
-import '../../utils/storage.dart';
-import '../../services/loggeer.dart';
+import 'package:piliotto/utils/storage.dart';
+import 'package:piliotto/services/loggeer.dart';
 
 class ApiException implements Exception {
   final String message;

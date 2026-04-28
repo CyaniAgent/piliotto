@@ -1,4 +1,4 @@
-import 'package:piliotto/api/models/following.dart';
+import 'package:piliotto/ottohub/api/models/following.dart';
 
 class DynamicsDataModel {
   DynamicsDataModel({

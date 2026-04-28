@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:piliotto/common/widgets/network_img_layer.dart';
-import 'package:piliotto/models/video/reply/item.dart';
+import 'package:piliotto/ottohub/models/video/reply/item.dart';
 import 'package:piliotto/utils/utils.dart';
 
 class FlatReplyItem extends StatelessWidget {

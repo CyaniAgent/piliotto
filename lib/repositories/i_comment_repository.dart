@@ -1,4 +1,4 @@
-import '../models/video/reply/item.dart';
+import 'package:piliotto/ottohub/models/video/reply/item.dart';
 
 class CommentListResult {
   final List<ReplyItemModel> replies;

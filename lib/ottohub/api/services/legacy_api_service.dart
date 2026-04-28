@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import '../../utils/storage.dart';
-import '../../services/loggeer.dart';
+import 'package:piliotto/utils/storage.dart';
+import 'package:piliotto/services/loggeer.dart';
 
 class NotLoggedInException implements Exception {
   final String message;

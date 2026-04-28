@@ -2,8 +2,8 @@ import '../api/services/legacy_api_service.dart';
 import '../models/video/reply/item.dart';
 import '../models/video/reply/member.dart';
 import '../models/video/reply/content.dart';
-import 'base_repository.dart';
-import 'i_comment_repository.dart';
+import 'package:piliotto/repositories/base_repository.dart';
+import 'package:piliotto/repositories/i_comment_repository.dart';
 
 class OttohubCommentRepository extends BaseRepository implements ICommentRepository {
   ReplyItemModel _convertCommentToReplyItemModel(

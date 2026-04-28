@@ -6,8 +6,8 @@ import 'package:piliotto/models/common/theme_type.dart';
 import 'package:piliotto/utils/feed_back.dart';
 import 'package:piliotto/utils/login.dart';
 import 'package:piliotto/utils/storage.dart';
-import '../../models/common/dynamic_badge_mode.dart';
-import '../../models/common/nav_bar_config.dart';
+import 'package:piliotto/models/common/dynamic_badge_mode.dart';
+import 'package:piliotto/models/common/nav_bar_config.dart';
 import '../main/index.dart';
 import 'widgets/select_dialog.dart';
 

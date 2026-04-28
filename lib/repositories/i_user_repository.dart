@@ -1,6 +1,6 @@
-import '../api/models/following.dart';
-import '../api/models/block.dart';
-import '../models/member/info.dart';
+import 'package:piliotto/ottohub/api/models/following.dart';
+import 'package:piliotto/ottohub/api/models/block.dart';
+import 'package:piliotto/ottohub/models/member/info.dart';
 import 'base_repository.dart';
 
 class UserProfileInfo {

@@ -4,8 +4,8 @@ import '../api/services/legacy_api_service.dart';
 import '../api/models/following.dart';
 import '../api/models/block.dart';
 import '../models/member/info.dart';
-import 'base_repository.dart';
-import 'i_user_repository.dart';
+import 'package:piliotto/repositories/base_repository.dart';
+import 'package:piliotto/repositories/i_user_repository.dart';
 
 class OttohubUserRepository extends BaseRepository implements IUserRepository {
   @override

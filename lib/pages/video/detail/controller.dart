@@ -8,7 +8,7 @@ import 'package:hive/hive.dart';
 import 'package:piliotto/repositories/i_video_repository.dart';
 import 'package:piliotto/repositories/i_danmaku_repository.dart';
 
-import 'package:piliotto/models/video/reply/item.dart';
+import 'package:piliotto/ottohub/models/video/reply/item.dart';
 import 'package:piliotto/models/common/reply_type.dart';
 import 'package:piliotto/pages/video/detail/reply_reply/view.dart';
 import 'package:piliotto/plugin/pl_player/index.dart';
@@ -18,7 +18,7 @@ import 'package:piliotto/utils/storage.dart';
 import 'package:screen_brightness/screen_brightness.dart';
 import 'package:universal_platform/universal_platform.dart';
 
-import '../../../api/models/video.dart';
+import '../../../ottohub/api/models/video.dart';
 import '../../../plugin/pl_player/models/bottom_control_type.dart';
 import 'widgets/header_control.dart';
 

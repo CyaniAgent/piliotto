@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
 import 'package:piliotto/common/widgets/network_img_layer.dart';
-import 'package:piliotto/models/member/info.dart';
+import 'package:piliotto/ottohub/models/member/info.dart';
 
 class ProfilePanel extends StatelessWidget {
   final dynamic ctr;

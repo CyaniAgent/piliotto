@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
@@ -8,7 +8,7 @@ import 'package:piliotto/common/widgets/badge.dart';
 import 'package:piliotto/common/widgets/markdown_text.dart';
 import 'package:piliotto/common/widgets/network_img_layer.dart';
 import 'package:piliotto/models/common/reply_type.dart';
-import 'package:piliotto/models/video/reply/item.dart';
+import 'package:piliotto/ottohub/models/video/reply/item.dart';
 import 'package:piliotto/pages/video/detail/index.dart';
 import 'package:piliotto/plugin/pl_popup/index.dart';
 import 'package:piliotto/utils/feed_back.dart';

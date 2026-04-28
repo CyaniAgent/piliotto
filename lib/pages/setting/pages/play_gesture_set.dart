@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
 import 'package:piliotto/utils/global_data_cache.dart';
 
-import '../../../models/common/gesture_mode.dart';
-import '../../../utils/storage.dart';
+import 'package:piliotto/models/common/gesture_mode.dart';
+import 'package:piliotto/utils/storage.dart';
 import '../widgets/select_dialog.dart';
 import '../widgets/switch_item.dart';
 

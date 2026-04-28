@@ -1,11 +1,11 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
 import 'package:hive/hive.dart';
 import 'package:piliotto/repositories/i_user_repository.dart';
 import 'package:piliotto/repositories/i_video_repository.dart';
-import 'package:piliotto/models/member/archive.dart';
-import 'package:piliotto/models/member/info.dart';
+import 'package:piliotto/ottohub/models/member/archive.dart';
+import 'package:piliotto/ottohub/models/member/info.dart';
 import 'package:piliotto/utils/responsive_util.dart';
 import 'package:piliotto/utils/storage.dart';
 import 'package:share_plus/share_plus.dart';

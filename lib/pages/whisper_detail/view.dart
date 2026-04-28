@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:piliotto/api/models/message.dart';
+import 'package:piliotto/ottohub/api/models/message.dart';
 import 'package:piliotto/utils/storage.dart';
 import 'controller.dart';
 

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:piliotto/repositories/i_comment_repository.dart';
 import 'package:piliotto/models/common/reply_type.dart';
-import 'package:piliotto/models/video/reply/item.dart';
+import 'package:piliotto/ottohub/models/video/reply/item.dart';
 import 'package:piliotto/services/loggeer.dart';
 
 class VideoReplyReplyController extends GetxController {

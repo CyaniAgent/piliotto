@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:piliotto/repositories/i_dynamics_repository.dart';
-import 'package:piliotto/models/dynamics/result.dart';
+import 'package:piliotto/ottohub/models/dynamics/result.dart';
 
 class MemberDynamicsController extends GetxController {
   final IDynamicsRepository _dynamicsRepo = Get.find<IDynamicsRepository>();

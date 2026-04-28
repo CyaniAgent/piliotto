@@ -1,4 +1,4 @@
-import 'package:piliotto/models/member/info.dart';
+import 'package:piliotto/ottohub/models/member/info.dart';
 
 import 'opus.dart';
 

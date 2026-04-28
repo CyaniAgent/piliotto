@@ -1,8 +1,8 @@
 import '../api/services/message_service.dart';
 import '../api/services/legacy_api_service.dart';
 import '../api/models/message.dart';
-import 'base_repository.dart';
-import 'i_message_repository.dart';
+import 'package:piliotto/repositories/base_repository.dart';
+import 'package:piliotto/repositories/i_message_repository.dart';
 
 class OttohubMessageRepository extends BaseRepository implements IMessageRepository {
   @override

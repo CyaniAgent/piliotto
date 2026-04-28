@@ -1,4 +1,4 @@
-import 'package:piliotto/api/services/video_service.dart';
+import 'package:piliotto/ottohub/api/services/video_service.dart';
 
 class Data {
   static Future init() async {

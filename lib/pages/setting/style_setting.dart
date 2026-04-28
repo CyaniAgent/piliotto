@@ -11,8 +11,8 @@ import 'package:piliotto/pages/setting/widgets/slide_dialog.dart';
 import 'package:piliotto/utils/global_data_cache.dart';
 import 'package:piliotto/utils/storage.dart';
 
-import '../../models/common/dynamic_badge_mode.dart';
-import '../../models/common/nav_bar_config.dart';
+import 'package:piliotto/models/common/dynamic_badge_mode.dart';
+import 'package:piliotto/models/common/nav_bar_config.dart';
 import 'controller.dart';
 import 'widgets/switch_item.dart';
 

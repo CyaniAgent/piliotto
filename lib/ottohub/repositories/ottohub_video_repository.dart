@@ -2,8 +2,8 @@ import '../api/services/legacy_api_service.dart';
 import '../api/services/video_service.dart';
 import '../api/models/video.dart';
 import '../models/member/archive.dart';
-import 'base_repository.dart';
-import 'i_video_repository.dart';
+import 'package:piliotto/repositories/base_repository.dart';
+import 'package:piliotto/repositories/i_video_repository.dart';
 
 class OttohubVideoRepository extends BaseRepository implements IVideoRepository {
   @override

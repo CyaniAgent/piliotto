@@ -1,4 +1,4 @@
-import '../api/models/message.dart';
+import 'package:piliotto/ottohub/api/models/message.dart';
 import 'base_repository.dart';
 
 abstract class IMessageRepository {

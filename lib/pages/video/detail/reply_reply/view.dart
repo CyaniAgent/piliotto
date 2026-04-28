@@ -5,7 +5,7 @@ import 'package:hive/hive.dart';
 import 'package:piliotto/common/skeleton/video_reply.dart';
 import 'package:piliotto/common/widgets/http_error.dart';
 import 'package:piliotto/models/common/reply_type.dart';
-import 'package:piliotto/models/video/reply/item.dart';
+import 'package:piliotto/ottohub/models/video/reply/item.dart';
 import 'package:piliotto/pages/video/detail/reply/widgets/reply_item.dart';
 import 'package:piliotto/pages/video/detail/reply/widgets/comment_input.dart';
 import 'package:piliotto/utils/storage.dart';

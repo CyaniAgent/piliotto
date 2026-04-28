@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:piliotto/api/models/video.dart';
+import 'package:piliotto/ottohub/api/models/video.dart';
 import 'package:piliotto/repositories/i_video_repository.dart';
 import 'package:piliotto/services/loggeer.dart';
 import 'package:piliotto/utils/responsive_util.dart';

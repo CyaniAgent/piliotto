@@ -1,5 +1,5 @@
 import 'package:get/get.dart';
-import 'package:piliotto/api/models/danmaku.dart';
+import 'package:piliotto/ottohub/api/models/danmaku.dart';
 import 'package:piliotto/repositories/i_danmaku_repository.dart';
 import 'package:piliotto/services/loggeer.dart';
 

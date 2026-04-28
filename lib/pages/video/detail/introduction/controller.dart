@@ -13,7 +13,7 @@ import 'package:piliotto/utils/storage.dart';
 import 'package:piliotto/services/loggeer.dart';
 import 'package:share_plus/share_plus.dart';
 
-import '../../../../api/models/video.dart';
+import 'package:piliotto/ottohub/api/models/video.dart';
 
 class VideoIntroController extends GetxController {
   VideoIntroController({required this.vid});

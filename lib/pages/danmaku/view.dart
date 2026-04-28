@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:hive/hive.dart';
 import 'package:canvas_danmaku/canvas_danmaku.dart';
-import 'package:piliotto/api/models/danmaku.dart';
+import 'package:piliotto/ottohub/api/models/danmaku.dart';
 import 'package:piliotto/pages/danmaku/index.dart';
 import 'package:piliotto/plugin/pl_player/index.dart';
 import 'package:piliotto/utils/storage.dart';

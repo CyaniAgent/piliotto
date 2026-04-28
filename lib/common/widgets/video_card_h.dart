@@ -5,8 +5,8 @@ import 'package:get/get.dart';
 import 'package:piliotto/utils/feed_back.dart';
 import 'package:piliotto/utils/image_save.dart';
 
-import '../../api/models/video.dart';
-import '../../repositories/i_user_repository.dart';
+import 'package:piliotto/ottohub/api/models/video.dart';
+import 'package:piliotto/repositories/i_user_repository.dart';
 import '../../utils/utils.dart';
 import '../constants.dart';
 import 'badge.dart';

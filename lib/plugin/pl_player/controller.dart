@@ -10,7 +10,7 @@ import 'package:hive/hive.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 import 'package:canvas_danmaku/canvas_danmaku.dart';
-import 'package:piliotto/api/services/video_service.dart';
+import 'package:piliotto/ottohub/api/services/video_service.dart';
 import 'package:piliotto/plugin/pl_player/index.dart';
 import 'package:piliotto/plugin/pl_player/models/play_repeat.dart';
 import 'package:piliotto/utils/feed_back.dart';

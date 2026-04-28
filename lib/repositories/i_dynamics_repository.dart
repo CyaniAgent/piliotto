@@ -1,4 +1,4 @@
-import '../models/dynamics/result.dart';
+import 'package:piliotto/ottohub/models/dynamics/result.dart';
 import 'base_repository.dart';
 
 abstract class IDynamicsRepository {

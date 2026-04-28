@@ -3,7 +3,7 @@ import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:get/get.dart';
 import 'package:piliotto/repositories/i_dynamics_repository.dart';
-import 'package:piliotto/models/dynamics/result.dart';
+import 'package:piliotto/ottohub/models/dynamics/result.dart';
 
 class ActionPanel extends StatefulWidget {
   final DynamicItemModel item;

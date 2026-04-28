@@ -6,7 +6,7 @@ import 'package:piliotto/utils/responsive_util.dart';
 import 'package:piliotto/utils/utils.dart';
 
 import '../../common/widgets/http_error.dart';
-import '../../models/dynamics/result.dart';
+import 'package:piliotto/ottohub/models/dynamics/result.dart';
 import '../dynamics/widgets/dynamic_panel.dart';
 
 class MemberDynamicsPage extends StatefulWidget {

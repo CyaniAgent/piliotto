@@ -3,7 +3,7 @@ import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
 import 'package:hive/hive.dart';
 import 'package:piliotto/repositories/i_video_repository.dart';
-import 'package:piliotto/api/models/video.dart';
+import 'package:piliotto/ottohub/api/models/video.dart';
 import 'package:piliotto/utils/responsive_util.dart';
 import 'package:piliotto/utils/storage.dart';
 import 'package:piliotto/services/loggeer.dart';

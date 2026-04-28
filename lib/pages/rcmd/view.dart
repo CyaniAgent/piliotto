@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:easy_debounce/easy_throttle.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:piliotto/api/models/video.dart';
+import 'package:piliotto/ottohub/api/models/video.dart';
 import 'package:piliotto/common/constants.dart';
 import 'package:piliotto/common/skeleton/video_card_v.dart';
 import 'package:piliotto/common/widgets/http_error.dart';

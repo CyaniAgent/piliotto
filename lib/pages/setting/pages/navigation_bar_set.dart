@@ -4,7 +4,7 @@ import 'package:hive/hive.dart';
 
 import 'package:piliotto/utils/storage.dart';
 
-import '../../../models/common/nav_bar_config.dart';
+import 'package:piliotto/models/common/nav_bar_config.dart';
 
 class NavigationBarSetPage extends StatefulWidget {
   const NavigationBarSetPage({super.key});

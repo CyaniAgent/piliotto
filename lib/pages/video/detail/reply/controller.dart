@@ -1,10 +1,10 @@
-﻿import 'package:get/get.dart';
+import 'package:get/get.dart';
 import 'package:hive/hive.dart';
 
 import 'package:piliotto/utils/storage.dart';
 import 'package:piliotto/repositories/i_comment_repository.dart';
 import 'package:piliotto/services/loggeer.dart';
-import 'package:piliotto/models/video/reply/item.dart';
+import 'package:piliotto/ottohub/models/video/reply/item.dart';
 
 class VideoReplyController extends GetxController {
   VideoReplyController(this.vid);

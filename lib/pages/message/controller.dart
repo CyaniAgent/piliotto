@@ -1,5 +1,5 @@
 import 'package:get/get.dart';
-import 'package:piliotto/api/models/message.dart';
+import 'package:piliotto/ottohub/api/models/message.dart';
 import 'package:piliotto/repositories/i_message_repository.dart';
 import 'package:piliotto/utils/storage.dart';
 

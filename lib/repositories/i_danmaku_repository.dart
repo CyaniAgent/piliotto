@@ -1,4 +1,4 @@
-import '../api/models/danmaku.dart';
+import 'package:piliotto/ottohub/api/models/danmaku.dart';
 import 'base_repository.dart';
 
 abstract class IDanmakuRepository {

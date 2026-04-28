@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
 import 'package:piliotto/repositories/i_video_repository.dart';
-import 'package:piliotto/models/member/archive.dart';
+import 'package:piliotto/ottohub/models/member/archive.dart';
 
 class MemberArchiveController extends GetxController {
   final IVideoRepository _videoRepo = Get.find<IVideoRepository>();

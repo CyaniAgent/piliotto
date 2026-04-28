@@ -1,5 +1,5 @@
-import '../api/models/video.dart';
-import '../models/member/archive.dart';
+import 'package:piliotto/ottohub/api/models/video.dart';
+import 'package:piliotto/ottohub/models/member/archive.dart';
 import 'base_repository.dart';
 
 abstract class IVideoRepository {

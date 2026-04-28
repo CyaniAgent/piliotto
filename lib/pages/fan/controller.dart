@@ -1,7 +1,7 @@
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
 import 'package:hive/hive.dart';
-import 'package:piliotto/api/models/following.dart';
+import 'package:piliotto/ottohub/api/models/following.dart';
 import 'package:piliotto/repositories/i_user_repository.dart';
 import 'package:piliotto/services/loggeer.dart';
 import 'package:piliotto/utils/storage.dart';

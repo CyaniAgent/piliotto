@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
 import 'package:hive/hive.dart';
-import 'package:piliotto/api/services/auth_service.dart';
+import 'package:piliotto/ottohub/api/services/auth_service.dart';
 import 'package:piliotto/models/user/info.dart';
 import 'package:piliotto/pages/dynamics/index.dart';
 import 'package:piliotto/pages/home/index.dart';

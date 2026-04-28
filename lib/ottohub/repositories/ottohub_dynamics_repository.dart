@@ -1,7 +1,7 @@
 import '../api/services/legacy_api_service.dart';
 import '../models/dynamics/result.dart';
-import 'base_repository.dart';
-import 'i_dynamics_repository.dart';
+import 'package:piliotto/repositories/base_repository.dart';
+import 'package:piliotto/repositories/i_dynamics_repository.dart';
 
 class OttohubDynamicsRepository extends BaseRepository implements IDynamicsRepository {
   @override
