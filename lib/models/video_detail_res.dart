@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 class VideoDetailResponse {
   int? code;
   String? message;
@@ -59,7 +57,6 @@ class VideoDetailData {
   bool? noCache;
   List<Part>? pages;
   Subtitle? subtitle;
-  // Label? label;
   UgcSeason? ugcSeason;
   bool? isSeasonDisplay;
   UserGarb? userGarb;
@@ -224,12 +221,6 @@ class DescV2 {
     this.bizId,
   });
 
-  DescV2 fromRawJson(String str) {
-    return DescV2.fromJson(json.decode(str));
-  }
-
-  String toRawJson() => json.encode(toJson());
-
   DescV2.fromJson(Map<String, dynamic> json) {
     rawText = json["raw_text"];
     type = json["type"];
@@ -238,11 +229,9 @@ class DescV2 {
 
   Map<String, dynamic> toJson() {
     final Map<String, dynamic> data = <String, dynamic>{};
-
     data["raw_text"] = rawText;
     data["type"] = type;
     data["biz_id"] = bizId;
-
     return data;
   }
 }
@@ -258,10 +247,6 @@ class Dimension {
     this.rotate,
   });
 
-  Dimension fromRawJson(String str) => Dimension.fromJson(json.decode(str));
-
-  String toRawJson() => json.encode(toJson());
-
   Dimension.fromJson(Map<String, dynamic> json) {
     width = json["width"];
     height = json["height"];
@@ -270,12 +255,9 @@ class Dimension {
 
   Map<String, dynamic> toJson() {
     final Map<String, dynamic> data = <String, dynamic>{};
-
     data["width"] = width;
     data["height"] = height;
     data["rotate"] = rotate;
-    data["data"] = data;
-
     return data;
   }
 }
@@ -287,10 +269,6 @@ class HonorReply {
     this.honor,
   });
 
-  HonorReply fromRawJson(String str) => HonorReply.fromJson(json.decode(str));
-
-  String toRawJson() => json.encode(toJson());
-
   HonorReply.fromJson(Map<String, dynamic> json) {
     honor = json["honor"] == null
         ? []
@@ -299,7 +277,6 @@ class HonorReply {
 
   Map<String, dynamic> toJson() {
     final Map<String, dynamic> data = <String, dynamic>{};
-
     data["honor"] =
         honor == null ? [] : List<dynamic>.from(honor!.map((x) => x.toJson()));
     return data;
@@ -319,10 +296,6 @@ class Honor {
     this.weeklyRecommendNum,
   });
 
-  Honor fromRawJson(String str) => Honor.fromJson(json.decode(str));
-
-  String toRawJson() => json.encode(toJson());
-
   Honor.fromJson(Map<String, dynamic> json) {
     aid = json["aid"];
     type = json["type"];
@@ -332,12 +305,10 @@ class Honor {
 
   Map<String, dynamic> toJson() {
     final Map<String, dynamic> data = <String, dynamic>{};
-
     data["aid"] = aid;
     data["type"] = type;
     data["desc"] = desc;
     data["weekly_recommend_num"] = weeklyRecommendNum;
-
     return data;
   }
 }
@@ -352,10 +323,6 @@ class Owner {
     this.name,
     this.face,
   });
-
-  Owner fromRawJson(String str) => Owner.fromJson(json.decode(str));
-
-  String toRawJson() => json.encode(toJson());
 
   Owner.fromJson(Map<String, dynamic> json) {
     mid = json["mid"];
@@ -396,10 +363,6 @@ class Part {
     this.firstFrame,
     this.cover,
   });
-
-  Part fromRawJson(String str) => Part.fromJson(json.decode(str));
-
-  String toRawJson() => json.encode(toJson());
 
   Part.fromJson(Map<String, dynamic> json) {
     cid = json["cid"];
@@ -462,10 +425,6 @@ class Stat {
     this.argueMsg,
   });
 
-  Stat fromRawJson(String str) => Stat.fromJson(json.decode(str));
-
-  String toRawJson() => json.encode(toJson());
-
   Stat.fromJson(Map<String, dynamic> json) {
     aid = json["aid"];
     view = json["view"];
@@ -484,7 +443,6 @@ class Stat {
 
   Map<String, dynamic> toJson() {
     final Map<String, dynamic> data = <String, dynamic>{};
-
     data["aid"] = aid;
     data["view"] = view;
     data["danmaku"] = danmaku;
@@ -511,10 +469,6 @@ class Subtitle {
     this.list,
   });
 
-  Subtitle fromRawJson(String str) => Subtitle.fromJson(json.decode(str));
-
-  String toRawJson() => json.encode(toJson());
-
   Subtitle.fromJson(Map<String, dynamic> json) {
     allowSubmit = json["allow_submit"];
     list = json["list"] == null
@@ -524,7 +478,6 @@ class Subtitle {
 
   Map<String, dynamic> toJson() {
     final Map<String, dynamic> data = <String, dynamic>{};
-
     data["allow_submit"] = allowSubmit;
     data["list"] = list == null ? [] : List<dynamic>.from(list!.map((x) => x));
     return data;
@@ -538,18 +491,12 @@ class UserGarb {
     this.urlImageAniCut,
   });
 
-  UserGarb fromRawJson(String str) => UserGarb.fromJson(json.decode(str));
-
-  String toRawJson() => json.encode(toJson());
-
   UserGarb.fromJson(Map<String, dynamic> json) {
     urlImageAniCut = json["url_image_ani_cut"];
   }
 
   Map<String, dynamic> toJson() => {"url_image_ani_cut": urlImageAniCut};
 }
-
-class Label {}
 
 class UgcSeason {
   UgcSeason({
