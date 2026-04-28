@@ -7,6 +7,7 @@ import 'package:get/get.dart';
 import 'package:piliotto/pages/dynamics/detail/index.dart';
 import 'package:piliotto/pages/dynamics/widgets/author_panel.dart';
 import 'package:piliotto/pages/dynamics/widgets/flat_reply_item.dart';
+import 'package:piliotto/pages/dynamics/widgets/blog_comment_input.dart';
 import 'package:piliotto/utils/responsive_util.dart';
 
 import 'header.dart';
@@ -154,115 +155,157 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
           },
         ),
       ),
-      body: RefreshIndicator(
-        onRefresh: () async {
-          await _dynamicDetailController.queryReplyList();
-        },
-        child: FutureBuilder(
-          future: _futureBuilderFuture,
-          builder: (context, snapshot) {
-            return Obx(() {
-              final replyList = _dynamicDetailController.replyList;
-              final isLoading = _dynamicDetailController.isLoadingMore.value;
+      body: Column(
+        children: [
+          Expanded(
+            child: RefreshIndicator(
+              onRefresh: () async {
+                await _dynamicDetailController.queryReplyList();
+              },
+              child: FutureBuilder(
+                future: _futureBuilderFuture,
+                builder: (context, snapshot) {
+                  return Obx(() {
+                    final replyList = _dynamicDetailController.replyList;
+                    final isLoading = _dynamicDetailController.isLoadingMore.value;
 
-              return ListView.builder(
-                controller: scrollController,
-                padding: _buildPadding(isWideScreen, screenWidth),
-                itemCount: replyList.length + 2,
-                itemBuilder: (context, index) {
-                  if (index == 0) {
-                    if (action != 'comment') {
-                      return DynamicDetailHeader(
-                        item: _dynamicDetailController.item,
-                      );
-                    }
-                    return const SizedBox.shrink();
-                  }
+                    return ListView.builder(
+                      controller: scrollController,
+                      padding: _buildPadding(isWideScreen, screenWidth),
+                      itemCount: replyList.length + 2,
+                      itemBuilder: (context, index) {
+                        if (index == 0) {
+                          if (action != 'comment') {
+                            return DynamicDetailHeader(
+                              item: _dynamicDetailController.item,
+                            );
+                          }
+                          return const SizedBox.shrink();
+                        }
 
-                  if (index == 1) {
-                    return Container(
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.surface,
-                        border: Border(
-                          top: BorderSide(
-                            width: 0.6,
-                            color: Theme.of(context)
-                                .dividerColor
-                                .withValues(alpha: 0.05),
-                          ),
-                        ),
-                      ),
-                      height: 45,
-                      padding: const EdgeInsets.only(left: 12, right: 6),
-                      child: Row(
-                        children: [
-                          Obx(
-                            () => AnimatedSwitcher(
-                              duration: const Duration(milliseconds: 400),
-                              transitionBuilder:
-                                  (Widget child, Animation<double> animation) {
-                                return ScaleTransition(
-                                    scale: animation, child: child);
-                              },
-                              child: Text(
-                                '${_dynamicDetailController.acount.value}',
-                                key: ValueKey<int>(
-                                    _dynamicDetailController.acount.value),
-                              ),
-                            ),
-                          ),
-                          const Text('条回复'),
-                        ],
-                      ),
+                        if (index == 1) {
+                          return _buildCommentHeader(context);
+                        }
+
+                        final replyIndex = index - 2;
+                        if (replyIndex == replyList.length) {
+                          return _buildLoadingIndicator(colorScheme, isLoading);
+                        }
+
+                        return FlatReplyItem(
+                          replyItem: replyList[replyIndex],
+                          bid: oid,
+                          onReply: (replyItem, [subReply, loadMore]) {
+                            _dynamicDetailController.setReplyingTo(
+                              subReply ?? replyItem,
+                              parent: replyItem.rpid,
+                            );
+                          },
+                          onRefresh: () {
+                            _dynamicDetailController.queryReplyList(reqType: 'init');
+                          },
+                        );
+                      },
                     );
-                  }
-
-                  final replyIndex = index - 2;
-                  if (replyIndex == replyList.length) {
-                    return Container(
-                      padding: const EdgeInsets.symmetric(vertical: 20),
-                      child: Center(
-                        child: isLoading
-                            ? Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  SizedBox(
-                                    width: 16,
-                                    height: 16,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      color: colorScheme.primary,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Text(
-                                    '加载中...',
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      color: colorScheme.outline,
-                                    ),
-                                  ),
-                                ],
-                              )
-                            : Text(
-                                _dynamicDetailController.noMore.value,
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: colorScheme.outline,
-                                ),
-                              ),
-                      ),
-                    );
-                  }
-
-                  return FlatReplyItem(
-                    replyItem: replyList[replyIndex],
-                  );
+                  });
                 },
-              );
-            });
-          },
+              ),
+            ),
+          ),
+          Obx(() => BlogCommentInput(
+                bid: oid,
+                parentBcid: _dynamicDetailController.parentBcid.value,
+                placeholder: _dynamicDetailController.replyingTo.value != null
+                    ? '回复 @${_dynamicDetailController.replyingTo.value?.member?.uname ?? ''}'
+                    : '发一条友善的评论喵~',
+                onCommentSuccess: () {
+                  _dynamicDetailController.onReplySuccess();
+                },
+              )),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCommentHeader(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Container(
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        border: Border(
+          top: BorderSide(
+            width: 0.6,
+            color: Theme.of(context).dividerColor.withValues(alpha: 0.05),
+          ),
         ),
+      ),
+      height: 45,
+      padding: const EdgeInsets.only(left: 12, right: 6),
+      child: Row(
+        children: [
+          Obx(
+            () => AnimatedSwitcher(
+              duration: const Duration(milliseconds: 400),
+              transitionBuilder: (Widget child, Animation<double> animation) {
+                return ScaleTransition(scale: animation, child: child);
+              },
+              child: Text(
+                '${_dynamicDetailController.acount.value}',
+                key: ValueKey<int>(_dynamicDetailController.acount.value),
+              ),
+            ),
+          ),
+          const Text('条回复'),
+          const Spacer(),
+          if (_dynamicDetailController.replyingTo.value != null)
+            TextButton.icon(
+              onPressed: () {
+                _dynamicDetailController.clearReplyingTo();
+              },
+              icon: const Icon(Icons.close, size: 16),
+              label: const Text('取消回复'),
+              style: TextButton.styleFrom(
+                foregroundColor: colorScheme.outline,
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLoadingIndicator(ColorScheme colorScheme, bool isLoading) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 20),
+      child: Center(
+        child: isLoading
+            ? Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: colorScheme.primary,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Text(
+                    '加载中...',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: colorScheme.outline,
+                    ),
+                  ),
+                ],
+              )
+            : Text(
+                _dynamicDetailController.noMore.value,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: colorScheme.outline,
+                ),
+              ),
       ),
     );
   }

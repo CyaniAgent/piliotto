@@ -13,4 +13,5 @@ abstract class ICommentRepository {
   Future<Map<String, dynamic>> commentVideo({required int vid, int parentVcid = 0, required String content});
   Future<Map<String, dynamic>> deleteVideoComment({required int vcid});
   Future<Map<String, dynamic>> commentBlog({required int bid, int parentBcid = 0, required String content});
+  Future<Map<String, dynamic>> deleteBlogComment({required int bcid});
 }

@@ -71,6 +71,8 @@ class _ActionPanelState extends State<ActionPanel> {
   @override
   Widget build(BuildContext context) {
     final commentCount = stat.comment?.count ?? '0';
+    final forwardCount = stat.forward?.count ?? '0';
+    final hasForward = forwardCount != '0' && forwardCount.isNotEmpty;
 
     return Row(
       children: [
@@ -89,7 +91,7 @@ class _ActionPanelState extends State<ActionPanel> {
         ),
         _ActionButton(
           icon: FontAwesomeIcons.shareFromSquare,
-          label: stat.forward?.count ?? '0',
+          label: hasForward ? forwardCount : null,
           onTap: () {},
         ),
       ],
@@ -99,13 +101,13 @@ class _ActionPanelState extends State<ActionPanel> {
 
 class _ActionButton extends StatelessWidget {
   final dynamic icon;
-  final String label;
+  final String? label;
   final bool isActive;
   final VoidCallback onTap;
 
   const _ActionButton({
     required this.icon,
-    required this.label,
+    this.label,
     this.isActive = false,
     required this.onTap,
   });
@@ -131,11 +133,13 @@ class _ActionButton extends StatelessWidget {
                   FaIcon(icon, size: 16, color: color)
                 else if (icon is IconData)
                   Icon(icon, size: 16, color: color),
-                const SizedBox(width: 8),
-                Text(
-                  label,
-                  style: theme.textTheme.bodySmall?.copyWith(color: color),
-                ),
+                if (label != null) ...[
+                  const SizedBox(width: 8),
+                  Text(
+                    label!,
+                    style: theme.textTheme.bodySmall?.copyWith(color: color),
+                  ),
+                ],
               ],
             ),
           ),

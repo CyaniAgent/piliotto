@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
@@ -65,6 +67,11 @@ class DynamicsController extends GetxController {
   RxBool hasMore = true.obs;
   RxString wideScreenLayout = 'center'.obs;
 
+  Timer? _pollTimer;
+  static const Duration _pollInterval = Duration(seconds: 30);
+  RxInt newDynamicsCount = 0.obs;
+  String? _latestDynamicId;
+
   @override
   void onInit() {
     userInfo = userInfoCache.get('userInfoCache');
@@ -78,6 +85,68 @@ class DynamicsController extends GetxController {
       defaultValue: 'center',
     );
     updateCrossAxisCount();
+    _startPolling();
+  }
+
+  @override
+  void onClose() {
+    _stopPolling();
+    scrollController.dispose();
+    super.onClose();
+  }
+
+  void _startPolling() {
+    _pollTimer?.cancel();
+    _pollTimer = Timer.periodic(_pollInterval, (_) {
+      _checkForNewDynamics();
+    });
+  }
+
+  void _stopPolling() {
+    _pollTimer?.cancel();
+    _pollTimer = null;
+  }
+
+  Future<void> _checkForNewDynamics() async {
+    if (currentTab.value != 'latest') return;
+    if (isLoadingDynamic.value) return;
+
+    try {
+      final items = await _dynamicsRepo.getNewBlogs(offset: 0, num: 10);
+      if (items.isEmpty) return;
+
+      final newLatestId = items.first.idStr;
+      if (_latestDynamicId == null) {
+        _latestDynamicId = newLatestId;
+        return;
+      }
+
+      if (newLatestId != _latestDynamicId) {
+        int count = 0;
+        for (final item in items) {
+          if (item.idStr == _latestDynamicId) break;
+          count++;
+        }
+        if (count > 0) {
+          newDynamicsCount.value = count;
+        }
+      }
+    } catch (e) {
+      debugPrint('Poll error: $e');
+    }
+  }
+
+  Future<void> loadNewDynamics() async {
+    if (newDynamicsCount.value == 0) return;
+
+    feedBack();
+    newDynamicsCount.value = 0;
+
+    await queryFollowDynamic(type: 'init');
+
+    if (scrollController.hasClients) {
+      scrollController.jumpTo(0);
+    }
   }
 
   void toggleWideScreenLayout() {
@@ -125,6 +194,9 @@ class DynamicsController extends GetxController {
       if (type == 'init') {
         _tabDataCache[tab] = items;
         _tabOffsetCache[tab] = 10;
+        if (tab == 'latest' && items.isNotEmpty) {
+          _latestDynamicId = items.first.idStr;
+        }
       } else {
         _tabDataCache[tab]!.addAll(items);
         _tabOffsetCache[tab] = _tabOffsetCache[tab]! + 10;
@@ -163,6 +235,7 @@ class DynamicsController extends GetxController {
   void onTabChanged(String tab) {
     if (currentTab.value == tab) return;
     currentTab.value = tab;
+    newDynamicsCount.value = 0;
     if (_tabHasLoadedCache[tab] == true && _tabDataCache[tab]!.isNotEmpty) {
       dynamicsList.value = List.from(_tabDataCache[tab]!);
       hasMore.value = _tabDataCache[tab]!.length % 10 == 0;
@@ -213,6 +286,7 @@ class DynamicsController extends GetxController {
 
   Future<void> onRefresh() async {
     page = 1;
+    newDynamicsCount.value = 0;
     await queryFollowDynamic();
   }
 

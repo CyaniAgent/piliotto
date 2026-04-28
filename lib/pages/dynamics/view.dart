@@ -258,9 +258,12 @@ class _TabPageState extends State<_TabPage> with AutomaticKeepAliveClientMixin {
       controller: _centeredScrollController,
       padding:
           _buildCenteredListPadding(isWideScreen, screenWidth, contentMaxWidth),
-      itemCount: cachedList.length + 1,
+      itemCount: cachedList.length + 2,
       itemBuilder: (context, index) {
-        if (index == cachedList.length) {
+        if (index == 0) {
+          return _buildNewDynamicsBanner(colorScheme, isWideScreen, contentMaxWidth);
+        }
+        if (index == cachedList.length + 1) {
           return _buildLoadingIndicator(colorScheme);
         }
 
@@ -268,13 +271,57 @@ class _TabPageState extends State<_TabPage> with AutomaticKeepAliveClientMixin {
           margin: const EdgeInsets.symmetric(vertical: 8),
           width: isWideScreen ? contentMaxWidth : null,
           child: DynamicPanel(
-            item: cachedList[index],
-            onTap: () => widget.dynamicsController.pushDetail(cachedList[index], 1),
-            onCommentTap: () => widget.dynamicsController.pushDetail(cachedList[index], 1, action: 'comment'),
+            item: cachedList[index - 1],
+            onTap: () => widget.dynamicsController.pushDetail(cachedList[index - 1], 1),
+            onCommentTap: () => widget.dynamicsController.pushDetail(cachedList[index - 1], 1, action: 'comment'),
           ),
         );
       },
     );
+  }
+
+  Widget _buildNewDynamicsBanner(ColorScheme colorScheme, bool isWideScreen, double contentMaxWidth) {
+    return Obx(() {
+      final count = widget.dynamicsController.newDynamicsCount.value;
+      if (count == 0 || widget.tab != 'latest') {
+        return const SizedBox.shrink();
+      }
+
+      return Container(
+        width: isWideScreen ? contentMaxWidth : null,
+        margin: const EdgeInsets.only(bottom: 8),
+        child: Material(
+          color: colorScheme.primaryContainer,
+          borderRadius: BorderRadius.circular(16),
+          child: InkWell(
+            onTap: () => widget.dynamicsController.loadNewDynamics(),
+            borderRadius: BorderRadius.circular(16),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.arrow_upward_rounded,
+                    size: 18,
+                    color: colorScheme.onPrimaryContainer,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    '$count 条新动态',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: colorScheme.onPrimaryContainer,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+    });
   }
 
   Widget _buildWaterfallList(
@@ -291,29 +338,73 @@ class _TabPageState extends State<_TabPage> with AutomaticKeepAliveClientMixin {
       crossAxisCount = 2;
     }
 
-    return MasonryGridView.count(
+    return CustomScrollView(
       controller: _waterfallScrollController,
-      padding: const EdgeInsets.only(
-        left: 12,
-        right: 12,
-        top: 8,
-        bottom: 80,
-      ),
-      crossAxisCount: crossAxisCount,
-      mainAxisSpacing: 12,
-      crossAxisSpacing: 12,
-      itemCount: cachedList.length + 1,
-      itemBuilder: (context, index) {
-        if (index == cachedList.length) {
-          return _buildLoadingIndicator(colorScheme);
-        }
-        return DynamicPanel(
-          item: cachedList[index],
-          onTap: () => widget.dynamicsController.pushDetail(cachedList[index], 1),
-          onCommentTap: () => widget.dynamicsController.pushDetail(cachedList[index], 1, action: 'comment'),
-        );
-      },
+      slivers: [
+        SliverToBoxAdapter(
+          child: _buildWaterfallNewDynamicsBanner(colorScheme),
+        ),
+        SliverMasonryGrid.count(
+          crossAxisCount: crossAxisCount,
+          mainAxisSpacing: 12,
+          crossAxisSpacing: 12,
+          childCount: cachedList.length + 1,
+          itemBuilder: (context, index) {
+            if (index == cachedList.length) {
+              return _buildLoadingIndicator(colorScheme);
+            }
+            return DynamicPanel(
+              item: cachedList[index],
+              onTap: () => widget.dynamicsController.pushDetail(cachedList[index], 1),
+              onCommentTap: () => widget.dynamicsController.pushDetail(cachedList[index], 1, action: 'comment'),
+            );
+          },
+        ),
+      ],
     );
+  }
+
+  Widget _buildWaterfallNewDynamicsBanner(ColorScheme colorScheme) {
+    return Obx(() {
+      final count = widget.dynamicsController.newDynamicsCount.value;
+      if (count == 0 || widget.tab != 'latest') {
+        return const SizedBox.shrink();
+      }
+
+      return Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        child: Material(
+          color: colorScheme.primaryContainer,
+          borderRadius: BorderRadius.circular(16),
+          child: InkWell(
+            onTap: () => widget.dynamicsController.loadNewDynamics(),
+            borderRadius: BorderRadius.circular(16),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.arrow_upward_rounded,
+                    size: 18,
+                    color: colorScheme.onPrimaryContainer,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    '$count 条新动态',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: colorScheme.onPrimaryContainer,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+    });
   }
 
   Widget _buildSkeletonList(

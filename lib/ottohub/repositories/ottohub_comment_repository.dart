@@ -171,4 +171,9 @@ class OttohubCommentRepository extends BaseRepository implements ICommentReposit
     return LegacyApiService.commentBlog(
         bid: bid, parentBcid: parentBcid, content: content);
   }
+
+  @override
+  Future<Map<String, dynamic>> deleteBlogComment({required int bcid}) {
+    return LegacyApiService.deleteBlogComment(bcid: bcid);
+  }
 }

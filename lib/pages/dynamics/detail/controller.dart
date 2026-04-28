@@ -21,6 +21,9 @@ class DynamicDetailController extends GetxController {
   Box setting = GStrorage.setting;
   final ICommentRepository _commentRepo = Get.find<ICommentRepository>();
 
+  Rxn<ReplyItemModel> replyingTo = Rxn<ReplyItemModel>();
+  RxInt parentBcid = 0.obs;
+
   @override
   void onInit() {
     super.onInit();
@@ -64,5 +67,21 @@ class DynamicDetailController extends GetxController {
 
     isLoadingMore.value = false;
     return {'status': true};
+  }
+
+  void setReplyingTo(ReplyItemModel? replyItem, {int? parent}) {
+    replyingTo.value = replyItem;
+    parentBcid.value = parent ?? replyItem?.rpid ?? 0;
+  }
+
+  void clearReplyingTo() {
+    replyingTo.value = null;
+    parentBcid.value = 0;
+  }
+
+  void onReplySuccess() {
+    clearReplyingTo();
+    queryReplyList(reqType: 'init');
+    acount.value++;
   }
 }

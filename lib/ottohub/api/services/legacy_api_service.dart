@@ -328,6 +328,20 @@ class LegacyApiService {
     );
   }
 
+  static Future<Map<String, dynamic>> deleteBlogComment({
+    required int bcid,
+  }) async {
+    return request(
+      'comment',
+      'delete_blog_comment',
+      {
+        'bcid': bcid.toString(),
+        'token': null,
+      },
+      requireAuth: true,
+    );
+  }
+
   static Future<Map<String, dynamic>> getVideoHistory() async {
     return request(
       'profile',
