@@ -1,0 +1,16 @@
+$:
+  vscode:
+    - docker:
+        # 指定开发环境镜像，可以是任意可访问的镜像。
+        # 如果 image 指定的镜像中已安装 code-server 代码服务，将使用单容器模式启动开发环境
+        # 如果 image 指定的镜像中未安装 code-server 代码服务，将使用双容器模式启动开发环境
+        # 如下镜像为 Flutter 开发环境镜像，已安装代码服务，将使用单容器模式启动开发环境
+        # 可按需替换为其他镜像
+        image: docker.cnb.cool/sakura_cake/sakura_cake-dev-env
+      services:
+        - vscode
+        - docker
+      # 开发环境启动后会执行的任务
+      stages:
+        - name: ls
+          script: ls -al
