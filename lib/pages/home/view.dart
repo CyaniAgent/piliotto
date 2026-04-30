@@ -5,12 +5,11 @@ import 'package:easy_debounce/easy_throttle.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
-import 'package:hive/hive.dart';
 import 'package:piliotto/common/widgets/network_img_layer.dart';
 import 'package:piliotto/pages/main/controller.dart';
 import 'package:piliotto/pages/mine/index.dart';
+import 'package:piliotto/services/search_history_service.dart';
 import 'package:piliotto/utils/feed_back.dart';
-import 'package:piliotto/utils/storage.dart';
 import './controller.dart';
 
 class HomePage extends StatefulWidget {
@@ -375,42 +374,17 @@ class HomeSearchBar extends StatefulWidget {
 
 class _HomeSearchBarState extends State<HomeSearchBar> {
   final SearchController _searchController = SearchController();
-  final Box _historyBox = GStrorage.historyword;
-  List<String> _searchHistory = [];
+  final SearchHistoryService _historyService = SearchHistoryService();
 
   @override
   void initState() {
     super.initState();
-    _loadSearchHistory();
-  }
-
-  void _loadSearchHistory() {
-    final history = _historyBox.get('searchHistory', defaultValue: <String>[]);
-    setState(() {
-      _searchHistory = List<String>.from(history);
-    });
-  }
-
-  void _saveSearchHistory(String keyword) {
-    if (keyword.trim().isEmpty) return;
-    _searchHistory.remove(keyword);
-    _searchHistory.insert(0, keyword);
-    if (_searchHistory.length > 20) {
-      _searchHistory = _searchHistory.sublist(0, 20);
-    }
-    _historyBox.put('searchHistory', _searchHistory);
-  }
-
-  void _clearSearchHistory() {
-    setState(() {
-      _searchHistory.clear();
-    });
-    _historyBox.put('searchHistory', <String>[]);
+    _historyService.loadSearchHistory();
   }
 
   void _onSearch(String keyword, {bool closeView = true}) {
     if (keyword.trim().isEmpty) return;
-    _saveSearchHistory(keyword.trim());
+    _historyService.saveSearchHistory(keyword.trim());
     if (closeView) {
       _searchController.closeView(null);
     }
@@ -466,12 +440,9 @@ class _HomeSearchBarState extends State<HomeSearchBar> {
                 );
               },
               suggestionsBuilder: (context, controller) {
-                final query = controller.text.toLowerCase();
-                final filteredHistory = query.isEmpty
-                    ? _searchHistory
-                    : _searchHistory
-                        .where((item) => item.toLowerCase().contains(query))
-                        .toList();
+                final query = controller.text;
+                final filteredHistory =
+                    _historyService.filterSearchHistory(query);
 
                 if (filteredHistory.isEmpty && query.isEmpty) {
                   return [
@@ -490,7 +461,7 @@ class _HomeSearchBarState extends State<HomeSearchBar> {
                 }
 
                 final List<Widget> suggestions = [
-                  if (_searchHistory.isNotEmpty) ...[
+                  if (_historyService.currentHistory.isNotEmpty) ...[
                     Padding(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 16.0,
@@ -507,7 +478,10 @@ class _HomeSearchBarState extends State<HomeSearchBar> {
                             ),
                           ),
                           TextButton(
-                            onPressed: _clearSearchHistory,
+                            onPressed: () {
+                              setState(() {});
+                              _historyService.clearSearchHistory();
+                            },
                             style: TextButton.styleFrom(
                               minimumSize: Size.zero,
                               padding: const EdgeInsets.symmetric(
@@ -532,10 +506,8 @@ class _HomeSearchBarState extends State<HomeSearchBar> {
                       trailing: IconButton(
                         icon: const Icon(Icons.close, size: 18),
                         onPressed: () {
-                          setState(() {
-                            _searchHistory.remove(item);
-                            _historyBox.put('searchHistory', _searchHistory);
-                          });
+                          setState(() {});
+                          _historyService.removeSearchHistory(item);
                         },
                       ),
                       onTap: () {
