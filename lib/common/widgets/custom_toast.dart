@@ -1,8 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:hive/hive.dart';
 import 'package:piliotto/utils/storage.dart';
-
-Box<dynamic> setting = GStrorage.setting;
 
 class CustomToast extends StatelessWidget {
   const CustomToast({super.key, required this.msg});
@@ -11,8 +8,13 @@ class CustomToast extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final double toastOpacity =
-        setting.get(SettingBoxKey.defaultToastOp, defaultValue: 1.0) as double;
+    double toastOpacity = 1.0;
+    try {
+      toastOpacity = GStrorage.setting.get(
+        SettingBoxKey.defaultToastOp,
+        defaultValue: 1.0,
+      ) as double;
+    } catch (_) {}
     return Container(
       margin:
           EdgeInsets.only(bottom: MediaQuery.of(context).padding.bottom + 30),

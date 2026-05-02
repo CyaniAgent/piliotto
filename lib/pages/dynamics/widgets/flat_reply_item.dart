@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
+import 'package:go_router/go_router.dart';
 import 'package:piliotto/common/widgets/badge.dart';
 import 'package:piliotto/common/widgets/markdown_text.dart';
 import 'package:piliotto/common/widgets/network_img_layer.dart';
@@ -74,12 +75,13 @@ class _FlatReplyItemState extends State<FlatReplyItem> {
     );
   }
 
-  Widget _buildHeader(BuildContext context, ColorScheme colorScheme, String heroTag) {
+  Widget _buildHeader(
+      BuildContext context, ColorScheme colorScheme, String heroTag) {
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: () {
         feedBack();
-        Get.toNamed('/member?mid=${widget.replyItem.mid}', arguments: {
+        context.push('/member?mid=${widget.replyItem.mid}', extra: {
           'face': widget.replyItem.member?.avatar,
           'heroTag': heroTag,
         });
@@ -102,7 +104,8 @@ class _FlatReplyItemState extends State<FlatReplyItem> {
                           fontSize: 13,
                           fontWeight: FontWeight.w500,
                           color: widget.replyItem.member?.vip != null &&
-                                  widget.replyItem.member!.vip!['vipStatus'] != null &&
+                                  widget.replyItem.member!.vip!['vipStatus'] !=
+                                      null &&
                                   widget.replyItem.member!.vip!['vipStatus'] > 0
                               ? const Color.fromARGB(255, 251, 100, 163)
                               : colorScheme.onSurface,
@@ -110,7 +113,8 @@ class _FlatReplyItemState extends State<FlatReplyItem> {
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
-                    if (widget.replyItem.member?.ottohubData?['honour'] != null &&
+                    if (widget.replyItem.member?.ottohubData?['honour'] !=
+                            null &&
                         widget.replyItem.member!.ottohubData!['honour']
                             .toString()
                             .isNotEmpty)
@@ -406,7 +410,8 @@ class _FlatReplyItemState extends State<FlatReplyItem> {
               value: 'delete',
               child: Row(
                 children: [
-                  Icon(Icons.delete_outline, size: 18, color: colorScheme.error),
+                  Icon(Icons.delete_outline,
+                      size: 18, color: colorScheme.error),
                   const SizedBox(width: 12),
                   Text('删除', style: TextStyle(color: colorScheme.error)),
                 ],
@@ -438,7 +443,8 @@ class _FlatReplyItemState extends State<FlatReplyItem> {
                       onPressed: () => Navigator.of(ctx).pop(false),
                       child: Text(
                         '取消',
-                        style: TextStyle(color: Theme.of(ctx).colorScheme.outline),
+                        style:
+                            TextStyle(color: Theme.of(ctx).colorScheme.outline),
                       ),
                     ),
                     TextButton(

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:hive/hive.dart';
 import 'package:piliotto/models/common/reply_sort_type.dart';
 import 'package:piliotto/pages/setting/widgets/select_dialog.dart';
 import 'package:piliotto/utils/storage.dart';
@@ -14,16 +13,21 @@ class ExtraSetting extends StatefulWidget {
 }
 
 class _ExtraSettingState extends State<ExtraSetting> {
-  Box setting = GStrorage.setting;
   late dynamic defaultReplySort;
 
   @override
   void initState() {
     super.initState();
-    defaultReplySort =
-        setting.get(SettingBoxKey.replySortType, defaultValue: 0);
+    try {
+      defaultReplySort =
+          GStrorage.setting.get(SettingBoxKey.replySortType, defaultValue: 0);
+    } catch (_) {
+      defaultReplySort = 0;
+    }
     if (defaultReplySort == 2) {
-      setting.put(SettingBoxKey.replySortType, 0);
+      try {
+        GStrorage.setting.put(SettingBoxKey.replySortType, 0);
+      } catch (_) {}
       defaultReplySort = 0;
     }
   }
@@ -73,7 +77,9 @@ class _ExtraSettingState extends State<ExtraSetting> {
               );
               if (result != null) {
                 defaultReplySort = result;
-                setting.put(SettingBoxKey.replySortType, result);
+                try {
+                  GStrorage.setting.put(SettingBoxKey.replySortType, result);
+                } catch (_) {}
                 setState(() {});
               }
             },

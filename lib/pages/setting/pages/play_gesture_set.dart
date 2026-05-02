@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:hive/hive.dart';
 import 'package:piliotto/utils/global_data_cache.dart';
 
 import 'package:piliotto/models/common/gesture_mode.dart';
@@ -15,14 +14,17 @@ class PlayGesturePage extends StatefulWidget {
 }
 
 class _PlayGesturePageState extends State<PlayGesturePage> {
-  Box setting = GStrorage.setting;
   late int fullScreenGestureMode;
 
   @override
   void initState() {
     super.initState();
-    fullScreenGestureMode = setting.get(SettingBoxKey.fullScreenGestureMode,
-        defaultValue: FullScreenGestureMode.values.last.index);
+    try {
+      fullScreenGestureMode = GStrorage.setting.get(SettingBoxKey.fullScreenGestureMode,
+          defaultValue: FullScreenGestureMode.values.last.index);
+    } catch (_) {
+      fullScreenGestureMode = FullScreenGestureMode.values.last.index;
+    }
   }
 
   @override
@@ -69,8 +71,10 @@ class _PlayGesturePageState extends State<PlayGesturePage> {
                     .firstWhere((element) => element.values == result);
                 fullScreenGestureMode =
                     GlobalDataCache().fullScreenGestureMode.index;
-                setting.put(
-                    SettingBoxKey.fullScreenGestureMode, fullScreenGestureMode);
+                try {
+                  GStrorage.setting.put(
+                      SettingBoxKey.fullScreenGestureMode, fullScreenGestureMode);
+                } catch (_) {}
                 setState(() {});
               }
             },

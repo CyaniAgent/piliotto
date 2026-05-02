@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
+import 'package:go_router/go_router.dart';
 import 'package:piliotto/utils/feed_back.dart';
 import 'package:piliotto/utils/image_save.dart';
 
@@ -24,8 +25,9 @@ class VideoCardV extends StatelessWidget {
     this.blockUserCb,
   });
 
-  void onPushDetail(String heroTag) {
-    Get.toNamed('/video?vid=${videoItem.vid}', arguments: {
+  void onPushDetail(BuildContext context, String heroTag) {
+    context.push('/video', extra: {
+      'vid': videoItem.vid,
       'pic': videoItem.coverUrl,
       'heroTag': heroTag,
     });
@@ -36,7 +38,7 @@ class VideoCardV extends StatelessWidget {
     final String heroTag = Utils.makeHeroTag(videoItem.vid.toString());
 
     return InkWell(
-      onTap: () => onPushDetail(heroTag),
+      onTap: () => onPushDetail(context, heroTag),
       borderRadius: BorderRadius.circular(16),
       child: Column(
         children: [
@@ -261,7 +263,7 @@ class MorePanel extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           InkWell(
-            onTap: () => Get.back(),
+            onTap: () => Navigator.of(context).pop(),
             child: Container(
               height: 35,
               padding: const EdgeInsets.only(bottom: 2),

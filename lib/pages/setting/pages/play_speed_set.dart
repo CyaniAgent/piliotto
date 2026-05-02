@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
-import 'package:hive/hive.dart';
 import 'package:piliotto/pages/setting/widgets/switch_item.dart';
 import 'package:piliotto/plugin/pl_player/index.dart';
 import 'package:piliotto/plugin/pl_player/models/play_speed.dart';
@@ -14,8 +13,6 @@ class PlaySpeedPage extends StatefulWidget {
 }
 
 class _PlaySpeedPageState extends State<PlaySpeedPage> {
-  Box videoStorage = GStrorage.video;
-  Box settingStorage = GStrorage.setting;
   late double playSpeedDefault;
   late List<double> playSpeedSystem;
   late double longPressSpeedDefault;
@@ -54,20 +51,24 @@ class _PlaySpeedPageState extends State<PlaySpeedPage> {
   @override
   void initState() {
     super.initState();
-    // 系统预设倍速
-    playSpeedSystem =
-        videoStorage.get(VideoBoxKey.playSpeedSystem, defaultValue: playSpeed);
-    // 默认倍速
-    playSpeedDefault =
-        videoStorage.get(VideoBoxKey.playSpeedDefault, defaultValue: 1.0);
-    // 默认长按倍速
-    longPressSpeedDefault =
-        videoStorage.get(VideoBoxKey.longPressSpeedDefault, defaultValue: 2.0);
-    // 自定义倍速
-    customSpeedsList =
-        videoStorage.get(VideoBoxKey.customSpeedsList, defaultValue: []);
-    enableAutoLongPressSpeed = settingStorage
-        .get(SettingBoxKey.enableAutoLongPressSpeed, defaultValue: false);
+    try {
+      playSpeedSystem =
+          GStrorage.video.get(VideoBoxKey.playSpeedSystem, defaultValue: playSpeed);
+      playSpeedDefault =
+          GStrorage.video.get(VideoBoxKey.playSpeedDefault, defaultValue: 1.0);
+      longPressSpeedDefault =
+          GStrorage.video.get(VideoBoxKey.longPressSpeedDefault, defaultValue: 2.0);
+      customSpeedsList =
+          GStrorage.video.get(VideoBoxKey.customSpeedsList, defaultValue: []);
+      enableAutoLongPressSpeed = GStrorage.setting
+          .get(SettingBoxKey.enableAutoLongPressSpeed, defaultValue: false);
+    } catch (_) {
+      playSpeedSystem = playSpeed;
+      playSpeedDefault = 1.0;
+      longPressSpeedDefault = 2.0;
+      customSpeedsList = [];
+      enableAutoLongPressSpeed = false;
+    }
     // 开启动态长按倍速时不展示
     if (enableAutoLongPressSpeed) {
       Map newItem = sheetMenu[1];
@@ -114,8 +115,10 @@ class _PlaySpeedPageState extends State<PlaySpeedPage> {
             TextButton(
               onPressed: () async {
                 customSpeedsList.add(customSpeed);
-                await videoStorage.put(
-                    VideoBoxKey.customSpeedsList, customSpeedsList);
+                try {
+                  await GStrorage.video.put(
+                      VideoBoxKey.customSpeedsList, customSpeedsList);
+                } catch (_) {}
                 setState(() {});
                 SmartDialog.dismiss();
               },
@@ -163,22 +166,21 @@ class _PlaySpeedPageState extends State<PlaySpeedPage> {
     );
   }
 
-  //
   void menuAction(String type, int index, int id) async {
     double chooseSpeed = 1.0;
-    // 获取当前选中的倍速值
     chooseSpeed =
         type == 'system' ? playSpeedSystem[index] : customSpeedsList[index];
-    // 设置
     if (id == 1) {
-      // 设置默认倍速
       playSpeedDefault = chooseSpeed;
-      videoStorage.put(VideoBoxKey.playSpeedDefault, playSpeedDefault);
+      try {
+        GStrorage.video.put(VideoBoxKey.playSpeedDefault, playSpeedDefault);
+      } catch (_) {}
     } else if (id == 2) {
-      // 设置默认长按倍速
       longPressSpeedDefault = chooseSpeed;
-      videoStorage.put(
-          VideoBoxKey.longPressSpeedDefault, longPressSpeedDefault);
+      try {
+        GStrorage.video.put(
+            VideoBoxKey.longPressSpeedDefault, longPressSpeedDefault);
+      } catch (_) {}
     } else if (id == -1) {
       late List speedsList =
           type == 'system' ? playSpeedSystem : customSpeedsList;
@@ -187,15 +189,19 @@ class _PlaySpeedPageState extends State<PlaySpeedPage> {
       }
       if (speedsList[index] == longPressSpeedDefault) {
         longPressSpeedDefault = 2.0;
-        videoStorage.put(
-            VideoBoxKey.longPressSpeedDefault, longPressSpeedDefault);
+        try {
+          GStrorage.video.put(
+              VideoBoxKey.longPressSpeedDefault, longPressSpeedDefault);
+        } catch (_) {}
       }
       speedsList.removeAt(index);
-      await videoStorage.put(
-          type == 'system'
-              ? VideoBoxKey.playSpeedSystem
-              : VideoBoxKey.customSpeedsList,
-          speedsList);
+      try {
+        await GStrorage.video.put(
+            type == 'system'
+                ? VideoBoxKey.playSpeedSystem
+                : VideoBoxKey.customSpeedsList,
+            speedsList);
+      } catch (_) {}
     }
     setState(() {});
     SmartDialog.showToast('操作成功');

@@ -1,145 +1,257 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
-import 'package:hive/hive.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:piliotto/common/widgets/user_drawer.dart';
 import 'package:piliotto/models/common/dynamic_badge_mode.dart';
-import 'package:piliotto/pages/dynamics/index.dart';
-import 'package:piliotto/pages/home/index.dart';
-import 'package:piliotto/pages/media/index.dart';
-import 'package:piliotto/utils/event_bus.dart';
+import 'package:piliotto/models/common/nav_bar_config.dart';
 import 'package:piliotto/utils/feed_back.dart';
 import 'package:piliotto/utils/responsive_util.dart';
 import 'package:piliotto/utils/storage.dart';
-import './controller.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 
-class MainApp extends StatefulWidget {
-  const MainApp({super.key});
+part 'view.g.dart';
 
-  @override
-  State<MainApp> createState() => _MainAppState();
+class MainAppState {
+  final List<Widget> pages;
+  final List<int> pagesIds;
+  final List<Map<String, dynamic>> navigationBars;
+  final int selectedIndex;
+  final bool userLogin;
+  final DynamicBadgeMode dynamicBadgeType;
+  final bool hideTabBar;
+  final bool useDrawerForUser;
+  final bool enableGradientBg;
+  final bool imgPreviewStatus;
+
+  const MainAppState({
+    this.pages = const [],
+    this.pagesIds = const [],
+    this.navigationBars = const [],
+    this.selectedIndex = 0,
+    this.userLogin = false,
+    this.dynamicBadgeType = DynamicBadgeMode.number,
+    this.hideTabBar = false,
+    this.useDrawerForUser = true,
+    this.enableGradientBg = true,
+    this.imgPreviewStatus = false,
+  });
+
+  MainAppState copyWith({
+    List<Widget>? pages,
+    List<int>? pagesIds,
+    List<Map<String, dynamic>>? navigationBars,
+    int? selectedIndex,
+    bool? userLogin,
+    DynamicBadgeMode? dynamicBadgeType,
+    bool? hideTabBar,
+    bool? useDrawerForUser,
+    bool? enableGradientBg,
+    bool? imgPreviewStatus,
+  }) {
+    return MainAppState(
+      pages: pages ?? this.pages,
+      pagesIds: pagesIds ?? this.pagesIds,
+      navigationBars: navigationBars ?? this.navigationBars,
+      selectedIndex: selectedIndex ?? this.selectedIndex,
+      userLogin: userLogin ?? this.userLogin,
+      dynamicBadgeType: dynamicBadgeType ?? this.dynamicBadgeType,
+      hideTabBar: hideTabBar ?? this.hideTabBar,
+      useDrawerForUser: useDrawerForUser ?? this.useDrawerForUser,
+      enableGradientBg: enableGradientBg ?? this.enableGradientBg,
+      imgPreviewStatus: imgPreviewStatus ?? this.imgPreviewStatus,
+    );
+  }
 }
 
-class _MainAppState extends State<MainApp> with SingleTickerProviderStateMixin {
-  final MainController _mainController = Get.put(MainController());
-  late HomeController _homeController;
-  DynamicsController? _dynamicController;
-  MediaController? _mediaController;
+@riverpod
+class MainAppNotifier extends _$MainAppNotifier {
+  late PageController pageController;
+  final GlobalKey<ScaffoldState> scaffoldKey = GlobalKey<ScaffoldState>();
+  final StreamController<bool> bottomBarStream = StreamController<bool>.broadcast();
+  DateTime? _lastPressedAt;
 
-  int? _lastSelectTime;
-  Box setting = GStrorage.setting;
+  @override
+  MainAppState build() {
+    pageController = PageController(initialPage: 0);
+    _initConfig();
+    return state;
+  }
+
+  void _initConfig() {
+    bool hideTabBar = false;
+    bool useDrawerForUser = true;
+    bool userLogin = false;
+    DynamicBadgeMode dynamicBadgeType = DynamicBadgeMode.number;
+    bool enableGradientBg = true;
+
+    try {
+      hideTabBar = GStrorage.setting.get(SettingBoxKey.hideTabBar, defaultValue: false);
+      useDrawerForUser = GStrorage.setting.get(SettingBoxKey.useDrawerForUser, defaultValue: true);
+      final userInfo = GStrorage.userInfo.get('userInfoCache');
+      userLogin = userInfo != null;
+      dynamicBadgeType = DynamicBadgeMode.values[GStrorage.setting.get(
+          SettingBoxKey.dynamicBadgeMode, defaultValue: DynamicBadgeMode.number.code)];
+      enableGradientBg = GStrorage.setting.get(SettingBoxKey.enableGradientBg, defaultValue: true);
+    } catch (_) {}
+
+    state = MainAppState(
+      hideTabBar: hideTabBar,
+      useDrawerForUser: useDrawerForUser,
+      userLogin: userLogin,
+      dynamicBadgeType: dynamicBadgeType,
+      enableGradientBg: enableGradientBg,
+    );
+
+    _setNavBarConfig();
+  }
+
+  void _setNavBarConfig() {
+    List<int> navBarSort;
+    try {
+      navBarSort = GStrorage.setting.get(SettingBoxKey.navBarSort, defaultValue: [0, 1, 3]);
+    } catch (_) {
+      navBarSort = [0, 1, 3];
+    }
+
+    for (var item in defaultNavigationBars) {
+      if (!navBarSort.contains(item['id'])) {
+        navBarSort.add(item['id']);
+      }
+    }
+
+    navBarSort.removeWhere((id) => !defaultNavigationBars.any((item) => item['id'] == id));
+
+    final isNarrowScreen = WidgetsBinding
+                .instance.platformDispatcher.implicitView?.physicalSize.width != null &&
+        (WidgetsBinding.instance.platformDispatcher.implicitView!.physicalSize.width /
+                WidgetsBinding.instance.platformDispatcher.implicitView!.devicePixelRatio) <
+            600;
+    if (isNarrowScreen && state.useDrawerForUser) {
+      navBarSort.remove(3);
+    }
+
+    List<Map<String, dynamic>> defaultNavTabs = [...defaultNavigationBars];
+    defaultNavTabs.retainWhere((item) => navBarSort.contains(item['id']));
+    defaultNavTabs.sort((a, b) => navBarSort.indexOf(a['id']).compareTo(navBarSort.indexOf(b['id'])));
+
+    int defaultHomePage;
+    try {
+      defaultHomePage = GStrorage.setting.get(SettingBoxKey.defaultHomePage, defaultValue: 0) as int;
+    } catch (_) {
+      defaultHomePage = 0;
+    }
+
+    int defaultIndex = defaultNavTabs.indexWhere((item) => item['id'] == defaultHomePage);
+    int selectedIndex = defaultIndex != -1 ? defaultIndex : 0;
+
+    List<Widget> pages = defaultNavTabs.map<Widget>((e) => e['page'] as Widget).toList();
+    List<int> pagesIds = defaultNavTabs.map<int>((e) => e['id'] as int).toList();
+
+    state = state.copyWith(
+      navigationBars: defaultNavTabs,
+      selectedIndex: selectedIndex,
+      pages: pages,
+      pagesIds: pagesIds,
+    );
+    
+    pageController = PageController(initialPage: selectedIndex);
+  }
+
+  void setSelectedIndex(int index) {
+    state = state.copyWith(selectedIndex: index);
+  }
+
+  void onBackPressed(BuildContext context) {
+    if (_lastPressedAt == null || DateTime.now().difference(_lastPressedAt!) > const Duration(seconds: 2)) {
+      _lastPressedAt = DateTime.now();
+      if (state.selectedIndex != 0) {
+        pageController.jumpTo(0);
+      }
+      SmartDialog.showToast("再按一次退出PiliOtto");
+      return;
+    }
+    Navigator.of(context).pop();
+  }
+}
+
+class MainApp extends ConsumerStatefulWidget {
+  final Widget? child;
+
+  const MainApp({super.key, this.child});
+
+  @override
+  ConsumerState<MainApp> createState() => _MainAppState();
+}
+
+class _MainAppState extends ConsumerState<MainApp> {
   late bool enableMYBar;
 
   @override
   void initState() {
     super.initState();
-    _lastSelectTime = DateTime.now().millisecondsSinceEpoch;
-    _mainController.pageController =
-        PageController(initialPage: _mainController.selectedIndex);
-    enableMYBar = setting.get(SettingBoxKey.enableMYBar, defaultValue: true);
-    controllerInit();
+    try {
+      enableMYBar = GStrorage.setting.get(SettingBoxKey.enableMYBar, defaultValue: true);
+    } catch (_) {
+      enableMYBar = true;
+    }
   }
 
-  void setIndex(int value) async {
+  void setIndex(int value, MainAppNotifier notifier) {
     feedBack();
-    _mainController.pageController.jumpToPage(value);
-    var currentPage = _mainController.pages[value];
-    if (currentPage is HomePage) {
-      if (_homeController.flag) {
-        if (DateTime.now().millisecondsSinceEpoch - _lastSelectTime! < 500) {
-          _homeController.onRefresh();
-        } else {
-          _homeController.animateToTop();
-        }
-        _lastSelectTime = DateTime.now().millisecondsSinceEpoch;
-      }
-      _homeController.flag = true;
-    } else {
-      _homeController.flag = false;
-    }
-
-    if (currentPage is DynamicsPage) {
-      if (_dynamicController!.flag) {
-        if (DateTime.now().millisecondsSinceEpoch - _lastSelectTime! < 500) {
-          _dynamicController!.onRefresh();
-        } else {
-          _dynamicController!.animateToTop();
-        }
-        _lastSelectTime = DateTime.now().millisecondsSinceEpoch;
-      }
-      _dynamicController!.flag = true;
-    } else {
-      _dynamicController?.flag = false;
-    }
-
-    if (currentPage is MediaPage) {
-      _mediaController!.queryFavFolder();
-    }
-  }
-
-  void controllerInit() {
-    _homeController = Get.put(HomeController());
-    if (_mainController.pagesIds.contains(1)) {
-      _dynamicController = Get.put(DynamicsController());
-    }
-    if (_mainController.pagesIds.contains(2)) {
-      _mediaController = Get.put(MediaController());
-    }
-  }
-
-  @override
-  void dispose() {
-    GStrorage.close();
-    EventBus().off(EventName.loginEvent);
-    super.dispose();
+    notifier.pageController.jumpToPage(value);
+    notifier.setSelectedIndex(value);
   }
 
   @override
   Widget build(BuildContext context) {
-    Box localCache = GStrorage.localCache;
+    final state = ref.watch(mainAppProvider);
+    final notifier = ref.read(mainAppProvider.notifier);
+
     double statusBarHeight = MediaQuery.of(context).padding.top;
     double sheetHeight = MediaQuery.sizeOf(context).height -
         MediaQuery.of(context).padding.top -
         MediaQuery.of(context).size.width * 9 / 16;
-    localCache.put('sheetHeight', sheetHeight);
-    localCache.put('statusBarHeight', statusBarHeight);
+    try {
+      GStrorage.localCache.put('sheetHeight', sheetHeight);
+      GStrorage.localCache.put('statusBarHeight', statusBarHeight);
+    } catch (_) {}
     bool isWideScreen = ResponsiveUtil.isLg || ResponsiveUtil.isXl;
 
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (bool didPop, dynamic result) async {
-        _mainController.onBackPressed(context);
+        notifier.onBackPressed(context);
       },
       child: isWideScreen
-          ? _buildWideScreenLayout(context)
-          : _buildNarrowScreenLayout(context),
+          ? _buildWideScreenLayout(context, state, notifier)
+          : _buildNarrowScreenLayout(context, state, notifier),
     );
   }
 
-  Widget _buildNarrowScreenLayout(BuildContext context) {
-    final useDrawer = _mainController.useDrawerForUser;
+  Widget _buildNarrowScreenLayout(BuildContext context, MainAppState state, MainAppNotifier notifier) {
+    final useDrawer = state.useDrawerForUser;
     return Scaffold(
-      key: _mainController.scaffoldKey,
+      key: notifier.scaffoldKey,
       drawer: useDrawer ? const UserDrawer() : null,
       extendBody: true,
       body: Stack(
         children: [
           PageView(
             physics: const NeverScrollableScrollPhysics(),
-            controller: _mainController.pageController,
+            controller: notifier.pageController,
             onPageChanged: (index) {
-              _mainController.selectedIndex = index;
-              setState(() {});
+              notifier.setSelectedIndex(index);
             },
-            children: _mainController.pages,
+            children: state.pages,
           ),
         ],
       ),
-      bottomNavigationBar: _mainController.navigationBars.length > 1
+      bottomNavigationBar: state.navigationBars.length > 1
           ? StreamBuilder(
-              stream: _mainController.hideTabBar
-                  ? _mainController.bottomBarStream.stream.distinct()
+              stream: state.hideTabBar
+                  ? notifier.bottomBarStream.stream.distinct()
                   : StreamController<bool>.broadcast().stream,
               initialData: true,
               builder: (context, AsyncSnapshot snapshot) {
@@ -148,65 +260,51 @@ class _MainAppState extends State<MainApp> with SingleTickerProviderStateMixin {
                   duration: const Duration(milliseconds: 500),
                   offset: Offset(0, snapshot.data ? 0 : 1),
                   child: enableMYBar
-                      ? Obx(
-                          () => NavigationBar(
-                            onDestinationSelected: (value) => setIndex(value),
-                            selectedIndex: _mainController.selectedIndex,
-                            destinations: <Widget>[
-                              ..._mainController.navigationBars.map((e) {
-                                return NavigationDestination(
-                                  icon: Badge(
-                                    label: _mainController
-                                                .dynamicBadgeType.value ==
-                                            DynamicBadgeMode.number
-                                        ? Text(e['count'].toString())
-                                        : null,
-                                    padding:
-                                        const EdgeInsets.fromLTRB(6, 0, 6, 0),
-                                    isLabelVisible: _mainController
-                                                .dynamicBadgeType.value !=
-                                            DynamicBadgeMode.hidden &&
-                                        e['count'] > 0,
-                                    child: e['icon'],
-                                  ),
-                                  selectedIcon: e['selectIcon'],
-                                  label: e['label'],
-                                );
-                              }),
-                            ],
-                          ),
+                      ? NavigationBar(
+                          onDestinationSelected: (value) => setIndex(value, notifier),
+                          selectedIndex: state.selectedIndex,
+                          destinations: <Widget>[
+                            ...state.navigationBars.map((e) {
+                              return NavigationDestination(
+                                icon: Badge(
+                                  label: state.dynamicBadgeType == DynamicBadgeMode.number
+                                      ? Text(e['count'].toString())
+                                      : null,
+                                  padding: const EdgeInsets.fromLTRB(6, 0, 6, 0),
+                                  isLabelVisible: state.dynamicBadgeType != DynamicBadgeMode.hidden &&
+                                      e['count'] > 0,
+                                  child: e['icon'],
+                                ),
+                                selectedIcon: e['selectIcon'],
+                                label: e['label'],
+                              );
+                            }),
+                          ],
                         )
-                      : Obx(
-                          () => BottomNavigationBar(
-                            currentIndex: _mainController.selectedIndex,
-                            type: BottomNavigationBarType.fixed,
-                            onTap: (value) => setIndex(value),
-                            iconSize: 16,
-                            selectedFontSize: 12,
-                            unselectedFontSize: 12,
-                            items: [
-                              ..._mainController.navigationBars.map((e) {
-                                return BottomNavigationBarItem(
-                                  icon: Badge(
-                                    label: _mainController
-                                                .dynamicBadgeType.value ==
-                                            DynamicBadgeMode.number
-                                        ? Text(e['count'].toString())
-                                        : null,
-                                    padding:
-                                        const EdgeInsets.fromLTRB(6, 0, 6, 0),
-                                    isLabelVisible: _mainController
-                                                .dynamicBadgeType.value !=
-                                            DynamicBadgeMode.hidden &&
-                                        e['count'] > 0,
-                                    child: e['icon'],
-                                  ),
-                                  activeIcon: e['selectIcon'],
-                                  label: e['label'],
-                                );
-                              }),
-                            ],
-                          ),
+                      : BottomNavigationBar(
+                          currentIndex: state.selectedIndex,
+                          type: BottomNavigationBarType.fixed,
+                          onTap: (value) => setIndex(value, notifier),
+                          iconSize: 16,
+                          selectedFontSize: 12,
+                          unselectedFontSize: 12,
+                          items: [
+                            ...state.navigationBars.map((e) {
+                              return BottomNavigationBarItem(
+                                icon: Badge(
+                                  label: state.dynamicBadgeType == DynamicBadgeMode.number
+                                      ? Text(e['count'].toString())
+                                      : null,
+                                  padding: const EdgeInsets.fromLTRB(6, 0, 6, 0),
+                                  isLabelVisible: state.dynamicBadgeType != DynamicBadgeMode.hidden &&
+                                      e['count'] > 0,
+                                  child: e['icon'],
+                                ),
+                                activeIcon: e['selectIcon'],
+                                label: e['label'],
+                              );
+                            }),
+                          ],
                         ),
                 );
               },
@@ -215,24 +313,22 @@ class _MainAppState extends State<MainApp> with SingleTickerProviderStateMixin {
     );
   }
 
-  Widget _buildWideScreenLayout(BuildContext context) {
+  Widget _buildWideScreenLayout(BuildContext context, MainAppState state, MainAppNotifier notifier) {
     return Scaffold(
       body: Row(
         children: [
           NavigationRail(
-            selectedIndex: _mainController.selectedIndex,
-            onDestinationSelected: (value) => setIndex(value),
+            selectedIndex: state.selectedIndex,
+            onDestinationSelected: (value) => setIndex(value, notifier),
             labelType: NavigationRailLabelType.all,
-            destinations: _mainController.navigationBars.map((e) {
+            destinations: state.navigationBars.map((e) {
               return NavigationRailDestination(
                 icon: Badge(
-                  label: _mainController.dynamicBadgeType.value ==
-                          DynamicBadgeMode.number
+                  label: state.dynamicBadgeType == DynamicBadgeMode.number
                       ? Text(e['count'].toString())
                       : null,
                   padding: const EdgeInsets.fromLTRB(6, 0, 6, 0),
-                  isLabelVisible: _mainController.dynamicBadgeType.value !=
-                          DynamicBadgeMode.hidden &&
+                  isLabelVisible: state.dynamicBadgeType != DynamicBadgeMode.hidden &&
                       e['count'] > 0,
                   child: e['icon'],
                 ),
@@ -246,12 +342,11 @@ class _MainAppState extends State<MainApp> with SingleTickerProviderStateMixin {
               children: [
                 PageView(
                   physics: const NeverScrollableScrollPhysics(),
-                  controller: _mainController.pageController,
+                  controller: notifier.pageController,
                   onPageChanged: (index) {
-                    _mainController.selectedIndex = index;
-                    setState(() {});
+                    notifier.setSelectedIndex(index);
                   },
-                  children: _mainController.pages,
+                  children: state.pages,
                 ),
               ],
             ),

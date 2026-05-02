@@ -85,7 +85,9 @@ class _VideoReplyNewDialogState extends State<VideoReplyNewDialog>
       );
       if (res['status'] == 'success') {
         SmartDialog.showToast('评论成功');
-        Get.back(result: true);
+        if (mounted) {
+          Navigator.of(context).pop(true);
+        }
       } else {
         SmartDialog.showToast(res['message'] ?? '评论失败');
       }

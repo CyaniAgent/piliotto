@@ -1,28 +1,39 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:piliotto/common/constants.dart';
 import 'package:piliotto/common/widgets/video_card_h.dart';
 import 'package:piliotto/common/skeleton/video_card_h.dart';
+import 'package:piliotto/pages/rank/provider.dart';
 import 'package:piliotto/utils/feed_back.dart';
-import './controller.dart';
 
-class RankPage extends StatefulWidget {
+class RankPage extends ConsumerStatefulWidget {
   const RankPage({super.key});
 
   @override
-  State<RankPage> createState() => _RankPageState();
+  ConsumerState<RankPage> createState() => _RankPageState();
 }
 
-class _RankPageState extends State<RankPage>
-    with AutomaticKeepAliveClientMixin {
-  final RankController _rankController = Get.put(RankController());
-
+class _RankPageState extends ConsumerState<RankPage>
+    with AutomaticKeepAliveClientMixin, TickerProviderStateMixin {
   @override
   bool get wantKeepAlive => true;
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final notifier = ref.read(rankProvider.notifier);
+      notifier.initTabController(this);
+      notifier.loadVideos();
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     super.build(context);
+    final state = ref.watch(rankProvider);
+    final notifier = ref.read(rankProvider.notifier);
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('排行榜'),
@@ -30,16 +41,16 @@ class _RankPageState extends State<RankPage>
       ),
       body: Column(
         children: [
-          _buildTabBar(),
+          _buildTabBar(state, notifier),
           Expanded(
-            child: Obx(() => _buildVideoList()),
+            child: _buildVideoList(state, notifier),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildTabBar() {
+  Widget _buildTabBar(RankState state, RankNotifier notifier) {
     return Container(
       width: double.infinity,
       height: 42,
@@ -52,27 +63,27 @@ class _RankPageState extends State<RankPage>
         ),
       ),
       child: TabBar(
-        controller: _rankController.tabController,
-        tabs: _rankController.tabs.map((e) => Tab(text: e['label'])).toList(),
+        controller: notifier.tabController,
+        tabs: notifier.tabs.map((e) => Tab(text: e['label'])).toList(),
         isScrollable: false,
         dividerColor: Colors.transparent,
         tabAlignment: TabAlignment.center,
         onTap: (value) {
           feedBack();
-          if (value == _rankController.currentTabIndex.value) {
-            _rankController.animateToTop();
+          if (value == state.currentTabIndex) {
+            notifier.animateToTop();
           }
         },
       ),
     );
   }
 
-  Widget _buildVideoList() {
-    if (_rankController.isLoading.value) {
+  Widget _buildVideoList(RankState state, RankNotifier notifier) {
+    if (state.isLoading) {
       return _buildLoadingSkeleton();
     }
 
-    if (_rankController.videoList.isEmpty) {
+    if (state.videoList.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -95,9 +106,9 @@ class _RankPageState extends State<RankPage>
     }
 
     return RefreshIndicator(
-      onRefresh: _rankController.onRefresh,
+      onRefresh: notifier.onRefresh,
       child: CustomScrollView(
-        controller: _rankController.scrollController,
+        controller: notifier.scrollController,
         slivers: [
           SliverPadding(
             padding: const EdgeInsets.fromLTRB(
@@ -108,21 +119,21 @@ class _RankPageState extends State<RankPage>
             ),
             sliver: SliverGrid(
               gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: _rankController.crossAxisCount.value,
+                crossAxisCount: state.crossAxisCount,
                 mainAxisSpacing: 16,
                 crossAxisSpacing: 16,
                 childAspectRatio: 3 / 1,
               ),
               delegate: SliverChildBuilderDelegate(
                 (context, index) {
-                  final video = _rankController.videoList[index];
+                  final video = state.videoList[index];
                   return VideoCardH(
                     videoItem: video,
                     source: 'rank',
                     rankIndex: index + 1,
                   );
                 },
-                childCount: _rankController.videoList.length,
+                childCount: state.videoList.length,
               ),
             ),
           ),

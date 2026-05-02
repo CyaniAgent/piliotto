@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:flutter_html/flutter_html.dart';
-import 'package:get/get.dart';
+import 'package:go_router/go_router.dart';
+import 'package:piliotto/router/app_router.dart';
 import 'package:piliotto/utils/utils.dart';
 
 class MarkdownText extends StatelessWidget {
@@ -78,7 +79,7 @@ class MarkdownText extends StatelessWidget {
           if (onLinkTap != null) {
             onLinkTap!(url);
           } else {
-            Get.toNamed('/webview', parameters: {
+            context.push('/webview', extra: {
               'url': url,
               'type': 'url',
               'pageTitle': url,
@@ -177,11 +178,14 @@ class MarkdownText extends StatelessWidget {
       if (onLinkTap != null) {
         onLinkTap!(href);
       } else {
-        Get.toNamed('/webview', parameters: {
-          'url': href,
-          'type': 'url',
-          'pageTitle': title ?? href,
-        });
+        final ctx = rootNavigatorKey.currentContext;
+        if (ctx != null) {
+          ctx.go('/webview', extra: {
+            'url': href,
+            'type': 'url',
+            'pageTitle': title ?? href,
+          });
+        }
       }
     };
   }

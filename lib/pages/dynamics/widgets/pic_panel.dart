@@ -1,16 +1,17 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
 import 'package:piliotto/common/constants.dart';
 import 'package:piliotto/common/widgets/badge.dart';
 import 'package:piliotto/common/widgets/network_img_layer.dart';
 import 'package:piliotto/plugin/pl_gallery/index.dart';
+import 'package:piliotto/utils/utils.dart';
 
-void onPreviewImg(String currentUrl, List<String> picList, int initIndex, BuildContext context) {
+void onPreviewImg(String currentUrl, List<String> picList, int initIndex, BuildContext context, List<String> heroTags) {
   Navigator.of(context).push(
     HeroDialogRoute<void>(
       builder: (BuildContext context) => InteractiveviewerGallery(
         sources: picList,
         initIndex: initIndex,
+        heroTags: heroTags,
         onPageChanged: (int pageIndex) {},
       ),
     ),
@@ -30,22 +31,24 @@ Widget picWidget(dynamic item, BuildContext context) {
   }
   int len = pictures.length;
   List<String> picList = [];
+  List<String> heroTags = [];
   List<Widget> list = [];
   for (var i = 0; i < len; i++) {
     picList.add(pictures[i].src ?? pictures[i].url);
+    heroTags.add(Utils.makeHeroTag('${picList[i]}_$i'));
   }
   for (var i = 0; i < len; i++) {
     list.add(
       LayoutBuilder(
         builder: (context, BoxConstraints box) {
           return Hero(
-            tag: picList[i],
+            tag: heroTags[i],
             placeholderBuilder:
                 (BuildContext context, Size heroSize, Widget child) {
               return child;
             },
             child: GestureDetector(
-              onTap: () => onPreviewImg(picList[i], picList, i, context),
+              onTap: () => onPreviewImg(picList[i], picList, i, context, heroTags),
               child: NetworkImgLayer(
                 src: pictures[i].src ?? pictures[i].url,
                 width: box.maxWidth,
@@ -100,7 +103,7 @@ Widget picWidget(dynamic item, BuildContext context) {
               childAspectRatio: aspectRatio,
               children: list,
             ),
-            if (len == 1 && height > Get.size.height * 0.9)
+            if (len == 1 && height > MediaQuery.sizeOf(context).height * 0.9)
               const PBadge(
                 text: '长图',
                 top: null,

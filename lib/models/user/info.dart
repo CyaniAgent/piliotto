@@ -54,6 +54,62 @@ class UserInfoData {
   bool? hasShop;
   String? shopUrl;
 
+  UserInfoData copyWith({
+    bool? isLogin,
+    int? emailVerified,
+    String? face,
+    String? cover,
+    LevelInfo? levelInfo,
+    int? mid,
+    int? mobileVerified,
+    double? money,
+    int? moral,
+    Map? official,
+    Map? officialVerify,
+    Map? pendant,
+    int? scores,
+    String? uname,
+    int? vipDueDate,
+    int? vipStatus,
+    int? vipType,
+    int? vipPayType,
+    int? vipThemeType,
+    Map? vipLabel,
+    int? vipAvatarSub,
+    String? vipNicknameColor,
+    Map? wallet,
+    bool? hasShop,
+    String? shopUrl,
+  }) {
+    return UserInfoData(
+      isLogin: isLogin ?? this.isLogin,
+      emailVerified: emailVerified ?? this.emailVerified,
+      face: face ?? this.face,
+      cover: cover ?? this.cover,
+      levelInfo: levelInfo ?? this.levelInfo,
+      mid: mid ?? this.mid,
+      mobileVerified: mobileVerified ?? this.mobileVerified,
+      money: money ?? this.money,
+      moral: moral ?? this.moral,
+      official: official ?? this.official,
+      officialVerify: officialVerify ?? this.officialVerify,
+      pendant: pendant ?? this.pendant,
+      scores: scores ?? this.scores,
+      uname: uname ?? this.uname,
+      vipDueDate: vipDueDate ?? this.vipDueDate,
+      vipStatus: vipStatus ?? this.vipStatus,
+      vipType: vipType ?? this.vipType,
+      vipPayType: vipPayType ?? this.vipPayType,
+      vipThemeType: vipThemeType ?? this.vipThemeType,
+      vipLabel: vipLabel ?? this.vipLabel,
+      vipAvatarSub: vipAvatarSub ?? this.vipAvatarSub,
+      vipNicknameColor: vipNicknameColor ?? this.vipNicknameColor,
+      wallet: wallet ?? this.wallet,
+      hasShop: hasShop ?? this.hasShop,
+      shopUrl: shopUrl ?? this.shopUrl,
+    );
+  }
+
   UserInfoData.fromJson(Map<String, dynamic> json) {
     isLogin = json['isLogin'] ?? false;
     emailVerified = json['email_verified'];

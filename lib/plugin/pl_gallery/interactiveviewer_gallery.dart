@@ -7,7 +7,6 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
-import 'package:get/get.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:piliotto/utils/download.dart';
 import 'package:share_plus/share_plus.dart';
@@ -39,6 +38,7 @@ class InteractiveviewerGallery<T> extends StatefulWidget {
     this.minScale = 1.0,
     this.onPageChanged,
     this.onDismissed,
+    this.heroTags,
     super.key,
   });
 
@@ -58,6 +58,9 @@ class InteractiveviewerGallery<T> extends StatefulWidget {
   final ValueChanged<int>? onPageChanged;
 
   final ValueChanged<int>? onDismissed;
+
+  /// Custom hero tags for each source. If not provided, sources will be used as tags.
+  final List<String>? heroTags;
 
   @override
   State<InteractiveviewerGallery> createState() =>
@@ -368,6 +371,7 @@ class _InteractiveviewerGalleryState extends State<InteractiveviewerGallery>
   }
 
   Widget _itemBuilder(List<dynamic> sources, int index) {
+    final heroTag = widget.heroTags?[index] ?? sources[index].toString();
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: () {
@@ -377,7 +381,7 @@ class _InteractiveviewerGalleryState extends State<InteractiveviewerGallery>
       },
       child: Center(
         child: Hero(
-          tag: sources[index],
+          tag: heroTag,
           child: CachedNetworkImage(
             fadeInDuration: const Duration(milliseconds: 0),
             imageUrl: sources[index],
@@ -448,7 +452,7 @@ class _InteractiveviewerGalleryState extends State<InteractiveviewerGallery>
             mainAxisSize: MainAxisSize.min,
             children: [
               InkWell(
-                onTap: () => Get.back(),
+                onTap: () => Navigator.of(context).pop(),
                 child: Container(
                   height: 35,
                   padding: const EdgeInsets.only(bottom: 2),

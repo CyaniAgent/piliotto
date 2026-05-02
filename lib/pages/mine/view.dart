@@ -1,32 +1,21 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:piliotto/common/widgets/network_img_layer.dart';
 import 'package:piliotto/models/common/theme_type.dart';
-import 'package:piliotto/pages/fav/index.dart';
-import 'package:piliotto/pages/history/index.dart';
-import 'controller.dart';
+import 'package:piliotto/pages/mine/provider.dart';
+import 'package:piliotto/utils/router_helper.dart';
 
-class MinePage extends StatefulWidget {
+class MinePage extends ConsumerStatefulWidget {
   final bool showBackButton;
   const MinePage({super.key, this.showBackButton = false});
 
   @override
-  State<MinePage> createState() => _MinePageState();
+  ConsumerState<MinePage> createState() => _MinePageState();
 }
 
-class _MinePageState extends State<MinePage> {
-  final MineController mineController = Get.put(MineController());
+class _MinePageState extends ConsumerState<MinePage> {
   final ScrollController _scrollController = ScrollController();
-
-  @override
-  void initState() {
-    super.initState();
-    mineController.userLogin.listen((status) {
-      if (mounted) {
-        setState(() {});
-      }
-    });
-  }
 
   @override
   void dispose() {
@@ -37,12 +26,14 @@ class _MinePageState extends State<MinePage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final state = ref.watch(mineProvider);
+    final notifier = ref.read(mineProvider.notifier);
 
     return Scaffold(
       body: CustomScrollView(
         controller: _scrollController,
         slivers: [
-          _buildAppBar(context, theme),
+          _buildAppBar(context, theme, state, notifier),
           SliverToBoxAdapter(
             child: _buildContent(context, theme),
           ),
@@ -51,38 +42,38 @@ class _MinePageState extends State<MinePage> {
     );
   }
 
-  Widget _buildAppBar(BuildContext context, ThemeData theme) {
+  Widget _buildAppBar(BuildContext context, ThemeData theme, MineState state, MineNotifier notifier) {
     return SliverAppBar(
       leading: widget.showBackButton
           ? IconButton(
-              icon: Obx(() => Icon(
-                    Icons.arrow_back,
-                    color: _getIconColor(theme),
-                  )),
-              onPressed: () => Get.back(),
+              icon: Icon(
+                Icons.arrow_back,
+                color: _getIconColor(theme, state),
+              ),
+              onPressed: () => AppRouterHelper.back(context),
             )
           : null,
       automaticallyImplyLeading: false,
       actions: [
         IconButton(
-          onPressed: () => mineController.onChangeTheme(),
-          icon: Obx(() => Icon(
-                mineController.themeType.value == ThemeType.light
-                    ? Icons.light_mode
-                    : mineController.themeType.value == ThemeType.dark
-                        ? Icons.dark_mode
-                        : Icons.brightness_auto,
-                size: 22,
-                color: _getIconColor(theme),
-              )),
+          onPressed: () => notifier.onChangeTheme(),
+          icon: Icon(
+            state.themeType == ThemeType.light
+                ? Icons.light_mode
+                : state.themeType == ThemeType.dark
+                    ? Icons.dark_mode
+                    : Icons.brightness_auto,
+            size: 22,
+            color: _getIconColor(theme, state),
+          ),
         ),
         IconButton(
-          onPressed: () => Get.toNamed('/setting', preventDuplicates: false),
-          icon: Obx(() => Icon(
-                Icons.settings_outlined,
-                size: 22,
-                color: _getIconColor(theme),
-              )),
+          onPressed: () => context.push('/setting'),
+          icon: Icon(
+            Icons.settings_outlined,
+            size: 22,
+            color: _getIconColor(theme, state),
+          ),
         ),
         const SizedBox(width: 4),
       ],
@@ -91,61 +82,59 @@ class _MinePageState extends State<MinePage> {
       snap: true,
       expandedHeight: 280,
       flexibleSpace:
-          FlexibleSpaceBar(background: _buildHeaderWithUserInfo(theme)),
+          FlexibleSpaceBar(background: _buildHeaderWithUserInfo(theme, state, notifier)),
     );
   }
 
-  Color _getIconColor(ThemeData theme) {
-    final cover = mineController.userInfo.value.cover;
+  Color _getIconColor(ThemeData theme, MineState state) {
+    final cover = state.userInfo.cover;
     final hasCover = cover != null && cover.isNotEmpty;
     return hasCover ? Colors.white : theme.colorScheme.onSurface;
   }
 
-  Widget _buildHeaderWithUserInfo(ThemeData theme) {
-    return Obx(() {
-      final cover = mineController.userInfo.value.cover;
-      final hasCover = cover != null && cover.isNotEmpty;
-      return Container(
-        height: 280,
-        decoration: BoxDecoration(
-          color: theme.colorScheme.secondaryContainer,
-          image: hasCover
-              ? DecorationImage(
-                  image: NetworkImage(cover),
-                  fit: BoxFit.cover,
-                  colorFilter: ColorFilter.mode(
-                    Colors.black.withAlpha(hasCover ? 100 : 0),
-                    BlendMode.darken,
-                  ),
-                )
-              : null,
-        ),
-        child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 60, 16, 16),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.end,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    _buildAvatar(theme, hasCover),
-                    const SizedBox(width: 16),
-                    Expanded(child: _buildUserDetails(theme, hasCover)),
-                  ],
+  Widget _buildHeaderWithUserInfo(ThemeData theme, MineState state, MineNotifier notifier) {
+    final cover = state.userInfo.cover;
+    final hasCover = cover != null && cover.isNotEmpty;
+    return Container(
+      height: 280,
+      decoration: BoxDecoration(
+        color: theme.colorScheme.secondaryContainer,
+        image: hasCover
+            ? DecorationImage(
+                image: NetworkImage(cover),
+                fit: BoxFit.cover,
+                colorFilter: ColorFilter.mode(
+                  Colors.black.withAlpha(hasCover ? 100 : 0),
+                  BlendMode.darken,
                 ),
-              ],
-            ),
+              )
+            : null,
+      ),
+      child: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 60, 16, 16),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.end,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  _buildAvatar(theme, hasCover, state, notifier),
+                  const SizedBox(width: 16),
+                  Expanded(child: _buildUserDetails(theme, hasCover, state, notifier)),
+                ],
+              ),
+            ],
           ),
         ),
-      );
-    });
+      ),
+    );
   }
 
-  Widget _buildAvatar(ThemeData theme, bool hasCover) {
+  Widget _buildAvatar(ThemeData theme, bool hasCover, MineState state, MineNotifier notifier) {
     return GestureDetector(
-      onTap: () => mineController.onLogin(),
+      onTap: () => notifier.onLogin(),
       child: Container(
         decoration: BoxDecoration(
           shape: BoxShape.circle,
@@ -163,33 +152,35 @@ class _MinePageState extends State<MinePage> {
             ),
           ],
         ),
-        child: Obx(() {
-          final face = mineController.userInfo.value.face;
-          if (face != null && face.isNotEmpty) {
-            return ClipOval(
-              child: NetworkImgLayer(
-                src: face,
-                width: 80,
-                height: 80,
-                type: 'avatar',
+        child: Builder(
+          builder: (context) {
+            final face = state.userInfo.face;
+            if (face != null && face.isNotEmpty) {
+              return ClipOval(
+                child: NetworkImgLayer(
+                  src: face,
+                  width: 80,
+                  height: 80,
+                  type: 'avatar',
+                ),
+              );
+            }
+            return CircleAvatar(
+              radius: 40,
+              backgroundColor: theme.colorScheme.surface,
+              child: Icon(
+                Icons.person,
+                size: 45,
+                color: theme.colorScheme.primary,
               ),
             );
-          }
-          return CircleAvatar(
-            radius: 40,
-            backgroundColor: theme.colorScheme.surface,
-            child: Icon(
-              Icons.person,
-              size: 45,
-              color: theme.colorScheme.primary,
-            ),
-          );
-        }),
+          },
+        ),
       ),
     );
   }
 
-  Widget _buildUserDetails(ThemeData theme, bool hasCover) {
+  Widget _buildUserDetails(ThemeData theme, bool hasCover, MineState state, MineNotifier notifier) {
     final textColor = hasCover ? Colors.white : theme.colorScheme.onSurface;
     final subTextColor =
         hasCover ? Colors.white70 : theme.colorScheme.onSurfaceVariant;
@@ -198,59 +189,47 @@ class _MinePageState extends State<MinePage> {
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        Obx(() => Text(
-              mineController.userInfo.value.uname ?? '点击头像登录',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: textColor,
-              ),
-            )),
+        Text(
+          state.userInfo.uname ?? '点击头像登录',
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: textColor,
+          ),
+        ),
         const SizedBox(height: 4),
-        Obx(() {
-          if (mineController.userLogin.value) {
-            return Text(
-              'UID: ${mineController.userInfo.value.mid}',
-              style: TextStyle(fontSize: 13, color: subTextColor),
-            );
-          }
-          return const SizedBox.shrink();
-        }),
+        if (state.userLogin)
+          Text(
+            'UID: ${state.userInfo.mid}',
+            style: TextStyle(fontSize: 13, color: subTextColor),
+          ),
         const SizedBox(height: 8),
-        Obx(() {
-          if (mineController.userLogin.value) {
-            return Row(
-              children: [
-                _buildStatItem(
-                  '关注',
-                  mineController.userStat.value.following?.toString() ?? '0',
-                  () => mineController.pushFollow(),
-                  textColor,
-                  subTextColor,
-                ),
-                const SizedBox(width: 16),
-                _buildStatItem(
-                  '粉丝',
-                  mineController.userStat.value.follower?.toString() ?? '0',
-                  () => mineController.pushFans(),
-                  textColor,
-                  subTextColor,
-                ),
-              ],
-            );
-          }
-          return const SizedBox.shrink();
-        }),
+        if (state.userLogin)
+          Row(
+            children: [
+              _buildStatItem(
+                '关注',
+                state.userStat.following?.toString() ?? '0',
+                () => notifier.pushFollow(),
+                textColor,
+                subTextColor,
+              ),
+              const SizedBox(width: 16),
+              _buildStatItem(
+                '粉丝',
+                state.userStat.follower?.toString() ?? '0',
+                () => notifier.pushFans(),
+                textColor,
+                subTextColor,
+              ),
+            ],
+          ),
         const SizedBox(height: 12),
-        Obx(() {
-          if (!mineController.userLogin.value) {
-            return FilledButton(
-              onPressed: () => Get.toNamed('/loginPage'),
-              child: const Text('立即登录'),
-            );
-          }
-          return const SizedBox.shrink();
-        }),
+        if (!state.userLogin)
+          FilledButton(
+            onPressed: () => context.push('/loginPage'),
+            child: const Text('立即登录'),
+          ),
       ],
     );
   }
@@ -297,14 +276,14 @@ class _MinePageState extends State<MinePage> {
           theme,
           Icons.favorite_border_outlined,
           '我的收藏',
-          () => Get.to(const FavPage()),
+          () => context.push('/fav'),
         ),
         _buildMenuItem(
           context,
           theme,
           Icons.history_outlined,
           '历史记录',
-          () => Get.to(const HistoryPage()),
+          () => context.push('/history'),
         ),
       ],
     );

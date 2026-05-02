@@ -1,38 +1,43 @@
 import 'package:easy_debounce/easy_throttle.dart';
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:piliotto/pages/member_dynamics/index.dart';
 import 'package:piliotto/utils/responsive_util.dart';
-import 'package:piliotto/utils/utils.dart';
+import 'package:piliotto/utils/route_arguments.dart';
 
-import '../../common/widgets/http_error.dart';
-import 'package:piliotto/ottohub/models/dynamics/result.dart';
 import '../dynamics/widgets/dynamic_panel.dart';
 
-class MemberDynamicsPage extends StatefulWidget {
+class MemberDynamicsPage extends ConsumerStatefulWidget {
   const MemberDynamicsPage({super.key});
 
   @override
-  State<MemberDynamicsPage> createState() => _MemberDynamicsPageState();
+  ConsumerState<MemberDynamicsPage> createState() => _MemberDynamicsPageState();
 }
 
-class _MemberDynamicsPageState extends State<MemberDynamicsPage> {
-  late MemberDynamicsController _memberDynamicController;
-  late Future _futureBuilderFuture;
+class _MemberDynamicsPageState extends ConsumerState<MemberDynamicsPage> {
+  Future? _futureBuilderFuture;
   late ScrollController scrollController;
   late int mid;
+  bool _initialized = false;
 
   @override
   void initState() {
     super.initState();
-    mid = int.parse(Get.parameters['mid']!);
-    final String heroTag = Utils.makeHeroTag(mid);
-    _memberDynamicController =
-        Get.put(MemberDynamicsController(), tag: heroTag);
-    _futureBuilderFuture =
-        _memberDynamicController.getMemberDynamic('onRefresh');
-    scrollController = _memberDynamicController.scrollController;
+    mid = int.parse(routeArguments.queryParameters['mid']!);
+    scrollController = ScrollController();
     scrollController.addListener(_onScroll);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_initialized) {
+      _initialized = true;
+      _futureBuilderFuture = ref
+          .read(memberDynamicsProvider(mid).notifier)
+          .getMemberDynamic('onRefresh');
+    }
   }
 
   void _onScroll() {
@@ -41,7 +46,7 @@ class _MemberDynamicsPageState extends State<MemberDynamicsPage> {
         scrollController.position.maxScrollExtent - 200) {
       EasyThrottle.throttle(
           'member_dynamics', const Duration(milliseconds: 1000), () {
-        _memberDynamicController.onLoad();
+        ref.read(memberDynamicsProvider(mid).notifier).onLoad();
       });
     }
   }
@@ -49,6 +54,7 @@ class _MemberDynamicsPageState extends State<MemberDynamicsPage> {
   @override
   void dispose() {
     scrollController.removeListener(_onScroll);
+    scrollController.dispose();
     super.dispose();
   }
 
@@ -68,53 +74,37 @@ class _MemberDynamicsPageState extends State<MemberDynamicsPage> {
         future: _futureBuilderFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.done) {
-            if (snapshot.data != null) {
-              Map data = snapshot.data as Map;
-              RxList<DynamicItemModel> list =
-                  _memberDynamicController.dynamicsList;
-              if (data['status'] == 'success') {
-                return Obx(
-                  () => list.isNotEmpty
-                      ? ListView.builder(
-                          controller: scrollController,
-                          padding: _buildPadding(
-                              isWideScreen, screenWidth, maxContentWidth),
-                          itemCount: list.length,
-                          itemBuilder: (context, index) {
-                            return Container(
-                              margin: const EdgeInsets.symmetric(vertical: 6),
-                              width: isWideScreen ? maxContentWidth : null,
-                              child: DynamicPanel(
-                                item: list[index],
-                                onTap: () => Get.toNamed('/dynamicDetail',
-                                    arguments: {
-                                      'item': list[index],
-                                      'floor': 1,
-                                    }),
-                                onCommentTap: () => Get.toNamed(
-                                    '/dynamicDetail',
-                                    arguments: {
-                                      'item': list[index],
-                                      'floor': 1,
-                                      'action': 'comment',
-                                    }),
-                              ),
-                            );
-                          },
-                        )
-                      : const Center(child: Text('暂无动态')),
-                );
-              } else {
-                return HttpError(
-                  errMsg: data['message'] ?? '加载失败，请稍后重试',
-                  fn: () {},
-                );
-              }
-            } else {
-              return HttpError(
-                errMsg: '加载失败，请稍后重试',
-                fn: () {},
+            final state = ref.watch(memberDynamicsProvider(mid));
+            final list = state.dynamicsList;
+
+            if (list.isNotEmpty) {
+              return ListView.builder(
+                controller: scrollController,
+                padding:
+                    _buildPadding(isWideScreen, screenWidth, maxContentWidth),
+                itemCount: list.length,
+                itemBuilder: (context, index) {
+                  return Container(
+                    margin: const EdgeInsets.symmetric(vertical: 6),
+                    width: isWideScreen ? maxContentWidth : null,
+                    child: DynamicPanel(
+                      item: list[index],
+                      onTap: () => context.push('/dynamicDetail', extra: {
+                        'item': list[index],
+                        'floor': 1,
+                      }),
+                      onCommentTap: () =>
+                          context.push('/dynamicDetail', extra: {
+                        'item': list[index],
+                        'floor': 1,
+                        'action': 'comment',
+                      }),
+                    ),
+                  );
+                },
               );
+            } else {
+              return const Center(child: Text('暂无动态'));
             }
           } else {
             return const Center(child: CircularProgressIndicator());

@@ -1,8 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
-import 'package:hive/hive.dart';
+import 'package:go_router/go_router.dart';
 
 import 'package:piliotto/pages/setting/widgets/select_dialog.dart';
 import 'package:piliotto/plugin/pl_player/index.dart';
@@ -19,16 +18,16 @@ class PlaySetting extends StatefulWidget {
 }
 
 class _PlaySettingState extends State<PlaySetting> {
-  Box setting = GStrorage.setting;
   late int defaultFullScreenMode;
   late int defaultBtmProgressBehavior;
 
   @override
   void initState() {
     super.initState();
-    defaultFullScreenMode = setting.get(SettingBoxKey.fullScreenMode,
+    defaultFullScreenMode = GStrorage.setting.get(SettingBoxKey.fullScreenMode,
         defaultValue: FullScreenMode.values.first.code);
-    defaultBtmProgressBehavior = setting.get(SettingBoxKey.btmProgressBehavior,
+    defaultBtmProgressBehavior = GStrorage.setting.get(
+        SettingBoxKey.btmProgressBehavior,
         defaultValue: BtmProgresBehavior.values.first.code);
   }
 
@@ -57,13 +56,13 @@ class _PlaySettingState extends State<PlaySetting> {
         children: [
           ListTile(
             dense: false,
-            onTap: () => Get.toNamed('/playSpeedSet'),
+            onTap: () => context.push('/playSpeedSet'),
             title: Text('倍速设置', style: titleStyle),
             subtitle: Text('设置视频播放速度', style: subTitleStyle),
           ),
           ListTile(
             dense: false,
-            onTap: () => Get.toNamed('/playerGestureSet'),
+            onTap: () => context.push('/playerGestureSet'),
             title: Text('手势设置', style: titleStyle),
             subtitle: Text('设置播放器手势', style: subTitleStyle),
           ),
@@ -145,7 +144,9 @@ class _PlaySettingState extends State<PlaySetting> {
               );
               if (result != null) {
                 defaultFullScreenMode = result;
-                setting.put(SettingBoxKey.fullScreenMode, result);
+                try {
+                  GStrorage.setting.put(SettingBoxKey.fullScreenMode, result);
+                } catch (_) {}
                 setState(() {});
               }
             },
@@ -171,7 +172,10 @@ class _PlaySettingState extends State<PlaySetting> {
               );
               if (result != null) {
                 defaultBtmProgressBehavior = result;
-                setting.put(SettingBoxKey.btmProgressBehavior, result);
+                try {
+                  GStrorage.setting
+                      .put(SettingBoxKey.btmProgressBehavior, result);
+                } catch (_) {}
                 setState(() {});
               }
             },

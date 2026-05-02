@@ -1,31 +1,31 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:piliotto/common/widgets/network_img_layer.dart';
 import 'package:piliotto/models/common/theme_type.dart';
-import 'package:piliotto/pages/fav/index.dart';
-import 'package:piliotto/pages/history/index.dart';
-import 'package:piliotto/pages/mine/controller.dart';
+import 'package:piliotto/pages/mine/provider.dart';
 
-class UserDrawer extends StatelessWidget {
+class UserDrawer extends ConsumerWidget {
   const UserDrawer({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    final MineController mineController = Get.put(MineController());
+    final state = ref.watch(mineProvider);
+    final notifier = ref.read(mineProvider.notifier);
 
     return Drawer(
       child: SafeArea(
         child: Column(
           children: [
-            _buildHeader(context, theme, mineController),
+            _buildHeader(context, theme, state, notifier),
             Expanded(
               child: SingleChildScrollView(
                 child: Column(
                   children: [
-                    _buildUserStats(theme, mineController),
+                    _buildUserStats(theme, state, notifier),
                     const Divider(height: 1),
-                    _buildMenuItems(context, theme, mineController),
+                    _buildMenuItems(context, theme, notifier),
                   ],
                 ),
               ),
@@ -37,7 +37,7 @@ class UserDrawer extends StatelessWidget {
   }
 
   Widget _buildHeader(
-      BuildContext context, ThemeData theme, MineController mineController) {
+      BuildContext context, ThemeData theme, MineState state, MineNotifier notifier) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 20),
@@ -51,19 +51,19 @@ class UserDrawer extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
               IconButton(
-                onPressed: () => mineController.onChangeTheme(),
-                icon: Obx(() => Icon(
-                      mineController.themeType.value == ThemeType.dark
-                          ? Icons.light_mode
-                          : Icons.dark_mode,
-                      size: 20,
-                      color: theme.colorScheme.onSecondaryContainer,
-                    )),
+                onPressed: () => notifier.onChangeTheme(),
+                icon: Icon(
+                  state.themeType == ThemeType.dark
+                      ? Icons.light_mode
+                      : Icons.dark_mode,
+                  size: 20,
+                  color: theme.colorScheme.onSecondaryContainer,
+                ),
               ),
               IconButton(
                 onPressed: () {
                   Navigator.of(context).pop();
-                  Get.toNamed('/setting', preventDuplicates: false);
+                  context.push('/setting');
                 },
                 icon: Icon(
                   Icons.settings_outlined,
@@ -75,71 +75,63 @@ class UserDrawer extends StatelessWidget {
           ),
           Row(
             children: [
-              _buildAvatar(theme, mineController, context),
+              _buildAvatar(theme, state, notifier, context),
               const SizedBox(width: 16),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Obx(() => Text(
-                          mineController.userInfo.value.uname ?? '点击头像登录',
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: theme.colorScheme.onSecondaryContainer,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        )),
+                    Text(
+                      state.userInfo.uname ?? '点击头像登录',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: theme.colorScheme.onSecondaryContainer,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
                     const SizedBox(height: 4),
-                    Obx(() {
-                      if (mineController.userLogin.value) {
-                        return Text(
-                          'UID: ${mineController.userInfo.value.mid}',
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: theme.colorScheme.onSecondaryContainer
-                                .withAlpha(180),
-                          ),
-                        );
-                      }
-                      return const SizedBox.shrink();
-                    }),
+                    if (state.userLogin)
+                      Text(
+                        'UID: ${state.userInfo.mid}',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: theme.colorScheme.onSecondaryContainer
+                              .withAlpha(180),
+                        ),
+                      ),
                   ],
                 ),
               ),
             ],
           ),
           const SizedBox(height: 16),
-          Obx(() {
-            if (!mineController.userLogin.value) {
-              return SizedBox(
-                width: double.infinity,
-                child: FilledButton(
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                    Get.toNamed('/loginPage');
-                  },
-                  style: FilledButton.styleFrom(
-                    backgroundColor: theme.colorScheme.onSecondaryContainer,
-                    foregroundColor: theme.colorScheme.secondaryContainer,
-                  ),
-                  child: const Text('立即登录'),
+          if (!state.userLogin)
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  context.push('/loginPage');
+                },
+                style: FilledButton.styleFrom(
+                  backgroundColor: theme.colorScheme.onSecondaryContainer,
+                  foregroundColor: theme.colorScheme.secondaryContainer,
                 ),
-              );
-            }
-            return const SizedBox.shrink();
-          }),
+                child: const Text('立即登录'),
+              ),
+            ),
         ],
       ),
     );
   }
 
   Widget _buildAvatar(
-      ThemeData theme, MineController mineController, BuildContext context) {
+      ThemeData theme, MineState state, MineNotifier notifier, BuildContext context) {
     return GestureDetector(
       onTap: () {
         Navigator.of(context).pop();
-        mineController.onLogin();
+        notifier.onLogin();
       },
       child: Container(
         decoration: BoxDecoration(
@@ -156,61 +148,63 @@ class UserDrawer extends StatelessWidget {
             ),
           ],
         ),
-        child: Obx(() {
-          final face = mineController.userInfo.value.face;
-          if (face != null && face.isNotEmpty) {
-            return ClipOval(
-              child: NetworkImgLayer(
-                src: face,
-                width: 56,
-                height: 56,
-                type: 'avatar',
+        child: Builder(
+          builder: (context) {
+            final face = state.userInfo.face;
+            if (face != null && face.isNotEmpty) {
+              return ClipOval(
+                child: NetworkImgLayer(
+                  src: face,
+                  width: 56,
+                  height: 56,
+                  type: 'avatar',
+                ),
+              );
+            }
+            return CircleAvatar(
+              radius: 28,
+              backgroundColor: theme.colorScheme.surface,
+              child: Icon(
+                Icons.person,
+                size: 32,
+                color: theme.colorScheme.primary,
               ),
             );
-          }
-          return CircleAvatar(
-            radius: 28,
-            backgroundColor: theme.colorScheme.surface,
-            child: Icon(
-              Icons.person,
-              size: 32,
-              color: theme.colorScheme.primary,
-            ),
-          );
-        }),
+          },
+        ),
       ),
     );
   }
 
-  Widget _buildUserStats(ThemeData theme, MineController mineController) {
-    return Obx(() => Padding(
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              _buildStatItem(
-                theme,
-                mineController.userStat.value.following?.toString() ?? '0',
-                '关注',
-                () => mineController.pushFollow(),
-              ),
-              _buildStatDivider(theme),
-              _buildStatItem(
-                theme,
-                mineController.userStat.value.follower?.toString() ?? '0',
-                '粉丝',
-                () => mineController.pushFans(),
-              ),
-              _buildStatDivider(theme),
-              _buildStatItem(
-                theme,
-                mineController.userStat.value.dynamicCount?.toString() ?? '0',
-                '动态',
-                () => mineController.pushDynamic(),
-              ),
-            ],
+  Widget _buildUserStats(ThemeData theme, MineState state, MineNotifier notifier) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 16),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          _buildStatItem(
+            theme,
+            state.userStat.following?.toString() ?? '0',
+            '关注',
+            () => notifier.pushFollow(),
           ),
-        ));
+          _buildStatDivider(theme),
+          _buildStatItem(
+            theme,
+            state.userStat.follower?.toString() ?? '0',
+            '粉丝',
+            () => notifier.pushFans(),
+          ),
+          _buildStatDivider(theme),
+          _buildStatItem(
+            theme,
+            state.userStat.dynamicCount?.toString() ?? '0',
+            '动态',
+            () => notifier.pushDynamic(),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildStatItem(
@@ -254,7 +248,7 @@ class UserDrawer extends StatelessWidget {
   }
 
   Widget _buildMenuItems(
-      BuildContext context, ThemeData theme, MineController mineController) {
+      BuildContext context, ThemeData theme, MineNotifier notifier) {
     return Column(
       children: [
         _buildMenuItem(
@@ -262,21 +256,21 @@ class UserDrawer extends StatelessWidget {
           theme,
           Icons.history_outlined,
           '历史记录',
-          () => Get.to(const HistoryPage()),
+          () => context.push('/history'),
         ),
         _buildMenuItem(
           context,
           theme,
           Icons.star_outline,
           '我的收藏',
-          () => Get.to(const FavPage()),
+          () => context.push('/fav'),
         ),
         _buildMenuItem(
           context,
           theme,
           Icons.dynamic_feed_outlined,
           '我的动态',
-          () => mineController.pushDynamic(),
+          () => notifier.pushDynamic(),
         ),
       ],
     );

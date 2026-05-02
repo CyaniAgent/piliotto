@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
-import 'package:get/get.dart';
-import 'package:hive/hive.dart';
+import 'package:go_router/go_router.dart';
 import 'package:piliotto/utils/storage.dart';
 
 class PrivacySetting extends StatefulWidget {
@@ -13,14 +12,18 @@ class PrivacySetting extends StatefulWidget {
 
 class _PrivacySettingState extends State<PrivacySetting> {
   bool userLogin = false;
-  Box userInfoCache = GStrorage.userInfo;
   dynamic userInfo;
 
   @override
   void initState() {
     super.initState();
-    userInfo = userInfoCache.get('userInfoCache');
-    userLogin = userInfo != null;
+    try {
+      userInfo = GStrorage.userInfo.get('userInfoCache');
+      userLogin = userInfo != null;
+    } catch (_) {
+      userInfo = null;
+      userLogin = false;
+    }
   }
 
   @override
@@ -47,7 +50,7 @@ class _PrivacySettingState extends State<PrivacySetting> {
                 SmartDialog.showToast('登录后查看');
                 return;
               }
-              Get.toNamed('/blackListPage');
+              context.push('/blackListPage');
             },
             dense: false,
             title: Text('黑名单管理', style: titleStyle),

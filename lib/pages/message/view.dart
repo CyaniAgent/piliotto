@@ -1,32 +1,31 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:piliotto/ottohub/api/models/message.dart';
-import 'package:piliotto/repositories/i_message_repository.dart';
+import 'package:piliotto/pages/message/provider.dart';
+import 'package:piliotto/utils/route_arguments.dart';
 import 'package:piliotto/utils/storage.dart';
-import 'controller.dart';
 
-class MessagePage extends StatefulWidget {
+class MessagePage extends ConsumerStatefulWidget {
   const MessagePage({super.key});
 
   @override
-  State<MessagePage> createState() => _MessagePageState();
+  ConsumerState<MessagePage> createState() => _MessagePageState();
 }
 
-class _MessagePageState extends State<MessagePage> {
-  late MessageController controller;
+class _MessagePageState extends ConsumerState<MessagePage> {
   bool _hasNavigated = false;
 
   @override
   void initState() {
     super.initState();
-    controller = Get.put(MessageController());
 
     final view = WidgetsBinding.instance.platformDispatcher.views.first;
     final screenWidth = view.physicalSize.width / view.devicePixelRatio;
     final isWideScreen = screenWidth >= 800;
 
     if (!isWideScreen) {
-      final parameters = Get.parameters;
+      final parameters = routeArguments.queryParameters;
       final mid = parameters['mid'];
       final name = parameters['name'];
       final face = parameters['face'];
@@ -34,8 +33,8 @@ class _MessagePageState extends State<MessagePage> {
       if (mid != null && name != null && !_hasNavigated) {
         _hasNavigated = true;
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          Get.toNamed('/whisperDetail', parameters: {
-            'mid': mid,
+          context.push('/whisperDetail', extra: {
+            'friendUid': int.tryParse(mid),
             'name': name,
             'face': face ?? '',
             'heroTag': mid,
@@ -56,181 +55,188 @@ class _MessagePageState extends State<MessagePage> {
         title: const Text('消息'),
         centerTitle: true,
       ),
-      body: isWideScreen
-          ? _buildWideLayout(theme)
-          : _buildNarrowLayout(theme),
+      body: isWideScreen ? _buildWideLayout(theme) : _buildNarrowLayout(theme),
     );
   }
 
   Widget _buildWideLayout(ThemeData theme) {
+    final state = ref.watch(messageProvider);
+    final notifier = ref.read(messageProvider.notifier);
+
     return Row(
       children: [
         SizedBox(
           width: 320,
-          child: _buildFriendListPanel(theme),
+          child: _buildFriendListPanel(theme, state, notifier),
         ),
         Container(
           width: 1,
           color: theme.colorScheme.outlineVariant.withAlpha(50),
         ),
         Expanded(
-          child: Obx(() {
-            final friend = controller.selectedFriend.value;
-            if (friend == null) {
-              return Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.chat_bubble_outline,
-                      size: 64,
-                      color: theme.colorScheme.outlineVariant,
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      '选择一个对话开始聊天',
-                      style: TextStyle(
-                        color: theme.colorScheme.onSurfaceVariant,
+          child: Builder(
+            builder: (context) {
+              final friend = state.selectedFriend;
+              if (friend == null) {
+                return Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.chat_bubble_outline,
+                        size: 64,
+                        color: theme.colorScheme.outlineVariant,
                       ),
-                    ),
-                  ],
-                ),
+                      const SizedBox(height: 16),
+                      Text(
+                        '选择一个对话开始聊天',
+                        style: TextStyle(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }
+              return _ChatDetailPanel(
+                friendUid: friend.uid,
+                friendName: friend.username,
+                friendAvatar: friend.avatarUrl,
               );
-            }
-            return _ChatDetailPanel(
-              friendUid: friend.uid,
-              friendName: friend.username,
-              friendAvatar: friend.avatarUrl,
-            );
-          }),
+            },
+          ),
         ),
       ],
     );
   }
 
   Widget _buildNarrowLayout(ThemeData theme) {
-    return _buildFriendListPanel(theme);
+    final state = ref.watch(messageProvider);
+    final notifier = ref.read(messageProvider.notifier);
+    return _buildFriendListPanel(theme, state, notifier);
   }
 
-  Widget _buildFriendListPanel(ThemeData theme) {
-    return Obx(() {
-      if (controller.isLoading.value && controller.friendList.isEmpty) {
-        return const Center(child: CircularProgressIndicator());
-      }
+  Widget _buildFriendListPanel(ThemeData theme, MessageState state, MessageNotifier notifier) {
+    if (state.isLoading && state.friendList.isEmpty) {
+      return const Center(child: CircularProgressIndicator());
+    }
 
-      if (controller.errorMessage.value.isNotEmpty &&
-          controller.friendList.isEmpty) {
-        return Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(controller.errorMessage.value),
-              const SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: () => controller.loadFriendList(refresh: true),
-                child: const Text('重试'),
-              ),
-            ],
-          ),
-        );
-      }
-
-      if (controller.friendList.isEmpty) {
-        return const Center(child: Text('暂无消息'));
-      }
-
-      return RefreshIndicator(
-        onRefresh: () => controller.loadFriendList(refresh: true),
-        child: ListView.builder(
-          itemCount: controller.friendList.length,
-          itemBuilder: (context, index) {
-            final friend = controller.friendList[index];
-            return _buildFriendItem(friend, theme);
-          },
+    if (state.errorMessage.isNotEmpty && state.friendList.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(state.errorMessage),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: () => notifier.loadFriendList(refresh: true),
+              child: const Text('重试'),
+            ),
+          ],
         ),
       );
-    });
+    }
+
+    if (state.friendList.isEmpty) {
+      return const Center(child: Text('暂无消息'));
+    }
+
+    return RefreshIndicator(
+      onRefresh: () => notifier.loadFriendList(refresh: true),
+      child: ListView.builder(
+        itemCount: state.friendList.length,
+        itemBuilder: (context, index) {
+          final friend = state.friendList[index];
+          return _buildFriendItem(friend, theme, state, notifier);
+        },
+      ),
+    );
   }
 
-  Widget _buildFriendItem(Friend friend, ThemeData theme) {
+  Widget _buildFriendItem(Friend friend, ThemeData theme, MessageState state, MessageNotifier notifier) {
     final screenWidth = MediaQuery.of(context).size.width;
     final isWideScreen = screenWidth >= 800;
+    final isSelected = state.selectedFriend?.uid == friend.uid;
 
-    return Obx(() {
-      final isSelected = controller.selectedFriend.value?.uid == friend.uid;
-      return Container(
-        color: isSelected ? theme.colorScheme.primaryContainer.withAlpha(100) : null,
-        child: ListTile(
-          onTap: () {
-            if (isWideScreen) {
-              controller.selectFriend(friend);
-            } else {
-              Get.toNamed('/whisperDetail', parameters: {
-                'mid': friend.uid.toString(),
-                'name': friend.username,
-                'face': friend.avatarUrl ?? '',
-                'heroTag': friend.uid.toString(),
-              });
-            }
-          },
-          leading: CircleAvatar(
-            radius: 24,
-            backgroundImage: friend.avatarUrl != null && friend.avatarUrl!.isNotEmpty
-                ? NetworkImage(friend.avatarUrl!)
-                : null,
-            backgroundColor: theme.colorScheme.primaryContainer,
-            child: friend.avatarUrl == null || friend.avatarUrl!.isEmpty
-                ? Icon(Icons.person,
-                    size: 24, color: theme.colorScheme.onPrimaryContainer)
-                : null,
-          ),
-          title: Text(
-            friend.username,
-            style: const TextStyle(fontWeight: FontWeight.w500),
-          ),
-          subtitle: friend.lastMessage != null
-              ? Text(
-                  friend.lastMessage!,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                )
-              : null,
-          trailing: friend.lastTime != null
-              ? Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      _formatTime(friend.lastTime!),
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                    if (friend.newMessageNum != null && friend.newMessageNum! > 0)
-                      Container(
-                        margin: const EdgeInsets.only(top: 4),
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: theme.colorScheme.error,
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Text(
-                          friend.newMessageNum! > 99 ? '99+' : friend.newMessageNum.toString(),
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: theme.colorScheme.onError,
-                          ),
-                        ),
-                      ),
-                  ],
-                )
+    return Container(
+      color: isSelected
+          ? theme.colorScheme.primaryContainer.withAlpha(100)
+          : null,
+      child: ListTile(
+        onTap: () {
+          if (isWideScreen) {
+            notifier.selectFriend(friend);
+          } else {
+            context.push('/whisperDetail', extra: {
+              'friendUid': friend.uid,
+              'name': friend.username,
+              'face': friend.avatarUrl ?? '',
+              'heroTag': friend.uid.toString(),
+            });
+          }
+        },
+        leading: CircleAvatar(
+          radius: 24,
+          backgroundImage:
+              friend.avatarUrl != null && friend.avatarUrl!.isNotEmpty
+                  ? NetworkImage(friend.avatarUrl!)
+                  : null,
+          backgroundColor: theme.colorScheme.primaryContainer,
+          child: friend.avatarUrl == null || friend.avatarUrl!.isEmpty
+              ? Icon(Icons.person,
+                  size: 24, color: theme.colorScheme.onPrimaryContainer)
               : null,
         ),
-      );
-    });
+        title: Text(
+          friend.username,
+          style: const TextStyle(fontWeight: FontWeight.w500),
+        ),
+        subtitle: friend.lastMessage != null
+            ? Text(
+                friend.lastMessage!,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              )
+            : null,
+        trailing: friend.lastTime != null
+            ? Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    _formatTime(friend.lastTime!),
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  if (friend.newMessageNum != null &&
+                      friend.newMessageNum! > 0)
+                    Container(
+                      margin: const EdgeInsets.only(top: 4),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.error,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Text(
+                        friend.newMessageNum! > 99
+                            ? '99+'
+                            : friend.newMessageNum.toString(),
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: theme.colorScheme.onError,
+                        ),
+                      ),
+                    ),
+                ],
+              )
+            : null,
+      ),
+    );
   }
 
   String _formatTime(String time) {
@@ -254,7 +260,7 @@ class _MessagePageState extends State<MessagePage> {
   }
 }
 
-class _ChatDetailPanel extends StatefulWidget {
+class _ChatDetailPanel extends ConsumerStatefulWidget {
   final int friendUid;
   final String friendName;
   final String? friendAvatar;
@@ -266,28 +272,13 @@ class _ChatDetailPanel extends StatefulWidget {
   });
 
   @override
-  State<_ChatDetailPanel> createState() => _ChatDetailPanelState();
+  ConsumerState<_ChatDetailPanel> createState() => _ChatDetailPanelState();
 }
 
-class _ChatDetailPanelState extends State<_ChatDetailPanel> {
+class _ChatDetailPanelState extends ConsumerState<_ChatDetailPanel> {
   final ScrollController scrollController = ScrollController();
   final TextEditingController messageController = TextEditingController();
   final FocusNode focusNode = FocusNode();
-
-  RxList<Message> messages = <Message>[].obs;
-  RxBool isLoading = false.obs;
-  RxBool isSending = false.obs;
-  RxString errorMessage = ''.obs;
-
-  int _offset = 0;
-  final int _pageSize = 20;
-  bool _hasMore = true;
-
-  @override
-  void initState() {
-    super.initState();
-    loadMessages();
-  }
 
   @override
   void dispose() {
@@ -297,84 +288,18 @@ class _ChatDetailPanelState extends State<_ChatDetailPanel> {
     super.dispose();
   }
 
-  Future loadMessages({bool refresh = false}) async {
-    if (isLoading.value) return;
-
-    if (refresh) {
-      _offset = 0;
-      _hasMore = true;
-      messages.clear();
-    }
-
-    if (!_hasMore) return;
-
-    isLoading.value = true;
-    errorMessage.value = '';
-
-    try {
-      final List<Message> newMessages = await Get.find<IMessageRepository>().getFriendMessage(
-        friendUid: widget.friendUid,
-        offset: _offset,
-        num: _pageSize,
-      );
-
-      if (newMessages.length < _pageSize) {
-        _hasMore = false;
-      }
-
-      if (refresh) {
-        messages.assignAll(newMessages);
-      } else {
-        messages.addAll(newMessages);
-      }
-
-      _offset += newMessages.length;
-
-      if (messages.isNotEmpty) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (scrollController.hasClients) {
-            scrollController.animateTo(
-              0,
-              duration: const Duration(milliseconds: 300),
-              curve: Curves.easeOut,
-            );
-          }
-        });
-      }
-    } catch (e) {
-      errorMessage.value = '加载失败: $e';
-    } finally {
-      isLoading.value = false;
-    }
-  }
-
-  Future sendMessage() async {
-    final text = messageController.text.trim();
-    if (text.isEmpty || isSending.value) return;
-
-    isSending.value = true;
-
-    try {
-      final success = await Get.find<IMessageRepository>().sendMessage(
-        receiver: widget.friendUid,
-        message: text,
-      );
-
-      if (success) {
-        messageController.clear();
-        await loadMessages(refresh: true);
-      }
-    } catch (e) {
-      // Handle error silently
-    } finally {
-      isSending.value = false;
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final userInfo = GStrorage.userInfo.get('userInfoCache');
+    final state = ref.watch(chatDetailProvider(widget.friendUid));
+    final notifier = ref.read(chatDetailProvider(widget.friendUid).notifier);
+
+    dynamic userInfo;
+    try {
+      userInfo = GStrorage.userInfo.get('userInfoCache');
+    } catch (_) {
+      userInfo = null;
+    }
     final myUid = userInfo?.mid ?? 0;
     final myAvatar = userInfo?.face;
 
@@ -391,7 +316,8 @@ class _ChatDetailPanelState extends State<_ChatDetailPanel> {
           ),
           child: Row(
             children: [
-              if (widget.friendAvatar != null && widget.friendAvatar!.isNotEmpty)
+              if (widget.friendAvatar != null &&
+                  widget.friendAvatar!.isNotEmpty)
                 Padding(
                   padding: const EdgeInsets.only(right: 12),
                   child: CircleAvatar(
@@ -410,48 +336,50 @@ class _ChatDetailPanelState extends State<_ChatDetailPanel> {
           ),
         ),
         Expanded(
-          child: Obx(() {
-            if (isLoading.value && messages.isEmpty) {
-              return const Center(child: CircularProgressIndicator());
-            }
+          child: Builder(
+            builder: (context) {
+              if (state.isLoading && state.messages.isEmpty) {
+                return const Center(child: CircularProgressIndicator());
+              }
 
-            if (errorMessage.value.isNotEmpty && messages.isEmpty) {
-              return Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(errorMessage.value),
-                    const SizedBox(height: 16),
-                    ElevatedButton(
-                      onPressed: () => loadMessages(refresh: true),
-                      child: const Text('重试'),
-                    ),
-                  ],
+              if (state.errorMessage.isNotEmpty && state.messages.isEmpty) {
+                return Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(state.errorMessage),
+                      const SizedBox(height: 16),
+                      ElevatedButton(
+                        onPressed: () => notifier.loadMessages(refresh: true),
+                        child: const Text('重试'),
+                      ),
+                    ],
+                  ),
+                );
+              }
+
+              if (state.messages.isEmpty) {
+                return const Center(child: Text('暂无消息'));
+              }
+
+              return RefreshIndicator(
+                onRefresh: () => notifier.loadMessages(refresh: true),
+                child: ListView.builder(
+                  controller: scrollController,
+                  reverse: true,
+                  padding: const EdgeInsets.all(16),
+                  itemCount: state.messages.length,
+                  itemBuilder: (context, index) {
+                    final message = state.messages[index];
+                    final isMe = message.sender == myUid;
+                    return _buildMessageItem(message, isMe, theme, myAvatar);
+                  },
                 ),
               );
-            }
-
-            if (messages.isEmpty) {
-              return const Center(child: Text('暂无消息'));
-            }
-
-            return RefreshIndicator(
-              onRefresh: () => loadMessages(refresh: true),
-              child: ListView.builder(
-                controller: scrollController,
-                reverse: true,
-                padding: const EdgeInsets.all(16),
-                itemCount: messages.length,
-                itemBuilder: (context, index) {
-                  final message = messages[index];
-                  final isMe = message.sender == myUid;
-                  return _buildMessageItem(message, isMe, theme, myAvatar);
-                },
-              ),
-            );
-          }),
+            },
+          ),
         ),
-        _buildInputArea(theme),
+        _buildInputArea(theme, state, notifier),
       ],
     );
   }
@@ -468,9 +396,10 @@ class _ChatDetailPanelState extends State<_ChatDetailPanel> {
           if (!isMe) ...[
             CircleAvatar(
               radius: 16,
-              backgroundImage: widget.friendAvatar != null && widget.friendAvatar!.isNotEmpty
-                  ? NetworkImage(widget.friendAvatar!)
-                  : null,
+              backgroundImage:
+                  widget.friendAvatar != null && widget.friendAvatar!.isNotEmpty
+                      ? NetworkImage(widget.friendAvatar!)
+                      : null,
               backgroundColor: theme.colorScheme.primaryContainer,
               child: widget.friendAvatar == null || widget.friendAvatar!.isEmpty
                   ? Icon(Icons.person,
@@ -541,7 +470,7 @@ class _ChatDetailPanelState extends State<_ChatDetailPanel> {
     );
   }
 
-  Widget _buildInputArea(ThemeData theme) {
+  Widget _buildInputArea(ThemeData theme, ChatDetailState state, ChatDetailNotifier notifier) {
     return Container(
       padding: EdgeInsets.only(
         left: 16,
@@ -578,20 +507,28 @@ class _ChatDetailPanelState extends State<_ChatDetailPanel> {
               ),
               maxLines: null,
               textInputAction: TextInputAction.send,
-              onSubmitted: (_) => sendMessage(),
+              onSubmitted: (_) async {
+                await notifier.sendMessage(messageController.text);
+                messageController.clear();
+              },
             ),
           ),
           const SizedBox(width: 8),
-          Obx(() => IconButton.filled(
-                onPressed: isSending.value ? null : sendMessage,
-                icon: isSending.value
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Icon(Icons.send_rounded),
-              )),
+          IconButton.filled(
+            onPressed: state.isSending
+                ? null
+                : () async {
+                    await notifier.sendMessage(messageController.text);
+                    messageController.clear();
+                  },
+            icon: state.isSending
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.send_rounded),
+          ),
         ],
       ),
     );

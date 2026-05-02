@@ -1,25 +1,24 @@
 import 'dart:async';
 
-import 'package:easy_debounce/easy_throttle.dart';
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:piliotto/common/constants.dart';
 import 'package:piliotto/common/skeleton/video_card_h.dart';
 import 'package:piliotto/common/widgets/http_error.dart';
 import 'package:piliotto/common/widgets/video_card_h.dart';
-import 'package:piliotto/pages/hot/controller.dart';
+import 'package:piliotto/pages/hot/provider.dart';
 import 'package:piliotto/utils/main_stream.dart';
 import 'package:piliotto/utils/responsive_util.dart';
 
-class HotPage extends StatefulWidget {
+class HotPage extends ConsumerStatefulWidget {
   const HotPage({super.key});
 
   @override
-  State<HotPage> createState() => _HotPageState();
+  ConsumerState<HotPage> createState() => _HotPageState();
 }
 
-class _HotPageState extends State<HotPage> with AutomaticKeepAliveClientMixin {
-  final HotController _hotController = Get.put(HotController());
+class _HotPageState extends ConsumerState<HotPage>
+    with AutomaticKeepAliveClientMixin {
   late Future _futureBuilderFuture;
 
   @override
@@ -28,59 +27,67 @@ class _HotPageState extends State<HotPage> with AutomaticKeepAliveClientMixin {
   @override
   void initState() {
     super.initState();
-    _futureBuilderFuture = _hotController.queryHotFeed(type: 'init');
-    _hotController.scrollController.addListener(_scrollListener);
+    _futureBuilderFuture = ref.read(hotProvider.notifier).queryHotFeed(type: 'init');
+    ref.read(hotProvider.notifier).scrollController.addListener(_scrollListener);
   }
 
   void _scrollListener() {
-    if (_hotController.scrollController.hasClients &&
-        _hotController.scrollController.position.pixels >=
-            _hotController.scrollController.position.maxScrollExtent - 200) {
-      if (!_hotController.isLoadingMore &&
-          _hotController.noMore != '没有更多了') {
-        _hotController.onLoad();
+    final notifier = ref.read(hotProvider.notifier);
+    final state = ref.read(hotProvider);
+    if (notifier.scrollController.hasClients &&
+        notifier.scrollController.position.pixels >=
+            notifier.scrollController.position.maxScrollExtent - 200) {
+      if (!state.isLoadingMore && state.noMore != '没有更多了') {
+        notifier.onLoad();
       }
     }
-    handleScrollEvent(_hotController.scrollController);
+    handleScrollEvent(notifier.scrollController, ref);
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _hotController.updateCrossAxisCount();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        ref.read(hotProvider.notifier).updateCrossAxisCount();
+      }
+    });
   }
 
   @override
   void didUpdateWidget(covariant HotPage oldWidget) {
     super.didUpdateWidget(oldWidget);
-    EasyThrottle.throttle(
-        'updateCrossAxisCount', const Duration(milliseconds: 100), () {
-      _hotController.updateCrossAxisCount();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        ref.read(hotProvider.notifier).updateCrossAxisCount();
+      }
     });
   }
 
   @override
   void dispose() {
-    _hotController.scrollController.removeListener(_scrollListener);
+    ref.read(hotProvider.notifier).scrollController.removeListener(_scrollListener);
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     super.build(context);
+    final state = ref.watch(hotProvider);
+    final notifier = ref.read(hotProvider.notifier);
     double screenWidth = MediaQuery.of(context).size.width;
     bool isWideScreen = ResponsiveUtil.isMd;
     double maxContentWidth = 800;
 
     return RefreshIndicator(
       onRefresh: () async {
-        return await _hotController.onRefresh();
+        return await notifier.onRefresh();
       },
       child: CustomScrollView(
-        controller: _hotController.scrollController,
+        controller: notifier.scrollController,
         slivers: [
           SliverToBoxAdapter(
-            child: _buildTabBar(context),
+            child: _buildTabBar(context, state, notifier),
           ),
           SliverPadding(
             padding: const EdgeInsets.fromLTRB(StyleString.safeSpace,
@@ -89,55 +96,49 @@ class _HotPageState extends State<HotPage> with AutomaticKeepAliveClientMixin {
               future: _futureBuilderFuture,
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.done) {
-                  if (_hotController.videoList.isEmpty) {
+                  if (state.videoList.isEmpty) {
                     return SliverPadding(
                       padding: EdgeInsets.symmetric(
                         horizontal: isWideScreen
                             ? (screenWidth - maxContentWidth) / 2
                             : 0,
                       ),
-                      sliver: SliverToBoxAdapter(
-                        child: HttpError(
-                          errMsg: _hotController.noMore == '加载失败'
-                              ? '加载失败，请重试'
-                              : '暂无数据',
-                          fn: () {
-                            setState(() {
-                              _futureBuilderFuture =
-                                  _hotController.queryHotFeed(type: 'init');
-                            });
-                          },
-                        ),
+                      sliver: HttpError(
+                        isSliver: true,
+                        errMsg: state.noMore == '加载失败'
+                            ? '加载失败，请重试'
+                            : '暂无数据',
+                        fn: () {
+                          setState(() {
+                            _futureBuilderFuture =
+                                notifier.queryHotFeed(type: 'init');
+                          });
+                        },
                       ),
                     );
                   }
-                  return Obx(
-                    () {
-                      return SliverPadding(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: isWideScreen
-                              ? (screenWidth - maxContentWidth) / 2
-                              : 0,
-                        ),
-                        sliver: SliverGrid(
-                          gridDelegate:
-                              SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount:
-                                _hotController.crossAxisCount.value,
-                            mainAxisSpacing: 16,
-                            crossAxisSpacing: 16,
-                            childAspectRatio: 3 / 1,
-                          ),
-                          delegate:
-                              SliverChildBuilderDelegate((context, index) {
-                            return VideoCardH(
-                              videoItem: _hotController.videoList[index],
-                              showPubdate: true,
-                            );
-                          }, childCount: _hotController.videoList.length),
-                        ),
-                      );
-                    },
+                  return SliverPadding(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: isWideScreen
+                          ? (screenWidth - maxContentWidth) / 2
+                          : 0,
+                    ),
+                    sliver: SliverGrid(
+                      gridDelegate:
+                          SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: state.crossAxisCount,
+                        mainAxisSpacing: 16,
+                        crossAxisSpacing: 16,
+                        childAspectRatio: 3 / 1,
+                      ),
+                      delegate:
+                          SliverChildBuilderDelegate((context, index) {
+                        return VideoCardH(
+                          videoItem: state.videoList[index],
+                          showPubdate: true,
+                        );
+                      }, childCount: state.videoList.length),
+                    ),
                   );
                 } else {
                   return SliverPadding(
@@ -148,7 +149,7 @@ class _HotPageState extends State<HotPage> with AutomaticKeepAliveClientMixin {
                     ),
                     sliver: SliverGrid(
                       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: _hotController.crossAxisCount.value,
+                        crossAxisCount: state.crossAxisCount,
                         mainAxisSpacing: 16,
                         crossAxisSpacing: 16,
                         childAspectRatio: 3 / 1,
@@ -172,25 +173,25 @@ class _HotPageState extends State<HotPage> with AutomaticKeepAliveClientMixin {
     );
   }
 
-  Widget _buildTabBar(BuildContext context) {
-    return Obx(() => Container(
+  Widget _buildTabBar(BuildContext context, HotState state, HotNotifier notifier) {
+    return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
-        children: List.generate(_hotController.tabs.length, (index) {
-          final isSelected = _hotController.currentTabIndex.value == index;
+        children: List.generate(notifier.tabs.length, (index) {
+          final isSelected = state.currentTabIndex == index;
           return Padding(
             padding: const EdgeInsets.symmetric(horizontal: 4),
             child: FilterChip(
-              label: Text(_hotController.tabs[index]['label'] as String),
+              label: Text(notifier.tabs[index]['label'] as String),
               selected: isSelected,
               onSelected: (_) {
-                _hotController.onTabChanged(index);
+                notifier.onTabChanged(index);
               },
             ),
           );
         }),
       ),
-    ));
+    );
   }
 }

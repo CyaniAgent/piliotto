@@ -1,22 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
-import 'package:get/get.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:piliotto/common/constants.dart';
 import 'package:piliotto/common/skeleton/video_card_h.dart';
 import 'package:piliotto/common/widgets/video_card_h.dart';
-import 'package:piliotto/pages/search/controller.dart';
+import 'package:piliotto/pages/search/provider.dart';
 import 'package:piliotto/services/search_history_service.dart';
 import 'package:piliotto/utils/responsive_util.dart';
+import 'package:piliotto/utils/route_arguments.dart';
 
-class SearchPage extends StatefulWidget {
+class SearchPage extends ConsumerStatefulWidget {
   const SearchPage({super.key});
 
   @override
-  State<SearchPage> createState() => _SearchPageState();
+  ConsumerState<SearchPage> createState() => _SearchPageState();
 }
 
-class _SearchPageState extends State<SearchPage> {
-  late VideoSearchController _videoSearchController;
+class _SearchPageState extends ConsumerState<SearchPage> {
   final SearchController _searchController = SearchController();
   final SearchHistoryService _historyService = SearchHistoryService();
   String? hintText;
@@ -26,9 +26,8 @@ class _SearchPageState extends State<SearchPage> {
   @override
   void initState() {
     super.initState();
-    _videoSearchController = Get.put(VideoSearchController());
-    hintText = Get.parameters['hintText'];
-    initialKeyword = Get.parameters['keyword'];
+    hintText = routeArguments.queryParameters['hintText'];
+    initialKeyword = routeArguments.queryParameters['keyword'];
     _historyService.loadSearchHistory();
 
     if (initialKeyword != null && initialKeyword!.isNotEmpty) {
@@ -43,7 +42,7 @@ class _SearchPageState extends State<SearchPage> {
       _hasSearched = true;
       SchedulerBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
-          _videoSearchController.searchVideos(initialKeyword!);
+          ref.read(searchProvider.notifier).searchVideos(initialKeyword!);
         }
       });
     }
@@ -55,14 +54,13 @@ class _SearchPageState extends State<SearchPage> {
     if (closeView) {
       _searchController.closeView(null);
     }
-    _videoSearchController.searchVideos(keyword.trim());
+    ref.read(searchProvider.notifier).searchVideos(keyword.trim());
   }
 
   @override
   void dispose() {
     _searchController.dispose();
-    _videoSearchController.scrollController.dispose();
-    Get.delete<VideoSearchController>();
+    ref.read(searchProvider.notifier).scrollController.dispose();
     super.dispose();
   }
 
@@ -71,6 +69,7 @@ class _SearchPageState extends State<SearchPage> {
     double screenWidth = MediaQuery.of(context).size.width;
     bool isWideScreen = ResponsiveUtil.isMd;
     double maxContentWidth = 800;
+    final state = ref.watch(searchProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -94,8 +93,7 @@ class _SearchPageState extends State<SearchPage> {
           },
         ),
       ),
-      body: Obx(
-          () => _buildSearchResult(screenWidth, isWideScreen, maxContentWidth)),
+      body: _buildSearchResult(screenWidth, isWideScreen, maxContentWidth, state),
     );
   }
 
@@ -238,12 +236,12 @@ class _SearchPageState extends State<SearchPage> {
   }
 
   Widget _buildSearchResult(
-      double screenWidth, bool isWideScreen, double maxContentWidth) {
-    if (_videoSearchController.isLoading.value) {
-      return _buildLoadingSkeleton(screenWidth, isWideScreen, maxContentWidth);
+      double screenWidth, bool isWideScreen, double maxContentWidth, dynamic state) {
+    if (state.isLoading) {
+      return _buildLoadingSkeleton(screenWidth, isWideScreen, maxContentWidth, state.crossAxisCount);
     }
 
-    if (_videoSearchController.hasError.value) {
+    if (state.hasError) {
       return Center(
         child: Padding(
           padding: const EdgeInsets.all(24.0),
@@ -257,7 +255,7 @@ class _SearchPageState extends State<SearchPage> {
               ),
               const SizedBox(height: 16),
               Text(
-                _videoSearchController.errorMessage.value,
+                state.errorMessage,
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   color: Theme.of(context).colorScheme.onSurface,
@@ -266,7 +264,7 @@ class _SearchPageState extends State<SearchPage> {
               ),
               const SizedBox(height: 24),
               FilledButton.icon(
-                onPressed: _videoSearchController.retrySearch,
+                onPressed: () => ref.read(searchProvider.notifier).retrySearch(),
                 icon: const Icon(Icons.refresh),
                 label: const Text('重试'),
               ),
@@ -276,7 +274,7 @@ class _SearchPageState extends State<SearchPage> {
       );
     }
 
-    if (_videoSearchController.videoList.isEmpty) {
+    if (state.videoList.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -288,7 +286,7 @@ class _SearchPageState extends State<SearchPage> {
             ),
             const SizedBox(height: 16),
             Text(
-              _videoSearchController.currentKeyword.value.isEmpty
+              state.currentKeyword.isEmpty
                   ? '输入关键词搜索视频'
                   : '未找到相关视频',
               style: TextStyle(
@@ -300,19 +298,21 @@ class _SearchPageState extends State<SearchPage> {
       );
     }
 
+    final scrollController = ref.read(searchProvider.notifier).scrollController;
+
     return NotificationListener<ScrollNotification>(
       onNotification: (notification) {
         if (notification is ScrollEndNotification &&
             notification.metrics.pixels >=
                 notification.metrics.maxScrollExtent - 100) {
-          _videoSearchController.onLoad();
+          ref.read(searchProvider.notifier).onLoad();
         }
         return false;
       },
       child: RefreshIndicator(
-        onRefresh: _videoSearchController.onRefresh,
+        onRefresh: () => ref.read(searchProvider.notifier).onRefresh(),
         child: CustomScrollView(
-          controller: _videoSearchController.scrollController,
+          controller: scrollController,
           slivers: [
             SliverPadding(
               padding: const EdgeInsets.fromLTRB(
@@ -328,7 +328,7 @@ class _SearchPageState extends State<SearchPage> {
                 ),
                 sliver: SliverGrid(
                   gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: _videoSearchController.crossAxisCount.value,
+                    crossAxisCount: state.crossAxisCount,
                     mainAxisSpacing: 16,
                     crossAxisSpacing: 16,
                     childAspectRatio: 3 / 1,
@@ -336,38 +336,40 @@ class _SearchPageState extends State<SearchPage> {
                   delegate: SliverChildBuilderDelegate(
                     (context, index) {
                       return VideoCardH(
-                        videoItem: _videoSearchController.videoList[index],
+                        videoItem: state.videoList[index],
                         source: 'search',
                       );
                     },
-                    childCount: _videoSearchController.videoList.length,
+                    childCount: state.videoList.length,
                   ),
                 ),
               ),
             ),
             SliverToBoxAdapter(
-              child: Obx(() {
-                if (_videoSearchController.isLoadingMore.value) {
-                  return Container(
-                    padding: const EdgeInsets.all(16),
-                    alignment: Alignment.center,
-                    child: const CircularProgressIndicator(),
-                  );
-                }
-                if (!_videoSearchController.hasMore.value) {
-                  return Container(
-                    padding: const EdgeInsets.all(16),
-                    alignment: Alignment.center,
-                    child: Text(
-                      '没有更多了',
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.outline,
+              child: Builder(
+                builder: (context) {
+                  if (state.isLoadingMore) {
+                    return Container(
+                      padding: const EdgeInsets.all(16),
+                      alignment: Alignment.center,
+                      child: const CircularProgressIndicator(),
+                    );
+                  }
+                  if (!state.hasMore) {
+                    return Container(
+                      padding: const EdgeInsets.all(16),
+                      alignment: Alignment.center,
+                      child: Text(
+                        '没有更多了',
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.outline,
+                        ),
                       ),
-                    ),
-                  );
-                }
-                return const SizedBox.shrink();
-              }),
+                    );
+                  }
+                  return const SizedBox.shrink();
+                },
+              ),
             ),
           ],
         ),
@@ -376,7 +378,7 @@ class _SearchPageState extends State<SearchPage> {
   }
 
   Widget _buildLoadingSkeleton(
-      double screenWidth, bool isWideScreen, double maxContentWidth) {
+      double screenWidth, bool isWideScreen, double maxContentWidth, int crossAxisCount) {
     return CustomScrollView(
       slivers: [
         SliverPadding(
@@ -393,7 +395,7 @@ class _SearchPageState extends State<SearchPage> {
             ),
             sliver: SliverGrid(
               gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: _videoSearchController.crossAxisCount.value,
+                crossAxisCount: crossAxisCount,
                 mainAxisSpacing: 16,
                 crossAxisSpacing: 16,
                 childAspectRatio: 3 / 1,

@@ -1,20 +1,23 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
-import 'package:hive/hive.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:piliotto/common/widgets/network_img_layer.dart';
-import 'package:piliotto/pages/home/controller.dart';
+import 'package:piliotto/pages/home/provider.dart';
 import 'package:piliotto/utils/storage.dart';
 
-Box userInfoCache = GStrorage.userInfo;
-
-class HomeAppBar extends StatelessWidget {
+class HomeAppBar extends ConsumerWidget {
   const HomeAppBar({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    var userInfo = userInfoCache.get('userInfoCache');
-    final HomeController homeController = Get.find<HomeController>();
+  Widget build(BuildContext context, WidgetRef ref) {
+    dynamic userInfo;
+    try {
+      userInfo = GStrorage.userInfo.get('userInfoCache');
+    } catch (_) {
+      userInfo = null;
+    }
+    final homeState = ref.watch(homeProvider);
     final isNarrowScreen = MediaQuery.of(context).size.width < 600;
 
     return SliverAppBar(
@@ -60,7 +63,7 @@ class HomeAppBar extends StatelessWidget {
                         ),
                   leadingWidth: 50,
                   title: GestureDetector(
-                    onTap: () => Get.toNamed('/search'),
+                    onTap: () => context.push('/search'),
                     child: Hero(
                       tag: 'searchBar',
                       child: Container(
@@ -81,17 +84,17 @@ class HomeAppBar extends StatelessWidget {
                             ),
                             const SizedBox(width: 8),
                             Expanded(
-                              child: Obx(() => Text(
-                                    homeController.defaultSearch.value.isEmpty
-                                        ? '搜索视频'
-                                        : homeController.defaultSearch.value,
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      color:
-                                          Theme.of(context).colorScheme.outline,
-                                    ),
-                                    overflow: TextOverflow.ellipsis,
-                                  )),
+                              child: Text(
+                                homeState.defaultSearch.isEmpty
+                                    ? '搜索视频'
+                                    : homeState.defaultSearch,
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color:
+                                      Theme.of(context).colorScheme.outline,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
                             ),
                             const SizedBox(width: 12),
                           ],

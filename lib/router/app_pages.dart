@@ -2,7 +2,6 @@
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:hive/hive.dart';
 import 'package:piliotto/pages/setting/pages/logs.dart';
 
 import '../pages/about/index.dart';
@@ -42,9 +41,6 @@ import '../pages/video/detail/reply_reply/index.dart';
 import '../pages/webview/index.dart';
 import '../pages/search/index.dart';
 import '../pages/whisper_detail/index.dart';
-import '../utils/storage.dart';
-
-Box<dynamic> setting = GStrorage.setting;
 
 class Routes {
   static final List<GetPage<dynamic>> getPages = [

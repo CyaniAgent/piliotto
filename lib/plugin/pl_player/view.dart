@@ -6,7 +6,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_volume_controller/flutter_volume_controller.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:get/get.dart';
-import 'package:hive/hive.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 import 'package:piliotto/models/common/gesture_mode.dart';
@@ -81,7 +80,6 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
   final RxDouble _distance = 0.0.obs;
   final RxBool _volumeInterceptEventStream = false.obs;
 
-  Box setting = GStrorage.setting;
   late FullScreenMode mode;
   late int defaultBtmProgressBehavior;
   late bool enableQuickDouble;
@@ -130,7 +128,9 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
   @override
   void initState() {
     super.initState();
-    screenWidth = Get.size.width;
+    screenWidth = WidgetsBinding
+            .instance.platformDispatcher.views.first.physicalSize.width /
+        WidgetsBinding.instance.platformDispatcher.views.first.devicePixelRatio;
     animationController = AnimationController(
       vsync: this,
       duration: GlobalDataCache().enablePlayerControlAnimation
@@ -140,12 +140,19 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
     widget.controller.headerControl = widget.headerControl;
     widget.controller.bottomControl = widget.bottomControl;
     widget.controller.danmuWidget = widget.danmuWidget;
-    defaultBtmProgressBehavior = setting.get(SettingBoxKey.btmProgressBehavior,
-        defaultValue: BtmProgresBehavior.values.first.code);
-    enableQuickDouble =
-        setting.get(SettingBoxKey.enableQuickDouble, defaultValue: true);
-    enableBackgroundPlay =
-        setting.get(SettingBoxKey.enableBackgroundPlay, defaultValue: false);
+    try {
+      defaultBtmProgressBehavior = GStrorage.setting.get(
+          SettingBoxKey.btmProgressBehavior,
+          defaultValue: BtmProgresBehavior.values.first.code);
+      enableQuickDouble = GStrorage.setting
+          .get(SettingBoxKey.enableQuickDouble, defaultValue: true);
+      enableBackgroundPlay = GStrorage.setting
+          .get(SettingBoxKey.enableBackgroundPlay, defaultValue: false);
+    } catch (_) {
+      defaultBtmProgressBehavior = BtmProgresBehavior.values.first.code;
+      enableQuickDouble = true;
+      enableBackgroundPlay = false;
+    }
     Future.microtask(() async {
       try {
         FlutterVolumeController.updateShowSystemUI(true);
@@ -252,7 +259,8 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
               playerController.durationSeconds.value >= 3600
                   ? printDurationWithHours(
                       Duration(seconds: playerController.positionSeconds.value))
-                  : printDuration(Duration(seconds: playerController.positionSeconds.value)),
+                  : printDuration(Duration(
+                      seconds: playerController.positionSeconds.value)),
               style: textStyle,
             );
           }),
@@ -264,7 +272,8 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
               playerController.durationSeconds.value >= 3600
                   ? printDurationWithHours(
                       Duration(seconds: playerController.durationSeconds.value))
-                  : printDuration(Duration(seconds: playerController.durationSeconds.value)),
+                  : printDuration(Duration(
+                      seconds: playerController.durationSeconds.value)),
               style: textStyle,
             ),
           ),
@@ -475,10 +484,13 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
                         children: [
                           Obx(() {
                             return Text(
-                              playerController.sliderTempPosition.value.inMinutes >= 60
+                              playerController
+                                          .sliderTempPosition.value.inMinutes >=
+                                      60
                                   ? printDurationWithHours(
                                       playerController.sliderTempPosition.value)
-                                  : printDuration(playerController.sliderTempPosition.value),
+                                  : printDuration(playerController
+                                      .sliderTempPosition.value),
                               style: textStyle,
                             );
                           }),
@@ -488,8 +500,10 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
                           Obx(
                             () => Text(
                               playerController.duration.value.inMinutes >= 60
-                                  ? printDurationWithHours(playerController.duration.value)
-                                  : printDuration(playerController.duration.value),
+                                  ? printDurationWithHours(
+                                      playerController.duration.value)
+                                  : printDuration(
+                                      playerController.duration.value),
                               style: textStyle,
                             ),
                           ),
@@ -565,11 +579,13 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
               },
               child: GestureDetector(
                 onTap: () {
-                  playerController.controls = !playerController.showControls.value;
+                  playerController.controls =
+                      !playerController.showControls.value;
                 },
                 onDoubleTapDown: (TapDownDetails details) {
                   // live模式下禁用 锁定时🔒禁用
-                  if (playerController.videoType == 'live' || playerController.controlsLock.value) {
+                  if (playerController.videoType == 'live' ||
+                      playerController.controlsLock.value) {
                     return;
                   }
                   final double totalWidth = MediaQuery.sizeOf(context).width;
@@ -595,14 +611,16 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
 
                 /// 水平位置 快进 live模式下禁用
                 onHorizontalDragStart: (DragStartDetails details) {
-                  if (playerController.videoType == 'live' || playerController.controlsLock.value) {
+                  if (playerController.videoType == 'live' ||
+                      playerController.controlsLock.value) {
                     return;
                   }
                   playerController.onChangedSliderStart();
                 },
                 onHorizontalDragUpdate: (DragUpdateDetails details) {
                   // live模式下禁用 锁定时🔒禁用
-                  if (playerController.videoType == 'live' || playerController.controlsLock.value) {
+                  if (playerController.videoType == 'live' ||
+                      playerController.controlsLock.value) {
                     return;
                   }
                   final int curSliderPosition =
@@ -616,11 +634,13 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
                   playerController.onUpdatedSliderProgress(result);
                 },
                 onHorizontalDragEnd: (DragEndDetails details) {
-                  if (playerController.videoType == 'live' || playerController.controlsLock.value) {
+                  if (playerController.videoType == 'live' ||
+                      playerController.controlsLock.value) {
                     return;
                   }
                   playerController.onChangedSliderEnd();
-                  playerController.seekTo(playerController.sliderPosition.value, type: 'slider');
+                  playerController.seekTo(playerController.sliderPosition.value,
+                      type: 'slider');
                 },
                 // 垂直方向 音量/亮度调节
                 onVerticalDragUpdate: (DragUpdateDetails details) async {
@@ -641,7 +661,7 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
                   if (tapPosition < sectionWidth) {
                     // 左边区域 👈
                     final double level = (playerController.isFullScreen.value
-                            ? Get.size.height
+                            ? MediaQuery.sizeOf(context).height
                             : screenWidth * 9 / 16) *
                         3;
                     final double brightness =
@@ -680,7 +700,7 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
                     EasyThrottle.throttle(
                         'setVolume', const Duration(milliseconds: 20), () {
                       final double level = (playerController.isFullScreen.value
-                          ? Get.size.height
+                          ? MediaQuery.sizeOf(context).height
                           : screenWidth * 9 / 16);
                       final double volume = _volumeValue.value -
                           double.parse(delta.toStringAsFixed(1)) / level;
@@ -698,20 +718,24 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
           Obx(
             () => Column(
               children: [
-                if (widget.headerControl != null || playerController.headerControl != null)
+                if (widget.headerControl != null ||
+                    playerController.headerControl != null)
                   ClipRect(
                     child: AppBarAni(
                       controller: animationController,
-                      visible: !playerController.controlsLock.value && playerController.showControls.value,
+                      visible: !playerController.controlsLock.value &&
+                          playerController.showControls.value,
                       position: 'top',
-                      child: widget.headerControl ?? playerController.headerControl!,
+                      child: widget.headerControl ??
+                          playerController.headerControl!,
                     ),
                   ),
                 const Spacer(),
                 ClipRect(
                   child: AppBarAni(
                     controller: animationController,
-                    visible: !playerController.controlsLock.value && playerController.showControls.value,
+                    visible: !playerController.controlsLock.value &&
+                        playerController.showControls.value,
                     position: 'bottom',
                     child: widget.bottomControl ??
                         BottomControl(
@@ -804,7 +828,8 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
           // 锁
           Obx(
             () => Visibility(
-              visible: playerController.videoType != 'live' && playerController.isFullScreen.value,
+              visible: playerController.videoType != 'live' &&
+                  playerController.isFullScreen.value,
               child: Align(
                 alignment: Alignment.centerLeft,
                 child: FractionalTranslation(
@@ -819,7 +844,8 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
                         size: 15,
                         color: Colors.white,
                       ),
-                      fuc: () => playerController.onLockControl(!playerController.controlsLock.value),
+                      fuc: () => playerController
+                          .onLockControl(!playerController.controlsLock.value),
                     ),
                   ),
                 ),
@@ -828,7 +854,8 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
           ),
           //
           Obx(() {
-            if (playerController.dataStatus.loading || playerController.isBuffering.value) {
+            if (playerController.dataStatus.loading ||
+                playerController.isBuffering.value) {
               return Center(
                 child: SizedBox(
                   width: 120,

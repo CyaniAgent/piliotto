@@ -179,7 +179,7 @@ class VideoService {
     required int vid,
     required int lastWatchSecond,
   }) async {
-    await ApiService.request(
+    await ApiService.silentRequest(
       '$baseEndpoint/watch-history',
       method: 'POST',
       body: {

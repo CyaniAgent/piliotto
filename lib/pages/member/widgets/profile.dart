@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
+import 'package:go_router/go_router.dart';
 import 'package:piliotto/common/widgets/network_img_layer.dart';
 import 'package:piliotto/ottohub/models/member/info.dart';
 
@@ -45,7 +46,7 @@ class ProfilePanel extends StatelessWidget {
                       children: [
                         InkWell(
                           onTap: () {
-                            Get.toNamed(
+                            context.push(
                                 '/follow?mid=${memberInfo.mid}&name=${memberInfo.name}');
                           },
                           child: Column(
@@ -72,7 +73,7 @@ class ProfilePanel extends StatelessWidget {
                         ),
                         InkWell(
                           onTap: () {
-                            Get.toNamed(
+                            context.push(
                                 '/fan?mid=${memberInfo.mid}&name=${memberInfo.name}');
                           },
                           child: Column(

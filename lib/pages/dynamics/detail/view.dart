@@ -3,25 +3,25 @@ import 'dart:async';
 import 'package:easy_debounce/easy_throttle.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
-import 'package:get/get.dart';
-import 'package:piliotto/pages/dynamics/detail/index.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:piliotto/pages/dynamics/detail/provider.dart';
 import 'package:piliotto/pages/dynamics/widgets/author_panel.dart';
 import 'package:piliotto/pages/dynamics/widgets/flat_reply_item.dart';
 import 'package:piliotto/pages/dynamics/widgets/blog_comment_input.dart';
 import 'package:piliotto/utils/responsive_util.dart';
+import 'package:piliotto/utils/route_arguments.dart';
 
 import 'header.dart';
 
-class DynamicDetailPage extends StatefulWidget {
+class DynamicDetailPage extends ConsumerStatefulWidget {
   const DynamicDetailPage({super.key});
 
   @override
-  State<DynamicDetailPage> createState() => _DynamicDetailPageState();
+  ConsumerState<DynamicDetailPage> createState() => _DynamicDetailPageState();
 }
 
-class _DynamicDetailPageState extends State<DynamicDetailPage>
+class _DynamicDetailPageState extends ConsumerState<DynamicDetailPage>
     with TickerProviderStateMixin {
-  late DynamicDetailController _dynamicDetailController;
   late AnimationController fabAnimationCtr;
   Future? _futureBuilderFuture;
   late StreamController<bool> titleStreamC = StreamController<bool>.broadcast();
@@ -48,14 +48,12 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
   }
 
   Future<void> init() async {
-    Map args = Get.arguments;
+    final Map args = routeArguments.arguments;
     action = args.containsKey('action') ? args['action'] : null;
 
     oid = int.tryParse(args['item'].idStr ?? '0') ?? 0;
 
-    _dynamicDetailController =
-        Get.put(DynamicDetailController(oid), tag: oid.toString());
-    _futureBuilderFuture = _dynamicDetailController.queryReplyList();
+    _futureBuilderFuture = ref.read(dynamicDetailProvider(oid).notifier).queryReplyList();
 
     if (mounted) {
       scrollListener();
@@ -64,13 +62,14 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
   }
 
   void scrollListener() {
-    scrollController = _dynamicDetailController.scrollController;
+    final notifier = ref.read(dynamicDetailProvider(oid).notifier);
+    scrollController = notifier.scrollController;
     scrollController.addListener(
       () {
         if (scrollController.position.pixels >=
             scrollController.position.maxScrollExtent - 300) {
           EasyThrottle.throttle('replylist', const Duration(seconds: 2), () {
-            _dynamicDetailController.queryReplyList(reqType: 'onLoad');
+            notifier.queryReplyList(reqType: 'onLoad');
           });
         }
 
@@ -136,6 +135,8 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
     final colorScheme = Theme.of(context).colorScheme;
     final isWideScreen = ResponsiveUtil.isLg || ResponsiveUtil.isXl;
     final screenWidth = MediaQuery.of(context).size.width;
+    final state = ref.watch(dynamicDetailProvider(oid));
+    final notifier = ref.read(dynamicDetailProvider(oid).notifier);
 
     return Scaffold(
       appBar: AppBar(
@@ -143,6 +144,7 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
         scrolledUnderElevation: 1,
         centerTitle: false,
         titleSpacing: 0,
+        automaticallyImplyLeading: true,
         title: StreamBuilder(
           stream: titleStreamC.stream,
           initialData: false,
@@ -150,7 +152,7 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
             return AnimatedOpacity(
               opacity: snapshot.data ? 1 : 0,
               duration: const Duration(milliseconds: 300),
-              child: AuthorPanel(item: _dynamicDetailController.item),
+              child: AuthorPanel(item: state.item),
             );
           },
         ),
@@ -160,74 +162,72 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
           Expanded(
             child: RefreshIndicator(
               onRefresh: () async {
-                await _dynamicDetailController.queryReplyList();
+                await notifier.queryReplyList();
               },
               child: FutureBuilder(
                 future: _futureBuilderFuture,
                 builder: (context, snapshot) {
-                  return Obx(() {
-                    final replyList = _dynamicDetailController.replyList;
-                    final isLoading = _dynamicDetailController.isLoadingMore.value;
+                  final replyList = state.replyList;
+                  final isLoading = state.isLoadingMore;
 
-                    return ListView.builder(
-                      controller: scrollController,
-                      padding: _buildPadding(isWideScreen, screenWidth),
-                      itemCount: replyList.length + 2,
-                      itemBuilder: (context, index) {
-                        if (index == 0) {
-                          if (action != 'comment') {
-                            return DynamicDetailHeader(
-                              item: _dynamicDetailController.item,
-                            );
-                          }
-                          return const SizedBox.shrink();
+                  return ListView.builder(
+                    controller: scrollController,
+                    padding: _buildPadding(isWideScreen, screenWidth),
+                    itemCount: replyList.length + 2,
+                    itemBuilder: (context, index) {
+                      if (index == 0) {
+                        if (action != 'comment') {
+                          return DynamicDetailHeader(
+                            item: state.item,
+                          );
                         }
+                        return const SizedBox.shrink();
+                      }
 
-                        if (index == 1) {
-                          return _buildCommentHeader(context);
-                        }
+                      if (index == 1) {
+                        return _buildCommentHeader(context, state, notifier);
+                      }
 
-                        final replyIndex = index - 2;
-                        if (replyIndex == replyList.length) {
-                          return _buildLoadingIndicator(colorScheme, isLoading);
-                        }
+                      final replyIndex = index - 2;
+                      if (replyIndex == replyList.length) {
+                        return _buildLoadingIndicator(colorScheme, isLoading, state);
+                      }
 
-                        return FlatReplyItem(
-                          replyItem: replyList[replyIndex],
-                          bid: oid,
-                          onReply: (replyItem, [subReply, loadMore]) {
-                            _dynamicDetailController.setReplyingTo(
-                              subReply ?? replyItem,
-                              parent: replyItem.rpid,
-                            );
-                          },
-                          onRefresh: () {
-                            _dynamicDetailController.queryReplyList(reqType: 'init');
-                          },
-                        );
-                      },
-                    );
-                  });
+                      return FlatReplyItem(
+                        replyItem: replyList[replyIndex],
+                        bid: oid,
+                        onReply: (replyItem, [subReply, loadMore]) {
+                          notifier.setReplyingTo(
+                            subReply ?? replyItem,
+                            parent: replyItem.rpid,
+                          );
+                        },
+                        onRefresh: () {
+                          notifier.queryReplyList(reqType: 'init');
+                        },
+                      );
+                    },
+                  );
                 },
               ),
             ),
           ),
-          Obx(() => BlogCommentInput(
-                bid: oid,
-                parentBcid: _dynamicDetailController.parentBcid.value,
-                placeholder: _dynamicDetailController.replyingTo.value != null
-                    ? '回复 @${_dynamicDetailController.replyingTo.value?.member?.uname ?? ''}'
-                    : '发一条友善的评论喵~',
-                onCommentSuccess: () {
-                  _dynamicDetailController.onReplySuccess();
-                },
-              )),
+          BlogCommentInput(
+            bid: oid,
+            parentBcid: state.parentBcid,
+            placeholder: state.replyingTo != null
+                ? '回复 @${state.replyingTo?.member?.uname ?? ''}'
+                : '发一条友善的评论喵~',
+            onCommentSuccess: () {
+              notifier.onReplySuccess();
+            },
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildCommentHeader(BuildContext context) {
+  Widget _buildCommentHeader(BuildContext context, DynamicDetailState state, DynamicDetailNotifier notifier) {
     final colorScheme = Theme.of(context).colorScheme;
     return Container(
       decoration: BoxDecoration(
@@ -243,24 +243,22 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
       padding: const EdgeInsets.only(left: 12, right: 6),
       child: Row(
         children: [
-          Obx(
-            () => AnimatedSwitcher(
-              duration: const Duration(milliseconds: 400),
-              transitionBuilder: (Widget child, Animation<double> animation) {
-                return ScaleTransition(scale: animation, child: child);
-              },
-              child: Text(
-                '${_dynamicDetailController.acount.value}',
-                key: ValueKey<int>(_dynamicDetailController.acount.value),
-              ),
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 400),
+            transitionBuilder: (Widget child, Animation<double> animation) {
+              return ScaleTransition(scale: animation, child: child);
+            },
+            child: Text(
+              '${state.acount}',
+              key: ValueKey<int>(state.acount),
             ),
           ),
           const Text('条回复'),
           const Spacer(),
-          if (_dynamicDetailController.replyingTo.value != null)
+          if (state.replyingTo != null)
             TextButton.icon(
               onPressed: () {
-                _dynamicDetailController.clearReplyingTo();
+                notifier.clearReplyingTo();
               },
               icon: const Icon(Icons.close, size: 16),
               label: const Text('取消回复'),
@@ -273,7 +271,7 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
     );
   }
 
-  Widget _buildLoadingIndicator(ColorScheme colorScheme, bool isLoading) {
+  Widget _buildLoadingIndicator(ColorScheme colorScheme, bool isLoading, DynamicDetailState state) {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 20),
       child: Center(
@@ -300,7 +298,7 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
                 ],
               )
             : Text(
-                _dynamicDetailController.noMore.value,
+                state.noMore,
                 style: TextStyle(
                   fontSize: 12,
                   color: colorScheme.outline,

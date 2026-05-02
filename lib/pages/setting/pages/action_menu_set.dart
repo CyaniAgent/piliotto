@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
-import 'package:hive/hive.dart';
 import 'package:piliotto/models/common/action_type.dart';
 import 'package:piliotto/utils/global_data_cache.dart';
 import '../../../utils/storage.dart';
@@ -13,15 +12,18 @@ class ActionMenuSetPage extends StatefulWidget {
 }
 
 class _ActionMenuSetPageState extends State<ActionMenuSetPage> {
-  Box setting = GStrorage.setting;
   late List<String> actionTypeSort;
   late List<Map> allLabels;
 
   @override
   void initState() {
     super.initState();
-    actionTypeSort = setting.get(SettingBoxKey.actionTypeSort,
-        defaultValue: ['like', 'coin', 'collect', 'watchLater', 'share']);
+    try {
+      actionTypeSort = GStrorage.setting.get(SettingBoxKey.actionTypeSort,
+          defaultValue: ['like', 'coin', 'collect', 'watchLater', 'share']);
+    } catch (_) {
+      actionTypeSort = ['like', 'coin', 'collect', 'watchLater', 'share'];
+    }
     allLabels = actionMenuConfig;
     allLabels.sort((a, b) {
       int indexA = actionTypeSort.indexOf((a['value'] as ActionType).value);
@@ -37,7 +39,9 @@ class _ActionMenuSetPageState extends State<ActionMenuSetPage> {
         .where((i) => actionTypeSort.contains((i['value'] as ActionType).value))
         .map<String>((i) => (i['value'] as ActionType).value)
         .toList();
-    setting.put(SettingBoxKey.actionTypeSort, sortedTabbar);
+    try {
+      GStrorage.setting.put(SettingBoxKey.actionTypeSort, sortedTabbar);
+    } catch (_) {}
     GlobalDataCache().actionTypeSort = sortedTabbar;
     SmartDialog.showToast('操作成功');
   }

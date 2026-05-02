@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
-import 'package:hive/hive.dart';
 import 'package:piliotto/models/common/tab_type.dart';
 import 'package:piliotto/utils/storage.dart';
 
@@ -12,7 +11,6 @@ class TabbarSetPage extends StatefulWidget {
 }
 
 class _TabbarSetPageState extends State<TabbarSetPage> {
-  Box settingStorage = GStrorage.setting;
   late List defaultTabs;
   late List<String> tabbarSort;
 
@@ -20,8 +18,12 @@ class _TabbarSetPageState extends State<TabbarSetPage> {
   void initState() {
     super.initState();
     defaultTabs = tabsConfig;
-    tabbarSort = settingStorage
-        .get(SettingBoxKey.tabbarSort, defaultValue: ['rcmd', 'hot']);
+    try {
+      tabbarSort = GStrorage.setting
+          .get(SettingBoxKey.tabbarSort, defaultValue: ['rcmd', 'hot']);
+    } catch (_) {
+      tabbarSort = ['rcmd', 'hot'];
+    }
     // 对 tabData 进行排序
     defaultTabs.sort((a, b) {
       int indexA = tabbarSort.indexOf((a['type'] as TabType).id);
@@ -40,7 +42,9 @@ class _TabbarSetPageState extends State<TabbarSetPage> {
         .where((i) => tabbarSort.contains((i['type'] as TabType).id))
         .map<String>((i) => (i['type'] as TabType).id)
         .toList();
-    settingStorage.put(SettingBoxKey.tabbarSort, sortedTabbar);
+    try {
+      GStrorage.setting.put(SettingBoxKey.tabbarSort, sortedTabbar);
+    } catch (_) {}
     SmartDialog.showToast('保存成功，下次启动时生效');
   }
 

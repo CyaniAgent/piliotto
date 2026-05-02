@@ -13,17 +13,22 @@ class RecommendFilter {
   }
 
   static void update() {
-    var setting = GStrorage.setting;
-    // filterUnfollowedRatio =
-    //     setting.get(SettingBoxKey.filterUnfollowedRatio, defaultValue: 0);
-    minDurationForRcmd =
-        setting.get(SettingBoxKey.minDurationForRcmd, defaultValue: 0);
-    minLikeRatioForRecommend =
-        setting.get(SettingBoxKey.minLikeRatioForRecommend, defaultValue: 0);
-    exemptFilterForFollowed =
-        setting.get(SettingBoxKey.exemptFilterForFollowed, defaultValue: true);
-    applyFilterToRelatedVideos = setting
-        .get(SettingBoxKey.applyFilterToRelatedVideos, defaultValue: true);
+    try {
+      var setting = GStrorage.setting;
+      minDurationForRcmd =
+          setting.get(SettingBoxKey.minDurationForRcmd, defaultValue: 0);
+      minLikeRatioForRecommend =
+          setting.get(SettingBoxKey.minLikeRatioForRecommend, defaultValue: 0);
+      exemptFilterForFollowed =
+          setting.get(SettingBoxKey.exemptFilterForFollowed, defaultValue: true);
+      applyFilterToRelatedVideos = setting
+          .get(SettingBoxKey.applyFilterToRelatedVideos, defaultValue: true);
+    } catch (_) {
+      minDurationForRcmd = 0;
+      minLikeRatioForRecommend = 0;
+      exemptFilterForFollowed = true;
+      applyFilterToRelatedVideos = true;
+    }
   }
 
   static bool filter(dynamic videoItem, {bool relatedVideos = false}) {

@@ -1,18 +1,18 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:piliotto/ottohub/api/models/message.dart';
+import 'package:piliotto/pages/whisper_detail/provider.dart';
+import 'package:piliotto/utils/route_arguments.dart';
 import 'package:piliotto/utils/storage.dart';
-import 'controller.dart';
 
-class WhisperDetailPage extends StatefulWidget {
+class WhisperDetailPage extends ConsumerStatefulWidget {
   const WhisperDetailPage({super.key});
 
   @override
-  State<WhisperDetailPage> createState() => _WhisperDetailPageState();
+  ConsumerState<WhisperDetailPage> createState() => _WhisperDetailPageState();
 }
 
-class _WhisperDetailPageState extends State<WhisperDetailPage> {
-  late WhisperDetailController controller;
+class _WhisperDetailPageState extends ConsumerState<WhisperDetailPage> {
   late final int friendUid;
   late final String friendName;
   late final String? friendAvatar;
@@ -21,29 +21,40 @@ class _WhisperDetailPageState extends State<WhisperDetailPage> {
   @override
   void initState() {
     super.initState();
-    final parameters = Get.parameters;
+    final parameters = routeArguments.queryParameters;
     friendUid = int.tryParse(parameters['mid'] ?? '0') ?? 0;
     friendName = parameters['name'] ?? '';
     friendAvatar = parameters['face'];
     heroTag = parameters['heroTag'] ?? '';
 
-    controller = Get.put(
-      WhisperDetailController(
-        friendUid: friendUid,
-        friendName: friendName,
-        friendAvatar: friendAvatar,
-        heroTag: heroTag,
-      ),
-      tag: heroTag,
-    );
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(whisperDetailProvider.notifier).loadMessages(friendUid);
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final userInfo = GStrorage.userInfo.get('userInfoCache');
+    final state = ref.watch(whisperDetailProvider);
+    final notifier = ref.read(whisperDetailProvider.notifier);
+
+    dynamic userInfo;
+    try {
+      userInfo = GStrorage.userInfo.get('userInfoCache');
+    } catch (_) {
+      userInfo = null;
+    }
     final myUid = userInfo?.mid ?? 0;
     final myAvatar = userInfo?.face;
+
+    if (state.snackbarMessage.isNotEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(state.snackbarMessage)),
+        );
+        notifier.clearSnackbarMessage();
+      });
+    }
 
     return Scaffold(
       appBar: AppBar(
@@ -65,62 +76,58 @@ class _WhisperDetailPageState extends State<WhisperDetailPage> {
       ),
       body: Column(
         children: [
-          Obx(() {
-            if (controller.snackbarMessage.value.isNotEmpty) {
-              WidgetsBinding.instance.addPostFrameCallback((_) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text(controller.snackbarMessage.value)),
-                );
-                controller.snackbarMessage.value = '';
-              });
-            }
-            return const SizedBox.shrink();
-          }),
           Expanded(
-            child: Obx(() {
-              if (controller.isLoading.value && controller.messages.isEmpty) {
-                return const Center(child: CircularProgressIndicator());
-              }
-
-              if (controller.errorMessage.value.isNotEmpty &&
-                  controller.messages.isEmpty) {
-                return Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(controller.errorMessage.value),
-                      const SizedBox(height: 16),
-                      ElevatedButton(
-                        onPressed: () => controller.loadMessages(refresh: true),
-                        child: const Text('重试'),
-                      ),
-                    ],
-                  ),
-                );
-              }
-
-              if (controller.messages.isEmpty) {
-                return const Center(child: Text('暂无消息'));
-              }
-
-              return RefreshIndicator(
-                onRefresh: () => controller.loadMessages(refresh: true),
-                child: ListView.builder(
-                  controller: controller.scrollController,
-                  reverse: true,
-                  padding: const EdgeInsets.all(16),
-                  itemCount: controller.messages.length,
-                  itemBuilder: (context, index) {
-                    final message = controller.messages[index];
-                    final isMe = message.sender == myUid;
-                    return _buildMessageItem(message, isMe, theme, myAvatar);
-                  },
-                ),
-              );
-            }),
+            child: _buildMessageList(state, notifier, theme, myUid, myAvatar),
           ),
-          _buildInputArea(theme),
+          _buildInputArea(theme, notifier),
         ],
+      ),
+    );
+  }
+
+  Widget _buildMessageList(
+    WhisperDetailState state,
+    WhisperDetailNotifier notifier,
+    ThemeData theme,
+    int myUid,
+    String? myAvatar,
+  ) {
+    if (state.isLoading && state.messages.isEmpty) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (state.errorMessage.isNotEmpty && state.messages.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(state.errorMessage),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: () => notifier.loadMessages(friendUid, refresh: true),
+              child: const Text('重试'),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (state.messages.isEmpty) {
+      return const Center(child: Text('暂无消息'));
+    }
+
+    return RefreshIndicator(
+      onRefresh: () => notifier.loadMessages(friendUid, refresh: true),
+      child: ListView.builder(
+        controller: notifier.scrollController,
+        reverse: true,
+        padding: const EdgeInsets.all(16),
+        itemCount: state.messages.length,
+        itemBuilder: (context, index) {
+          final message = state.messages[index];
+          final isMe = message.sender == myUid;
+          return _buildMessageItem(message, isMe, theme, myAvatar);
+        },
       ),
     );
   }
@@ -210,7 +217,8 @@ class _WhisperDetailPageState extends State<WhisperDetailPage> {
     );
   }
 
-  Widget _buildInputArea(ThemeData theme) {
+  Widget _buildInputArea(ThemeData theme, WhisperDetailNotifier notifier) {
+    final state = ref.watch(whisperDetailProvider);
     return Container(
       padding: EdgeInsets.only(
         left: 16,
@@ -230,8 +238,8 @@ class _WhisperDetailPageState extends State<WhisperDetailPage> {
         children: [
           Expanded(
             child: TextField(
-              controller: controller.messageController,
-              focusNode: controller.focusNode,
+              controller: notifier.messageController,
+              focusNode: notifier.focusNode,
               decoration: InputDecoration(
                 hintText: '输入消息...',
                 border: OutlineInputBorder(
@@ -247,21 +255,20 @@ class _WhisperDetailPageState extends State<WhisperDetailPage> {
               ),
               maxLines: null,
               textInputAction: TextInputAction.send,
-              onSubmitted: (_) => controller.sendMessage(),
+              onSubmitted: (_) => notifier.sendMessage(friendUid),
             ),
           ),
           const SizedBox(width: 8),
-          Obx(() => IconButton.filled(
-                onPressed:
-                    controller.isSending.value ? null : controller.sendMessage,
-                icon: controller.isSending.value
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Icon(Icons.send_rounded),
-              )),
+          IconButton.filled(
+            onPressed: state.isSending ? null : () => notifier.sendMessage(friendUid),
+            icon: state.isSending
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.send_rounded),
+          ),
         ],
       ),
     );

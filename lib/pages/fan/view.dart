@@ -1,25 +1,25 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:piliotto/common/widgets/user_list_page.dart';
-import 'controller.dart';
+import 'package:piliotto/pages/fan/provider.dart';
 
-class FansPage extends StatelessWidget {
+class FansPage extends ConsumerWidget {
   const FansPage({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final String mid = Get.parameters['mid'] ?? '0';
-    final FanController controller = Get.put(FanController(), tag: mid);
+  Widget build(BuildContext context, WidgetRef ref) {
+    final state = ref.watch(fanProvider);
+    final notifier = ref.read(fanProvider.notifier);
 
     return UserListPage(
-      title: '${controller.name}的粉丝',
-      onRefresh: controller.onRefresh,
-      onLoad: controller.onLoad,
-      onInit: controller.onRefresh,
-      userList: controller.fanList,
-      isLoading: controller.isLoading,
-      hasMore: controller.hasMore,
-      loadingText: controller.loadingText,
+      title: '${state.name}的粉丝',
+      onRefresh: notifier.onRefresh,
+      onLoad: notifier.onLoad,
+      onInit: notifier.onRefresh,
+      userList: state.fanList,
+      isLoading: state.isLoading,
+      hasMore: state.hasMore,
+      loadingText: state.loadingText,
     );
   }
 }

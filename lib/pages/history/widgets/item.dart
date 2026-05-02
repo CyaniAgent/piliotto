@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
-import 'package:get/get.dart';
+import 'package:go_router/go_router.dart';
 import 'package:piliotto/ottohub/api/models/video.dart';
 import 'package:piliotto/common/constants.dart';
 import 'package:piliotto/common/widgets/network_img_layer.dart';
@@ -20,7 +20,8 @@ class HistoryItem extends StatelessWidget {
 
     return InkWell(
       onTap: () {
-        Get.toNamed('/video?vid=${videoItem.vid}', arguments: {
+        context.push('/video', extra: {
+          'vid': videoItem.vid,
           'heroTag': heroTag,
           'pic': videoItem.coverUrl,
         });

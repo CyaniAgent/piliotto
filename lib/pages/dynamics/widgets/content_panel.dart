@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:piliotto/common/widgets/markdown_text.dart';
 import 'package:piliotto/common/widgets/network_img_layer.dart';
 import 'package:piliotto/plugin/pl_gallery/index.dart';
+import 'package:piliotto/utils/utils.dart';
 
 class Content extends StatefulWidget {
   final dynamic item;
@@ -15,6 +16,7 @@ class Content extends StatefulWidget {
 
 class _ContentState extends State<Content> {
   List<String> picList = [];
+  List<String> heroTags = [];
   bool get hasPics => picList.isNotEmpty;
 
   @override
@@ -30,6 +32,11 @@ class _ContentState extends State<Content> {
           .map((item) => item.src ?? '')
           .cast<String>()
           .toList();
+      heroTags = picList
+          .asMap()
+          .entries
+          .map((e) => Utils.makeHeroTag('${e.value}_${e.key}'))
+          .toList();
     }
   }
 
@@ -40,6 +47,7 @@ class _ContentState extends State<Content> {
         builder: (context) => InteractiveviewerGallery(
           sources: picList,
           initIndex: initIndex,
+          heroTags: heroTags,
         ),
       ),
     );
@@ -93,7 +101,7 @@ class _ContentState extends State<Content> {
           child: ClipRRect(
             borderRadius: BorderRadius.circular(12),
             child: Hero(
-              tag: picList.first,
+              tag: heroTags.first,
               child: NetworkImgLayer(
                 src: picList.first,
                 width: maxWidth,
@@ -123,7 +131,7 @@ class _ContentState extends State<Content> {
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(8),
                 child: Hero(
-                  tag: picList[index],
+                  tag: heroTags[index],
                   child: NetworkImgLayer(
                     src: picList[index],
                     width: itemSize,

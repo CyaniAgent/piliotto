@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:hive/hive.dart';
 import 'package:piliotto/models/video/play/quality.dart';
 import 'package:piliotto/utils/storage.dart';
 
@@ -19,7 +18,6 @@ class SetSelectItem extends StatefulWidget {
 }
 
 class _SetSelectItemState extends State<SetSelectItem> {
-  Box setting = GStrorage.setting;
   late dynamic currentVal;
   late int currentIndex;
   late List menus;
@@ -33,7 +31,11 @@ class _SetSelectItemState extends State<SetSelectItem> {
       case 'defaultVideoQa':
         defaultVal = VideoQuality.values.last.description;
         List<VideoQuality> list = menus = VideoQuality.values.reversed.toList();
-        currentVal = setting.get(widget.setKey, defaultValue: defaultVal);
+        try {
+          currentVal = GStrorage.setting.get(widget.setKey, defaultValue: defaultVal);
+        } catch (_) {
+          currentVal = defaultVal;
+        }
         currentIndex =
             list.firstWhere((i) => i.description == currentVal).index;
 
@@ -50,7 +52,11 @@ class _SetSelectItemState extends State<SetSelectItem> {
       case 'defaultAudioQa':
         defaultVal = AudioQuality.values.last.description;
         List<AudioQuality> list = menus = AudioQuality.values.reversed.toList();
-        currentVal = setting.get(widget.setKey, defaultValue: defaultVal);
+        try {
+          currentVal = GStrorage.setting.get(widget.setKey, defaultValue: defaultVal);
+        } catch (_) {
+          currentVal = defaultVal;
+        }
         currentIndex =
             list.firstWhere((i) => i.description == currentVal).index;
 
@@ -65,7 +71,11 @@ class _SetSelectItemState extends State<SetSelectItem> {
         break;
       case 'defaultDecode':
         defaultVal = VideoDecodeFormats.values[0].description;
-        currentVal = setting.get(widget.setKey, defaultValue: defaultVal);
+        try {
+          currentVal = GStrorage.setting.get(widget.setKey, defaultValue: defaultVal);
+        } catch (_) {
+          currentVal = defaultVal;
+        }
         List<VideoDecodeFormats> list = menus = VideoDecodeFormats.values;
 
         currentIndex =
@@ -82,7 +92,11 @@ class _SetSelectItemState extends State<SetSelectItem> {
         break;
       case 'defaultVideoSpeed':
         defaultVal = '1.0';
-        currentVal = setting.get(widget.setKey, defaultValue: defaultVal);
+        try {
+          currentVal = GStrorage.setting.get(widget.setKey, defaultValue: defaultVal);
+        } catch (_) {
+          currentVal = defaultVal;
+        }
 
         break;
     }

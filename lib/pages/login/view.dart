@@ -1,26 +1,17 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
-import 'controller.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:piliotto/pages/login/provider.dart';
 
-class LoginPage extends StatefulWidget {
+class LoginPage extends ConsumerStatefulWidget {
   const LoginPage({super.key});
 
   @override
-  State<LoginPage> createState() => _LoginPageState();
+  ConsumerState<LoginPage> createState() => _LoginPageState();
 }
 
-class _LoginPageState extends State<LoginPage> {
-  late String heroTag;
-  late LoginPageController _loginPageCtr;
+class _LoginPageState extends ConsumerState<LoginPage> {
   final ScrollController _scrollController = ScrollController();
-
-  @override
-  void initState() {
-    super.initState();
-    heroTag = 'login_${DateTime.now().millisecondsSinceEpoch}';
-    _loginPageCtr = Get.put(LoginPageController(), tag: heroTag);
-  }
 
   @override
   void dispose() {
@@ -31,15 +22,20 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final state = ref.watch(loginProvider);
+    final notifier = ref.read(loginProvider.notifier);
+
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
           onPressed: () async {
-            _loginPageCtr.emailTextFieldNode.unfocus();
-            _loginPageCtr.passwordTextFieldNode.unfocus();
-            _loginPageCtr.verificationCodeTextFieldNode.unfocus();
+            notifier.emailTextFieldNode.unfocus();
+            notifier.passwordTextFieldNode.unfocus();
+            notifier.verificationCodeTextFieldNode.unfocus();
             await Future.delayed(const Duration(milliseconds: 200));
-            Get.back();
+            if (context.mounted) {
+              Navigator.of(context).pop();
+            }
           },
           icon: const Icon(Icons.close_outlined),
         ),
@@ -49,16 +45,17 @@ class _LoginPageState extends State<LoginPage> {
           bool isWideScreen = constraints.maxWidth > 800;
 
           if (isWideScreen) {
-            return _buildWideScreenLayout(context, theme);
+            return _buildWideScreenLayout(context, theme, state, notifier);
           } else {
-            return _buildNarrowScreenLayout(context, theme);
+            return _buildNarrowScreenLayout(context, theme, state, notifier);
           }
         },
       ),
     );
   }
 
-  Widget _buildWideScreenLayout(BuildContext context, ThemeData theme) {
+  Widget _buildWideScreenLayout(BuildContext context, ThemeData theme,
+      LoginState state, LoginNotifier notifier) {
     return Center(
       child: Row(
         children: [
@@ -92,22 +89,22 @@ class _LoginPageState extends State<LoginPage> {
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 40),
               child: Form(
-                key: _loginPageCtr.formKey,
+                key: notifier.formKey,
                 child: SingleChildScrollView(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      _buildTitle(context, theme),
-                      _buildEmailField(context),
-                      _buildPasswordField(context),
-                      _buildVerificationCodeField(context),
+                      _buildTitle(context, theme, state),
+                      _buildEmailField(context, notifier),
+                      _buildPasswordField(context, theme, state, notifier),
+                      _buildVerificationCodeField(context, state, notifier),
                       const SizedBox(height: 20),
-                      _buildAgreementSection(context, theme),
+                      _buildAgreementSection(context, theme, state, notifier),
                       const SizedBox(height: 20),
-                      _buildSubmitButton(context),
+                      _buildSubmitButton(context, state, notifier),
                       const SizedBox(height: 15),
-                      _buildModeToggleButton(context),
+                      _buildModeToggleButton(context, state, notifier),
                     ],
                   ),
                 ),
@@ -119,7 +116,8 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  Widget _buildNarrowScreenLayout(BuildContext context, ThemeData theme) {
+  Widget _buildNarrowScreenLayout(BuildContext context, ThemeData theme,
+      LoginState state, LoginNotifier notifier) {
     return Padding(
       padding: EdgeInsets.only(
         left: 20,
@@ -128,22 +126,22 @@ class _LoginPageState extends State<LoginPage> {
         bottom: MediaQuery.of(context).padding.bottom + 10,
       ),
       child: Form(
-        key: _loginPageCtr.formKey,
+        key: notifier.formKey,
         child: SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              _buildTitle(context, theme),
-              _buildEmailField(context),
-              _buildPasswordField(context),
-              _buildVerificationCodeField(context),
+              _buildTitle(context, theme, state),
+              _buildEmailField(context, notifier),
+              _buildPasswordField(context, theme, state, notifier),
+              _buildVerificationCodeField(context, state, notifier),
               const SizedBox(height: 20),
-              _buildAgreementSection(context, theme),
+              _buildAgreementSection(context, theme, state, notifier),
               const SizedBox(height: 20),
-              _buildSubmitButton(context),
+              _buildSubmitButton(context, state, notifier),
               const SizedBox(height: 15),
-              _buildModeToggleButton(context),
+              _buildModeToggleButton(context, state, notifier),
             ],
           ),
         ),
@@ -151,33 +149,33 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  Widget _buildTitle(BuildContext context, ThemeData theme) {
+  Widget _buildTitle(BuildContext context, ThemeData theme, LoginState state) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Obx(() => Text(
-              _loginPageCtr.isRegisterMode.value ? '注册' : '登录',
-              style: theme.textTheme.titleLarge!.copyWith(
-                letterSpacing: 1,
-                height: 2.1,
-                fontSize: 34,
-                fontWeight: FontWeight.w500,
-              ),
-            )),
-        Obx(() => Text(
-              '请使用您的 Ottohub 账号${_loginPageCtr.isRegisterMode.value ? '注册' : '登录'}。',
-              style: theme.textTheme.titleSmall!,
-            )),
+        Text(
+          state.isRegisterMode ? '注册' : '登录',
+          style: theme.textTheme.titleLarge!.copyWith(
+            letterSpacing: 1,
+            height: 2.1,
+            fontSize: 34,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        Text(
+          '请使用您的 Ottohub 账号${state.isRegisterMode ? '注册' : '登录'}。',
+          style: theme.textTheme.titleSmall!,
+        ),
       ],
     );
   }
 
-  Widget _buildEmailField(BuildContext context) {
+  Widget _buildEmailField(BuildContext context, LoginNotifier notifier) {
     return Container(
       margin: const EdgeInsets.only(top: 38, bottom: 15),
       child: TextFormField(
-        controller: _loginPageCtr.emailTextController,
-        focusNode: _loginPageCtr.emailTextFieldNode,
+        controller: notifier.emailTextController,
+        focusNode: notifier.emailTextFieldNode,
         keyboardType: TextInputType.emailAddress,
         decoration: InputDecoration(
           isDense: true,
@@ -190,7 +188,7 @@ class _LoginPageState extends State<LoginPage> {
           if (v!.trim().isEmpty) {
             return "邮箱不能为空";
           }
-          if (!GetUtils.isEmail(v.trim())) {
+          if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(v.trim())) {
             return "请输入有效的邮箱地址";
           }
           return null;
@@ -199,215 +197,213 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  Widget _buildPasswordField(BuildContext context) {
+  Widget _buildPasswordField(BuildContext context, ThemeData theme,
+      LoginState state, LoginNotifier notifier) {
     return Container(
       margin: const EdgeInsets.only(bottom: 15),
-      child: Obx(() => TextFormField(
-            controller: _loginPageCtr.passwordTextController,
-            focusNode: _loginPageCtr.passwordTextFieldNode,
-            keyboardType: TextInputType.visiblePassword,
-            obscureText: _loginPageCtr.passwordVisible.value,
-            decoration: InputDecoration(
-              isDense: true,
-              labelText: '输入密码',
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(6.0),
-              ),
-              suffixIcon: IconButton(
-                icon: Icon(
-                  _loginPageCtr.passwordVisible.value
-                      ? Icons.visibility
-                      : Icons.visibility_off,
-                  color: Theme.of(context).colorScheme.primary,
-                ),
-                onPressed: () {
-                  _loginPageCtr.passwordVisible.value =
-                      !_loginPageCtr.passwordVisible.value;
-                },
-              ),
+      child: TextFormField(
+        controller: notifier.passwordTextController,
+        focusNode: notifier.passwordTextFieldNode,
+        keyboardType: TextInputType.visiblePassword,
+        obscureText: state.passwordVisible,
+        decoration: InputDecoration(
+          isDense: true,
+          labelText: '输入密码',
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(6.0),
+          ),
+          suffixIcon: IconButton(
+            icon: Icon(
+              state.passwordVisible ? Icons.visibility : Icons.visibility_off,
+              color: Theme.of(context).colorScheme.primary,
             ),
-            validator: (v) {
-              return v!.trim().isNotEmpty ? null : "密码不能为空";
+            onPressed: () {
+              notifier.togglePasswordVisible();
             },
-          )),
+          ),
+        ),
+        validator: (v) {
+          return v!.trim().isNotEmpty ? null : "密码不能为空";
+        },
+      ),
     );
   }
 
-  Widget _buildVerificationCodeField(BuildContext context) {
-    return Obx(() => AnimatedSize(
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeInOut,
-          child: _loginPageCtr.isRegisterMode.value
-              ? Container(
-                  margin: const EdgeInsets.only(bottom: 15),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      Expanded(
-                        child: TextFormField(
-                          controller: _loginPageCtr.verificationCodeController,
-                          focusNode:
-                              _loginPageCtr.verificationCodeTextFieldNode,
-                          keyboardType: TextInputType.number,
-                          decoration: InputDecoration(
-                            isDense: true,
-                            labelText: '验证码',
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(6.0),
-                            ),
-                          ),
+  Widget _buildVerificationCodeField(
+      BuildContext context, LoginState state, LoginNotifier notifier) {
+    return AnimatedSize(
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+      child: state.isRegisterMode
+          ? Container(
+              margin: const EdgeInsets.only(bottom: 15),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Expanded(
+                    child: TextFormField(
+                      controller: notifier.verificationCodeController,
+                      focusNode: notifier.verificationCodeTextFieldNode,
+                      keyboardType: TextInputType.number,
+                      decoration: InputDecoration(
+                        isDense: true,
+                        labelText: '验证码',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(6.0),
                         ),
                       ),
-                      const SizedBox(width: 10),
-                      TextButton(
-                        onPressed: _loginPageCtr.smsCodeSendStatus.value
-                            ? null
-                            : _loginPageCtr.sendVerificationCode,
-                        child: Text(
-                          _loginPageCtr.smsCodeSendStatus.value
-                              ? '${_loginPageCtr.seconds.value}s'
-                              : '发送验证码',
-                          style: TextStyle(
-                            color: _loginPageCtr.smsCodeSendStatus.value
-                                ? Theme.of(context).colorScheme.outline
-                                : Theme.of(context).colorScheme.primary,
-                          ),
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
-                )
-              : const SizedBox(height: 0, width: double.infinity),
-        ));
+                  const SizedBox(width: 10),
+                  TextButton(
+                    onPressed: state.smsCodeSendStatus
+                        ? null
+                        : notifier.sendVerificationCode,
+                    child: Text(
+                      state.smsCodeSendStatus ? '${state.seconds}s' : '发送验证码',
+                      style: TextStyle(
+                        color: state.smsCodeSendStatus
+                            ? Theme.of(context).colorScheme.outline
+                            : Theme.of(context).colorScheme.primary,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            )
+          : const SizedBox(height: 0, width: double.infinity),
+    );
   }
 
-  Widget _buildAgreementSection(BuildContext context, ThemeData theme) {
+  Widget _buildAgreementSection(BuildContext context, ThemeData theme,
+      LoginState state, LoginNotifier notifier) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Obx(() => Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                SizedBox(
-                  width: 24,
-                  height: 24,
-                  child: Checkbox(
-                    value: _loginPageCtr.agreedToOttohub.value,
-                    onChanged: (value) {
-                      _loginPageCtr.agreedToOttohub.value = value ?? false;
-                    },
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text.rich(
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SizedBox(
+              width: 24,
+              height: 24,
+              child: Checkbox(
+                value: state.agreedToOttohub,
+                onChanged: (value) {
+                  notifier.setAgreedToOttohub(value ?? false);
+                },
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text.rich(
+                TextSpan(
+                  children: [
+                    const TextSpan(text: '我已阅读并同意'),
                     TextSpan(
-                      children: [
-                        const TextSpan(text: '我已阅读并同意'),
-                        TextSpan(
-                          text: '《OttoHub用户协议》',
-                          style: TextStyle(
-                            color: theme.colorScheme.primary,
-                          ),
-                          recognizer: TapGestureRecognizer()
-                            ..onTap = () => _showOttohubUserAgreement(context),
-                        ),
-                        const TextSpan(text: '和'),
-                        TextSpan(
-                          text: '《OttoHub隐私政策》',
-                          style: TextStyle(
-                            color: theme.colorScheme.primary,
-                          ),
-                          recognizer: TapGestureRecognizer()
-                            ..onTap = () => _showOttohubPrivacyPolicy(context),
-                        ),
-                      ],
+                      text: '《OttoHub用户协议》',
+                      style: TextStyle(
+                        color: theme.colorScheme.primary,
+                      ),
+                      recognizer: TapGestureRecognizer()
+                        ..onTap = () => _showOttohubUserAgreement(context),
                     ),
-                    style: theme.textTheme.bodySmall,
-                  ),
+                    const TextSpan(text: '和'),
+                    TextSpan(
+                      text: '《OttoHub隐私政策》',
+                      style: TextStyle(
+                        color: theme.colorScheme.primary,
+                      ),
+                      recognizer: TapGestureRecognizer()
+                        ..onTap = () => _showOttohubPrivacyPolicy(context),
+                    ),
+                  ],
                 ),
-              ],
-            )),
+                style: theme.textTheme.bodySmall,
+              ),
+            ),
+          ],
+        ),
         const SizedBox(height: 8),
-        Obx(() => Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                SizedBox(
-                  width: 24,
-                  height: 24,
-                  child: Checkbox(
-                    value: _loginPageCtr.agreedToPiliotto.value,
-                    onChanged: (value) {
-                      _loginPageCtr.agreedToPiliotto.value = value ?? false;
-                    },
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text.rich(
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SizedBox(
+              width: 24,
+              height: 24,
+              child: Checkbox(
+                value: state.agreedToPiliotto,
+                onChanged: (value) {
+                  notifier.setAgreedToPiliotto(value ?? false);
+                },
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text.rich(
+                TextSpan(
+                  children: [
+                    const TextSpan(text: '我已阅读并同意'),
                     TextSpan(
-                      children: [
-                        const TextSpan(text: '我已阅读并同意'),
-                        TextSpan(
-                          text: '《PiliOtto用户协议》',
-                          style: TextStyle(
-                            color: theme.colorScheme.primary,
-                          ),
-                          recognizer: TapGestureRecognizer()
-                            ..onTap = () => _showPiliottoUserAgreement(context),
-                        ),
-                        const TextSpan(text: '和'),
-                        TextSpan(
-                          text: '《PiliOtto隐私政策》',
-                          style: TextStyle(
-                            color: theme.colorScheme.primary,
-                          ),
-                          recognizer: TapGestureRecognizer()
-                            ..onTap = () => _showPiliottoPrivacyPolicy(context),
-                        ),
-                      ],
+                      text: '《PiliOtto用户协议》',
+                      style: TextStyle(
+                        color: theme.colorScheme.primary,
+                      ),
+                      recognizer: TapGestureRecognizer()
+                        ..onTap = () => _showPiliottoUserAgreement(context),
                     ),
-                    style: theme.textTheme.bodySmall,
-                  ),
+                    const TextSpan(text: '和'),
+                    TextSpan(
+                      text: '《PiliOtto隐私政策》',
+                      style: TextStyle(
+                        color: theme.colorScheme.primary,
+                      ),
+                      recognizer: TapGestureRecognizer()
+                        ..onTap = () => _showPiliottoPrivacyPolicy(context),
+                    ),
+                  ],
                 ),
-              ],
-            )),
+                style: theme.textTheme.bodySmall,
+              ),
+            ),
+          ],
+        ),
       ],
     );
   }
 
-  Widget _buildSubmitButton(BuildContext context) {
+  Widget _buildSubmitButton(
+      BuildContext context, LoginState state, LoginNotifier notifier) {
     return SizedBox(
       width: double.infinity,
-      child: Obx(() => TextButton(
-            style: TextButton.styleFrom(
-              padding: const EdgeInsets.fromLTRB(20, 12, 20, 12),
-              foregroundColor: Theme.of(context).colorScheme.onPrimary,
-              backgroundColor: Theme.of(context).colorScheme.primary,
-            ),
-            onPressed:
-                _loginPageCtr.isLoading.value ? null : _loginPageCtr.submit,
-            child: _loginPageCtr.isLoading.value
-                ? SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: Theme.of(context).colorScheme.onPrimary,
-                    ),
-                  )
-                : Text(_loginPageCtr.isRegisterMode.value ? '注册' : '登录'),
-          )),
+      child: TextButton(
+        style: TextButton.styleFrom(
+          padding: const EdgeInsets.fromLTRB(20, 12, 20, 12),
+          foregroundColor: Theme.of(context).colorScheme.onPrimary,
+          backgroundColor: Theme.of(context).colorScheme.primary,
+        ),
+        onPressed: state.isLoading ? null : notifier.submit,
+        child: state.isLoading
+            ? SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: Theme.of(context).colorScheme.onPrimary,
+                ),
+              )
+            : Text(state.isRegisterMode ? '注册' : '登录'),
+      ),
     );
   }
 
-  Widget _buildModeToggleButton(BuildContext context) {
+  Widget _buildModeToggleButton(
+      BuildContext context, LoginState state, LoginNotifier notifier) {
     return Center(
       child: TextButton(
-        onPressed: _loginPageCtr.toggleMode,
-        child: Obx(() => Text(
-              _loginPageCtr.isRegisterMode.value ? '已有账号？去登录' : '没有账号？去注册',
-            )),
+        onPressed: notifier.toggleMode,
+        child: Text(
+          state.isRegisterMode ? '已有账号？去登录' : '没有账号？去注册',
+        ),
       ),
     );
   }

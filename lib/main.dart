@@ -9,15 +9,14 @@ import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 import 'package:dynamic_color/dynamic_color.dart';
 import 'package:hive/hive.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:piliotto/common/widgets/custom_toast.dart';
 import 'package:piliotto/models/common/color_type.dart';
 import 'package:piliotto/models/common/theme_type.dart';
 import 'package:universal_platform/universal_platform.dart';
 import 'package:window_manager/window_manager.dart';
 
-import 'package:piliotto/pages/video/detail/index.dart';
-import 'package:piliotto/router/app_pages.dart';
-import 'package:piliotto/pages/main/view.dart';
+import 'package:piliotto/router/app_router.dart';
 import 'package:piliotto/services/service_locator.dart';
 import 'package:piliotto/utils/app_scheme.dart';
 import 'package:piliotto/utils/data.dart';
@@ -103,6 +102,10 @@ void main() async {
 
   PiliSchame.init();
   await GlobalDataCache().initialize();
+
+  RecommendFilter();
+  Data.init();
+  setupServiceLocator();
 }
 
 class MyApp extends StatelessWidget {
@@ -120,21 +123,19 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    Box setting = GStrorage.setting;
     // 主题色
-    Color defaultColor =
-        colorThemeTypes[_getSetting(setting, SettingBoxKey.customColor, 0)]
-            ['color'];
+    Color defaultColor = colorThemeTypes[
+        _getSetting(GStrorage.setting, SettingBoxKey.customColor, 0)]['color'];
     Color brandColor = defaultColor;
     // 主题模式
-    ThemeType currentThemeValue = ThemeType.values[
-        _getSetting(setting, SettingBoxKey.themeMode, ThemeType.system.code)];
+    ThemeType currentThemeValue = ThemeType.values[_getSetting(
+        GStrorage.setting, SettingBoxKey.themeMode, ThemeType.system.code)];
     // 是否动态取色
     bool isDynamicColor =
-        _getSetting(setting, SettingBoxKey.dynamicColor, true);
+        _getSetting(GStrorage.setting, SettingBoxKey.dynamicColor, true);
     // 字体缩放大小
     double textScale =
-        _getSetting(setting, SettingBoxKey.defaultTextScale, 1.0);
+        _getSetting(GStrorage.setting, SettingBoxKey.defaultTextScale, 1.0);
 
     // 强制设置高帧率
     if (Platform.isAndroid) {
@@ -143,7 +144,7 @@ class MyApp extends StatelessWidget {
         FlutterDisplayMode.supported.then((value) {
           modes = value;
           var storageDisplay =
-              _getSetting(setting, SettingBoxKey.displayMode, null);
+              _getSetting(GStrorage.setting, SettingBoxKey.displayMode, null);
           DisplayMode f = DisplayMode.auto;
           if (storageDisplay != null) {
             f = modes.firstWhere((e) => e.toString() == storageDisplay);
@@ -291,52 +292,44 @@ class BuildMainApp extends StatelessWidget {
         break;
     }
 
-    return GetMaterialApp(
-      title: 'PiliOtto',
-      themeMode: appThemeMode,
-      theme: ThemeData(
-        colorScheme: lightColorScheme,
-        snackBarTheme: lightSnackBarTheme,
-        pageTransitionsTheme: const PageTransitionsTheme(
-          builders: <TargetPlatform, PageTransitionsBuilder>{
-            TargetPlatform.android: ZoomPageTransitionsBuilder(
-              allowEnterRouteSnapshotting: false,
-            ),
-          },
-        ),
-      ),
-      darkTheme: ThemeData(
-        colorScheme: darkColorScheme,
-        snackBarTheme: darkSnackBarTheme,
-      ),
-      localizationsDelegates: const [
-        GlobalCupertinoLocalizations.delegate,
-        GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-      ],
-      locale: const Locale("zh", "CN"),
-      supportedLocales: const [Locale("zh", "CN"), Locale("en", "US")],
-      fallbackLocale: const Locale("zh", "CN"),
-      getPages: Routes.getPages,
-      home: const MainApp(),
-      builder: (BuildContext context, Widget? child) {
-        return FlutterSmartDialog(
-          toastBuilder: (String msg) => CustomToast(msg: msg),
-          child: MediaQuery(
-            data: MediaQuery.of(context)
-                .copyWith(textScaler: TextScaler.linear(textScale)),
-            child: child!,
+    return ProviderScope(
+      child: MaterialApp.router(
+        title: 'PiliOtto',
+        themeMode: appThemeMode,
+        theme: ThemeData(
+          colorScheme: lightColorScheme,
+          snackBarTheme: lightSnackBarTheme,
+          pageTransitionsTheme: const PageTransitionsTheme(
+            builders: <TargetPlatform, PageTransitionsBuilder>{
+              TargetPlatform.android: ZoomPageTransitionsBuilder(
+                allowEnterRouteSnapshotting: false,
+              ),
+            },
           ),
-        );
-      },
-      navigatorObservers: [
-        VideoDetailPage.routeObserver,
-      ],
-      onReady: () async {
-        RecommendFilter();
-        Data.init();
-        setupServiceLocator();
-      },
+        ),
+        darkTheme: ThemeData(
+          colorScheme: darkColorScheme,
+          snackBarTheme: darkSnackBarTheme,
+        ),
+        localizationsDelegates: const [
+          GlobalCupertinoLocalizations.delegate,
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+        ],
+        locale: const Locale("zh", "CN"),
+        supportedLocales: const [Locale("zh", "CN"), Locale("en", "US")],
+        routerConfig: appRouter,
+        builder: (BuildContext context, Widget? child) {
+          return FlutterSmartDialog(
+            toastBuilder: (String msg) => CustomToast(msg: msg),
+            child: MediaQuery(
+              data: MediaQuery.of(context)
+                  .copyWith(textScaler: TextScaler.linear(textScale)),
+              child: child!,
+            ),
+          );
+        },
+      ),
     );
   }
 }

@@ -2,8 +2,9 @@ import 'package:appscheme/appscheme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
-import 'package:get/get.dart';
+import 'package:go_router/go_router.dart';
 import 'package:universal_platform/universal_platform.dart';
+import 'package:piliotto/router/app_router.dart';
 
 import 'utils.dart';
 
@@ -38,18 +39,21 @@ class PiliSchame {
     final String scheme = value.scheme ?? '';
     final String host = value.host ?? '';
     final String path = value.path ?? '';
+    final BuildContext? context = rootNavigatorKey.currentContext;
+    if (context == null) return;
+    
     if (scheme == 'ottohub') {
       switch (host) {
         case 'root':
           Navigator.popUntil(
-              Get.context!, (Route<dynamic> route) => route.isFirst);
+              context, (Route<dynamic> route) => route.isFirst);
           break;
         case 'u':
         case 'user':
           final String uid = path.split('/').last;
-          Get.toNamed<dynamic>(
+          context.go(
             '/member?mid=$uid',
-            arguments: <String, dynamic>{'face': null},
+            extra: <String, dynamic>{'face': null},
           );
           break;
         case 'v':
@@ -66,7 +70,7 @@ class PiliSchame {
           SmartDialog.showToast('暂不支持动态查看');
           break;
         case 'search':
-          Get.toNamed('/search');
+          context.push('/search');
           break;
         default:
           SmartDialog.showToast('未匹配地址，请联系开发者');
@@ -84,11 +88,19 @@ class PiliSchame {
     try {
       final String heroTag = Utils.makeHeroTag(vid);
       SmartDialog.dismiss<dynamic>().then(
-        (e) => Get.toNamed<dynamic>('/video?vid=$vid',
-            arguments: <String, String?>{
-              'pic': '',
-              'heroTag': heroTag,
-            }),
+        (e) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            final context = rootNavigatorKey.currentContext;
+            if (context != null) {
+              context.go('/video',
+                  extra: <String, dynamic>{
+                    'vid': vid,
+                    'pic': '',
+                    'heroTag': heroTag,
+                  });
+            }
+          });
+        },
       );
     } catch (e) {
       SmartDialog.showToast('video获取失败: $e');
@@ -98,6 +110,9 @@ class PiliSchame {
   static Future<void> fullPathPush(SchemeEntity value) async {
     final String host = value.host!;
     final String? path = value.path;
+    final BuildContext? context = rootNavigatorKey.currentContext;
+    if (context == null) return;
+    
     RegExp regExp = RegExp(r'^((www\.)?(m\.)?)?ottohub\.cn$');
     if (regExp.hasMatch(host)) {
       if (path!.startsWith('/v/')) {
@@ -112,12 +127,12 @@ class PiliSchame {
         SmartDialog.showToast('暂不支持动态查看');
       } else if (path.startsWith('/u/')) {
         final String uid = path.split('/').last;
-        Get.toNamed('/member?mid=$uid', arguments: {'face': ''});
+        context.push('/member?mid=$uid', extra: {'face': ''});
       }
     } else {
-      Get.toNamed(
+      context.go(
         '/webview',
-        parameters: {
+        extra: {
           'url': value.dataString ?? "",
           'type': 'url',
           'pageTitle': ''

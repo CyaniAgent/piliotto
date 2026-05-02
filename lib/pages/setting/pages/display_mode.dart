@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_displaymode/flutter_displaymode.dart';
-import 'package:hive/hive.dart';
 import 'package:piliotto/utils/storage.dart';
 
 class SetDiaplayMode extends StatefulWidget {
@@ -16,7 +15,6 @@ class _SetDiaplayModeState extends State<SetDiaplayMode> {
   List<DisplayMode> modes = <DisplayMode>[];
   DisplayMode? active;
   DisplayMode? preferred;
-  Box setting = GStrorage.setting;
 
   final ValueNotifier<int> page = ValueNotifier<int>(0);
   late final PageController controller = PageController()
@@ -35,7 +33,9 @@ class _SetDiaplayModeState extends State<SetDiaplayMode> {
   Future<void> fetchAll() async {
     preferred = await FlutterDisplayMode.preferred;
     active = await FlutterDisplayMode.active;
-    await setting.put(SettingBoxKey.displayMode, preferred.toString());
+    try {
+      await GStrorage.setting.put(SettingBoxKey.displayMode, preferred.toString());
+    } catch (_) {}
     setState(() {});
   }
 
@@ -52,7 +52,10 @@ class _SetDiaplayModeState extends State<SetDiaplayMode> {
   }
 
   Future<DisplayMode> getDisplayModeType(List<DisplayMode> modes) async {
-    var value = setting.get(SettingBoxKey.displayMode);
+    String? value;
+    try {
+      value = GStrorage.setting.get(SettingBoxKey.displayMode);
+    } catch (_) {}
     DisplayMode f = DisplayMode.auto;
     if (value != null) {
       f = modes.firstWhere((e) => e.toString() == value);

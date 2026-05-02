@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
 import 'package:piliotto/pages/hot/index.dart';
 import 'package:piliotto/pages/rcmd/index.dart';
 
@@ -18,7 +17,6 @@ List tabsConfig = [
     ),
     'label': '推荐',
     'type': TabType.rcmd,
-    'ctr': Get.find<RcmdController>,
     'page': const RcmdPage(),
   },
   {
@@ -28,7 +26,6 @@ List tabsConfig = [
     ),
     'label': '热门',
     'type': TabType.hot,
-    'ctr': Get.find<HotController>,
     'page': const HotPage(),
   },
 ];

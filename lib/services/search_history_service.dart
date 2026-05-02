@@ -1,16 +1,19 @@
-import 'package:hive/hive.dart';
 import 'package:piliotto/utils/storage.dart';
 
 class SearchHistoryService {
   static const String _historyKey = 'searchHistory';
   static const int _maxHistoryCount = 20;
 
-  final Box _historyBox = GStrorage.historyword;
   List<String> _searchHistory = [];
 
   List<String> loadSearchHistory() {
-    final history = _historyBox.get(_historyKey, defaultValue: <String>[]);
-    _searchHistory = List<String>.from(history);
+    try {
+      final history =
+          GStrorage.historyword.get(_historyKey, defaultValue: <String>[]);
+      _searchHistory = List<String>.from(history);
+    } catch (_) {
+      _searchHistory = [];
+    }
     return _searchHistory;
   }
 
@@ -24,17 +27,23 @@ class SearchHistoryService {
       _searchHistory = _searchHistory.sublist(0, _maxHistoryCount);
     }
 
-    _historyBox.put(_historyKey, _searchHistory);
+    try {
+      GStrorage.historyword.put(_historyKey, _searchHistory);
+    } catch (_) {}
   }
 
   void clearSearchHistory() {
     _searchHistory.clear();
-    _historyBox.put(_historyKey, <String>[]);
+    try {
+      GStrorage.historyword.put(_historyKey, <String>[]);
+    } catch (_) {}
   }
 
   void removeSearchHistory(String keyword) {
     _searchHistory.remove(keyword);
-    _historyBox.put(_historyKey, _searchHistory);
+    try {
+      GStrorage.historyword.put(_historyKey, _searchHistory);
+    } catch (_) {}
   }
 
   List<String> filterSearchHistory(String query) {

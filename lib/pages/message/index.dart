@@ -1,2 +1,4 @@
+library;
+
+export './provider.dart';
 export './view.dart';
-export './controller.dart';

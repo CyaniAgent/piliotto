@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
-import 'package:get/get.dart';
+import 'package:go_router/go_router.dart';
 
 class UrlUtils {
   static Future<String> parseRedirectUrl(String url) async {
@@ -30,24 +31,26 @@ class UrlUtils {
   }
 
   static Future<void> matchUrlPush(
+    BuildContext context,
     String pathSegment,
     String title,
     String redirectUrl,
   ) async {
     final vid = int.tryParse(pathSegment);
     if (vid != null) {
-      await Get.toNamed(
-        '/video?vid=$vid',
-        arguments: <String, String?>{
+      context.go(
+        '/video',
+        extra: <String, dynamic>{
+          'vid': vid,
           'pic': '',
           'heroTag': 'video_$vid',
         },
       );
     } else {
       SmartDialog.showToast('无法解析视频ID');
-      await Get.toNamed(
+      context.go(
         '/webview',
-        parameters: {
+        extra: {
           'url': redirectUrl,
           'type': 'url',
           'pageTitle': title,

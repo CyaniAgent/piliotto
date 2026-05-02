@@ -2,69 +2,315 @@ import 'dart:io';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:piliotto/models/user/info.dart';
+import 'package:piliotto/services/loggeer.dart';
 
 class GStrorage {
-  static late final Box<dynamic> userInfo;
-  static late final Box<dynamic> historyword;
-  static late final Box<dynamic> localCache;
-  static late final Box<dynamic> setting;
-  static late final Box<dynamic> video;
+  static late final Box<dynamic> _userInfo;
+  static late final Box<dynamic> _historyword;
+  static late final Box<dynamic> _localCache;
+  static late final Box<dynamic> _setting;
+  static late final Box<dynamic> _video;
+
+  static Box<dynamic> get userInfo => _SafeBox(_userInfo, 'userInfo');
+  static Box<dynamic> get historyword => _SafeBox(_historyword, 'historyword');
+  static Box<dynamic> get localCache => _SafeBox(_localCache, 'localCache');
+  static Box<dynamic> get setting => _SafeBox(_setting, 'setting');
+  static Box<dynamic> get video => _SafeBox(_video, 'video');
 
   static Future<void> init() async {
     final Directory dir = await getApplicationSupportDirectory();
     final String path = dir.path;
     await Hive.initFlutter('$path/hive');
     regAdapter();
-    // 登录用户信息
-    userInfo = await Hive.openBox(
+    _userInfo = await Hive.openBox(
       'userInfo',
       compactionStrategy: (int entries, int deletedEntries) {
         return deletedEntries > 2;
       },
     );
-    // 本地缓存
-    localCache = await Hive.openBox(
+    _localCache = await Hive.openBox(
       'localCache',
       compactionStrategy: (int entries, int deletedEntries) {
         return deletedEntries > 4;
       },
     );
-    // 设置
-    setting = await Hive.openBox('setting');
-    // 搜索历史
-    historyword = await Hive.openBox(
+    _setting = await Hive.openBox('setting');
+    _historyword = await Hive.openBox(
       'historyWord',
       compactionStrategy: (int entries, int deletedEntries) {
         return deletedEntries > 10;
       },
     );
-    // 视频设置
-    video = await Hive.openBox('video');
+    _video = await Hive.openBox('video');
   }
 
   static void regAdapter() {
     Hive.registerAdapter(UserInfoDataAdapter());
     Hive.registerAdapter(LevelInfoAdapter());
   }
+}
 
-  static Future<void> close() async {
-    // user.compact();
-    // user.close();
-    userInfo.compact();
-    userInfo.close();
-    historyword.compact();
-    historyword.close();
-    localCache.compact();
-    localCache.close();
-    setting.compact();
-    setting.close();
-    video.compact();
-    video.close();
+class _SafeBox implements Box<dynamic> {
+  final Box<dynamic> _box;
+  final String _boxName;
+
+  _SafeBox(this._box, this._boxName);
+
+  void _logError(String operation, dynamic key, dynamic error) {
+    getLogger().w('Hive[$_boxName] $operation failed (key: $key): $error');
+  }
+
+  void _logErrorSimple(String operation, dynamic error) {
+    getLogger().w('Hive[$_boxName] $operation failed: $error');
+  }
+
+  @override
+  dynamic get(dynamic key, {dynamic defaultValue}) {
+    try {
+      return _box.get(key, defaultValue: defaultValue);
+    } catch (e) {
+      _logError('get', key, e);
+      return defaultValue;
+    }
+  }
+
+  @override
+  Future<void> put(dynamic key, dynamic value) async {
+    try {
+      await _box.put(key, value);
+    } catch (e) {
+      _logError('put', key, e);
+    }
+  }
+
+  @override
+  Future<void> delete(dynamic key) async {
+    try {
+      await _box.delete(key);
+    } catch (e) {
+      _logError('delete', key, e);
+    }
+  }
+
+  @override
+  bool containsKey(dynamic key) {
+    try {
+      return _box.containsKey(key);
+    } catch (e) {
+      _logError('containsKey', key, e);
+      return false;
+    }
+  }
+
+  @override
+  Iterable<dynamic> get keys {
+    try {
+      return _box.keys;
+    } catch (e) {
+      _logErrorSimple('keys', e);
+      return [];
+    }
+  }
+
+  @override
+  int get length {
+    try {
+      return _box.length;
+    } catch (e) {
+      _logErrorSimple('length', e);
+      return 0;
+    }
+  }
+
+  @override
+  Map<dynamic, dynamic> toMap() {
+    try {
+      return _box.toMap();
+    } catch (e) {
+      _logErrorSimple('toMap', e);
+      return {};
+    }
+  }
+
+  @override
+  dynamic getAt(int index) {
+    try {
+      return _box.getAt(index);
+    } catch (e) {
+      _logError('getAt', index, e);
+      return null;
+    }
+  }
+
+  @override
+  Future<void> putAt(int index, dynamic value) async {
+    try {
+      await _box.putAt(index, value);
+    } catch (e) {
+      _logError('putAt', index, e);
+    }
+  }
+
+  @override
+  Future<void> deleteAt(int index) async {
+    try {
+      await _box.deleteAt(index);
+    } catch (e) {
+      _logError('deleteAt', index, e);
+    }
+  }
+
+  @override
+  Future<int> add(dynamic value) async {
+    try {
+      return await _box.add(value);
+    } catch (e) {
+      _logErrorSimple('add', e);
+      return -1;
+    }
+  }
+
+  @override
+  Future<Iterable<int>> addAll(Iterable<dynamic> entries) async {
+    try {
+      return await _box.addAll(entries);
+    } catch (e) {
+      _logErrorSimple('addAll', e);
+      return [];
+    }
+  }
+
+  @override
+  Future<void> deleteAll(Iterable<dynamic> keys) async {
+    try {
+      await _box.deleteAll(keys);
+    } catch (e) {
+      _logErrorSimple('deleteAll', e);
+    }
+  }
+
+  @override
+  Future<void> putAll(Map<dynamic, dynamic> entries) async {
+    try {
+      await _box.putAll(entries);
+    } catch (e) {
+      _logErrorSimple('putAll', e);
+    }
+  }
+
+  @override
+  bool get isEmpty => length == 0;
+
+  @override
+  bool get isNotEmpty => length > 0;
+
+  @override
+  bool get isOpen {
+    try {
+      return _box.isOpen;
+    } catch (e) {
+      _logErrorSimple('isOpen', e);
+      return false;
+    }
+  }
+
+  @override
+  String get name => _box.name;
+
+  @override
+  String? get path => _box.path;
+
+  @override
+  Future<int> clear() async {
+    try {
+      return await _box.clear();
+    } catch (e) {
+      _logErrorSimple('clear', e);
+      return 0;
+    }
+  }
+
+  @override
+  Future<void> compact() async {
+    try {
+      await _box.compact();
+    } catch (e) {
+      _logErrorSimple('compact', e);
+    }
+  }
+
+  @override
+  Future<void> close() async {
+    try {
+      await _box.close();
+    } catch (e) {
+      _logErrorSimple('close', e);
+    }
+  }
+
+  @override
+  Iterable<dynamic> get values {
+    try {
+      return _box.values;
+    } catch (e) {
+      _logErrorSimple('values', e);
+      return [];
+    }
+  }
+
+  @override
+  Iterable<dynamic> valuesBetween({dynamic startKey, dynamic endKey}) {
+    try {
+      return _box.valuesBetween(startKey: startKey, endKey: endKey);
+    } catch (e) {
+      _logErrorSimple('valuesBetween', e);
+      return [];
+    }
+  }
+
+  @override
+  dynamic keyAt(int index) {
+    try {
+      return _box.keyAt(index);
+    } catch (e) {
+      _logError('keyAt', index, e);
+      return null;
+    }
+  }
+
+  @override
+  Future<void> deleteFromDisk() async {
+    try {
+      await _box.deleteFromDisk();
+    } catch (e) {
+      _logErrorSimple('deleteFromDisk', e);
+    }
+  }
+
+  @override
+  bool get lazy => _box.lazy;
+
+  @override
+  Stream<BoxEvent> watch({dynamic key}) {
+    try {
+      return _box.watch(key: key);
+    } catch (e) {
+      _logError('watch', key, e);
+      return const Stream.empty();
+    }
+  }
+
+  @override
+  Future<void> flush() async {
+    try {
+      await _box.flush();
+    } catch (e) {
+      _logErrorSimple('flush', e);
+    }
   }
 }
 
 class SettingBoxKey {
-  /// 播放器
   static const String btmProgressBehavior = 'btmProgressBehavior',
       defaultVideoSpeed = 'defaultVideoSpeed',
       autoUpgradeEnable = 'autoUpgradeEnable',
@@ -88,31 +334,20 @@ class SettingBoxKey {
       autoPiP = 'autoPiP',
       enableAutoLongPressSpeed = 'enableAutoLongPressSpeed',
       enablePlayerControlAnimation = 'enablePlayerControlAnimation',
-      // 默认音频输出方式
       defaultAoOutput = 'defaultAoOutput',
-      // 港澳台模式
       enableGATMode = 'enableGATMode',
-
-      // youtube 双击快进快退
       enableQuickDouble = 'enableQuickDouble',
       enableShowDanmaku = 'enableShowDanmaku',
       enableBackgroundPlay = 'enableBackgroundPlay',
       fullScreenGestureMode = 'fullScreenGestureMode',
-
-      /// 隐私
       blackMidsList = 'blackMidsList',
-
-      /// 推荐
       enableRcmdDynamic = 'enableRcmdDynamic',
       defaultRcmdType = 'defaultRcmdType',
       enableSaveLastData = 'enableSaveLastData',
       minDurationForRcmd = 'minDurationForRcmd',
       minLikeRatioForRecommend = 'minLikeRatioForRecommend',
       exemptFilterForFollowed = 'exemptFilterForFollowed',
-      //filterUnfollowedRatio = 'filterUnfollowedRatio',
       applyFilterToRelatedVideos = 'applyFilterToRelatedVideos',
-
-      /// 其他
       autoUpdate = 'autoUpdate',
       replySortType = 'replySortType',
       defaultDynamicType = 'defaultDynamicType',
@@ -125,47 +360,36 @@ class SettingBoxKey {
       defaultHomePage = 'defaultHomePage',
       enableRelatedVideo = 'enableRelatedVideo';
 
-  /// 外观
   static const String themeMode = 'themeMode',
       defaultTextScale = 'textScale',
-      dynamicColor = 'dynamicColor', // bool
-      customColor = 'customColor', // 自定义主题色
-      enableSingleRow = 'enableSingleRow', // 首页单列
+      dynamicColor = 'dynamicColor',
+      customColor = 'customColor',
+      enableSingleRow = 'enableSingleRow',
       displayMode = 'displayMode',
-      customRows = 'customRows', // 自定义列
+      customRows = 'customRows',
       enableMYBar = 'enableMYBar',
-      hideSearchBar = 'hideSearchBar', // 收起顶栏
-      hideTabBar = 'hideTabBar', // 收起底栏
-      tabbarSort = 'tabbarSort', // 首页tabbar
+      hideSearchBar = 'hideSearchBar',
+      hideTabBar = 'hideTabBar',
+      tabbarSort = 'tabbarSort',
       dynamicBadgeMode = 'dynamicBadgeMode',
       enableGradientBg = 'enableGradientBg',
       navBarSort = 'navBarSort',
       actionTypeSort = 'actionTypeSort',
-      // 动态页面宽屏布局模式: 'center' 居中, 'waterfall' 瀑布流
       dynamicWideScreenLayout = 'dynamicWideScreenLayout',
-      // 窄屏模式下使用侧边栏代替"我的"页面
       useDrawerForUser = 'useDrawerForUser';
 }
 
 class LocalCacheKey {
-  // 历史记录暂停状态 默认false 记录
   static const String historyPause = 'historyPause',
-      // access_key
       accessKey = 'accessKey',
-
-      //
       wbiKeys = 'wbiKeys',
       timeStamp = 'timeStamp',
-
-      // 弹幕相关设置 屏蔽类型 显示区域 透明度 字体大小 弹幕时间 描边粗细
       danmakuBlockType = 'danmakuBlockType',
       danmakuShowArea = 'danmakuShowArea',
       danmakuOpacity = 'danmakuOpacity',
       danmakuFontScale = 'danmakuFontScale',
       danmakuDuration = 'danmakuDuration',
       strokeWidth = 'strokeWidth',
-
-      // 代理host port
       systemProxyHost = 'systemProxyHost',
       systemProxyPort = 'systemProxyPort';
 
@@ -175,22 +399,13 @@ class LocalCacheKey {
 }
 
 class VideoBoxKey {
-  // 视频比例
   static const String videoFit = 'videoFit',
-      // 亮度
       videoBrightness = 'videoBrightness',
-      // 倍速
       videoSpeed = 'videoSpeed',
-      // 播放顺序
       playRepeat = 'playRepeat',
-      // 系统预设倍速
       playSpeedSystem = 'playSpeedSystem',
-      // 默认倍速
       playSpeedDefault = 'playSpeedDefault',
-      // 默认长按倍速
       longPressSpeedDefault = 'longPressSpeedDefault',
-      // 自定义倍速集合
       customSpeedsList = 'customSpeedsList',
-      // 画面填充比例
       cacheVideoFit = 'cacheVideoFit';
 }

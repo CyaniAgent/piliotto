@@ -1,7 +1,5 @@
 import 'package:get/get.dart';
-import 'package:hive/hive.dart';
 
-import 'package:piliotto/utils/storage.dart';
 import 'package:piliotto/repositories/i_comment_repository.dart';
 import 'package:piliotto/services/loggeer.dart';
 import 'package:piliotto/ottohub/models/video/reply/item.dart';
@@ -19,7 +17,6 @@ class VideoReplyController extends GetxController {
   int ps = 12;
   int count = 0;
 
-  Box setting = GStrorage.setting;
   final ICommentRepository _commentRepo = Get.find<ICommentRepository>();
 
   void updateVid(int newVid) {

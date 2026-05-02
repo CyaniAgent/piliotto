@@ -16,7 +16,11 @@ class LegacyApiService {
   static const String _tokenKey = 'ottohub_token';
 
   static String? getToken() {
-    return GStrorage.setting.get(_tokenKey);
+    try {
+      return GStrorage.setting.get(_tokenKey);
+    } catch (_) {
+      return null;
+    }
   }
 
   static void requireLogin() {
@@ -26,11 +30,31 @@ class LegacyApiService {
     }
   }
 
+  static Future<Map<String, dynamic>?> silentRequest(
+    String module,
+    String action,
+    Map<String, dynamic> params, {
+    bool requireAuth = false,
+  }) async {
+    try {
+      return await request(
+        module,
+        action,
+        params,
+        requireAuth: requireAuth,
+        silent: true,
+      );
+    } catch (e) {
+      return null;
+    }
+  }
+
   static Future<Map<String, dynamic>> request(
     String module,
     String action,
     Map<String, dynamic> params, {
     bool requireAuth = false,
+    bool silent = false,
   }) async {
     if (requireAuth) {
       requireLogin();
@@ -57,16 +81,20 @@ class LegacyApiService {
     };
 
     try {
-      final logger = getLogger();
       final response = await http.get(uri, headers: headers);
-      logger.d(
-          'API Request: ${uri.toString()}, Response Status: ${response.statusCode}, Response Body: ${response.body}');
+      if (!silent) {
+        final logger = getLogger();
+        logger.d(
+            'API Request: ${uri.toString()}, Response Status: ${response.statusCode}');
+      }
       final responseData = jsonDecode(response.body);
       return responseData;
     } catch (e) {
-      final logger = getLogger();
-      logger.e('API Request Error: ${e.toString()}');
-      throw Exception('API request failed: $e');
+      if (!silent) {
+        final logger = getLogger();
+        logger.e('API Request Error: ${e.toString()}');
+      }
+      rethrow;
     }
   }
 

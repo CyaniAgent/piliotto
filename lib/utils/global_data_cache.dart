@@ -1,14 +1,8 @@
-import 'package:hive/hive.dart';
 import 'package:piliotto/models/user/info.dart';
 import 'package:piliotto/plugin/pl_player/models/play_repeat.dart';
 import 'package:piliotto/plugin/pl_player/models/play_speed.dart';
 import 'package:piliotto/utils/storage.dart';
 import '../models/common/index.dart';
-
-Box setting = GStrorage.setting;
-Box localCache = GStrorage.localCache;
-Box videoStorage = GStrorage.video;
-Box userInfoCache = GStrorage.userInfo;
 
 class GlobalDataCache {
   late int imgQuality;
@@ -55,52 +49,72 @@ class GlobalDataCache {
 
   // 异步初始化方法
   Future<void> initialize() async {
-    imgQuality = await setting.get(SettingBoxKey.defaultPicQa,
-        defaultValue: 10); // 设置全局变量
-    fullScreenGestureMode = FullScreenGestureMode.values[setting.get(
-        SettingBoxKey.fullScreenGestureMode,
-        defaultValue: FullScreenGestureMode.values.last.index) as int];
-    enablePlayerControlAnimation = setting
-        .get(SettingBoxKey.enablePlayerControlAnimation, defaultValue: true);
-    actionTypeSort = await setting.get(SettingBoxKey.actionTypeSort,
-        defaultValue: ['like', 'coin', 'collect', 'watchLater', 'share']);
+    try {
+      imgQuality = await GStrorage.setting
+          .get(SettingBoxKey.defaultPicQa, defaultValue: 10);
+      fullScreenGestureMode = FullScreenGestureMode.values[GStrorage.setting
+          .get(SettingBoxKey.fullScreenGestureMode,
+              defaultValue: FullScreenGestureMode.values.last.index) as int];
+      enablePlayerControlAnimation = GStrorage.setting
+          .get(SettingBoxKey.enablePlayerControlAnimation, defaultValue: true);
+      actionTypeSort = await GStrorage.setting.get(SettingBoxKey.actionTypeSort,
+          defaultValue: ['like', 'coin', 'collect', 'watchLater', 'share']);
 
-    isOpenDanmu =
-        await setting.get(SettingBoxKey.enableShowDanmaku, defaultValue: true);
-    blockTypes =
-        await localCache.get(LocalCacheKey.danmakuBlockType, defaultValue: []);
-    showArea =
-        await localCache.get(LocalCacheKey.danmakuShowArea, defaultValue: 0.5);
-    opacityVal =
-        await localCache.get(LocalCacheKey.danmakuOpacity, defaultValue: 1.0);
-    fontSizeVal =
-        await localCache.get(LocalCacheKey.danmakuFontScale, defaultValue: 1.0);
-    danmakuDurationVal =
-        await localCache.get(LocalCacheKey.danmakuDuration, defaultValue: 4.0);
-    strokeWidth =
-        await localCache.get(LocalCacheKey.strokeWidth, defaultValue: 1.5);
+      isOpenDanmu = await GStrorage.setting
+          .get(SettingBoxKey.enableShowDanmaku, defaultValue: true);
+      blockTypes = await GStrorage.localCache
+          .get(LocalCacheKey.danmakuBlockType, defaultValue: []);
+      showArea = await GStrorage.localCache
+          .get(LocalCacheKey.danmakuShowArea, defaultValue: 0.5);
+      opacityVal = await GStrorage.localCache
+          .get(LocalCacheKey.danmakuOpacity, defaultValue: 1.0);
+      fontSizeVal = await GStrorage.localCache
+          .get(LocalCacheKey.danmakuFontScale, defaultValue: 1.0);
+      danmakuDurationVal = await GStrorage.localCache
+          .get(LocalCacheKey.danmakuDuration, defaultValue: 4.0);
+      strokeWidth = await GStrorage.localCache
+          .get(LocalCacheKey.strokeWidth, defaultValue: 1.5);
 
-    var defaultPlayRepeat = await videoStorage.get(VideoBoxKey.playRepeat,
-        defaultValue: PlayRepeat.pause.value);
-    playRepeat = PlayRepeat.values
-        .toList()
-        .firstWhere((e) => e.value == defaultPlayRepeat);
-    playbackSpeed =
-        await videoStorage.get(VideoBoxKey.playSpeedDefault, defaultValue: 1.0);
-    enableAutoLongPressSpeed = await setting
-        .get(SettingBoxKey.enableAutoLongPressSpeed, defaultValue: false);
-    if (!enableAutoLongPressSpeed) {
-      longPressSpeed = await videoStorage.get(VideoBoxKey.longPressSpeedDefault,
-          defaultValue: 2.0);
-    } else {
+      var defaultPlayRepeat = await GStrorage.video
+          .get(VideoBoxKey.playRepeat, defaultValue: PlayRepeat.pause.value);
+      playRepeat = PlayRepeat.values
+          .toList()
+          .firstWhere((e) => e.value == defaultPlayRepeat);
+      playbackSpeed = await GStrorage.video
+          .get(VideoBoxKey.playSpeedDefault, defaultValue: 1.0);
+      enableAutoLongPressSpeed = await GStrorage.setting
+          .get(SettingBoxKey.enableAutoLongPressSpeed, defaultValue: false);
+      if (!enableAutoLongPressSpeed) {
+        longPressSpeed = await GStrorage.video
+            .get(VideoBoxKey.longPressSpeedDefault, defaultValue: 2.0);
+      } else {
+        longPressSpeed = 2.0;
+      }
+      speedsList = List<double>.from(await GStrorage.video
+          .get(VideoBoxKey.customSpeedsList, defaultValue: <double>[]));
+      final List<double> playSpeedSystem = await GStrorage.video
+          .get(VideoBoxKey.playSpeedSystem, defaultValue: playSpeed);
+      speedsList.addAll(playSpeedSystem);
+
+      userInfo = GStrorage.userInfo.get('userInfoCache');
+    } catch (_) {
+      // 使用默认值
+      imgQuality = 10;
+      fullScreenGestureMode = FullScreenGestureMode.values.last;
+      enablePlayerControlAnimation = true;
+      actionTypeSort = ['like', 'coin', 'collect', 'watchLater', 'share'];
+      isOpenDanmu = true;
+      blockTypes = [];
+      showArea = 0.5;
+      opacityVal = 1.0;
+      fontSizeVal = 1.0;
+      danmakuDurationVal = 4.0;
+      strokeWidth = 1.5;
+      playRepeat = PlayRepeat.pause;
+      playbackSpeed = 1.0;
+      enableAutoLongPressSpeed = false;
       longPressSpeed = 2.0;
+      speedsList = List<double>.from(playSpeed);
     }
-    speedsList = List<double>.from(await videoStorage
-        .get(VideoBoxKey.customSpeedsList, defaultValue: <double>[]));
-    final List<double> playSpeedSystem = await videoStorage
-        .get(VideoBoxKey.playSpeedSystem, defaultValue: playSpeed);
-    speedsList.addAll(playSpeedSystem);
-
-    userInfo = userInfoCache.get('userInfoCache');
   }
 }

@@ -1,47 +1,57 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
-import 'package:get/get.dart';
-import 'package:piliotto/models/user/info.dart';
-import 'package:piliotto/models/user/stat.dart';
-import 'package:piliotto/pages/dynamics/index.dart';
-import 'package:piliotto/pages/home/index.dart';
-import 'package:piliotto/pages/media/index.dart';
-import 'package:piliotto/pages/mine/index.dart';
+import 'package:go_router/go_router.dart';
+import 'package:piliotto/pages/dynamics/provider.dart';
+import 'package:piliotto/pages/home/provider.dart';
+import 'package:piliotto/pages/media/provider.dart';
+import 'package:piliotto/pages/mine/provider.dart';
+import 'package:piliotto/router/app_router.dart';
 import 'package:piliotto/utils/storage.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
 class LoginUtils {
-  static Future refreshLoginStatus(bool status) async {
+  static Future refreshLoginStatus(bool status, dynamic ref) async {
     try {
-      final mineCtr = Get.find<MineController>();
-      mineCtr.userLogin.value = status;
-      if (status) {
-        mineCtr.userInfo.value = await GStrorage.userInfo.get('userInfoCache');
-      } else {
-        mineCtr.userInfo.value = UserInfoData();
-        mineCtr.userStat.value = UserStat();
+      if (ref != null) {
+        final mineNotifier = ref.read(mineProvider.notifier);
+        if (status) {
+          final userInfo = await GStrorage.userInfo.get('userInfoCache');
+          mineNotifier.state = mineNotifier.state.copyWith(
+            userLogin: true,
+            userInfo: userInfo,
+          );
+        } else {
+          mineNotifier.state = mineNotifier.state.copyWith(
+            userLogin: false,
+          );
+        }
+
+        final homeNotifier = ref.read(homeProvider.notifier);
+        homeNotifier.updateLoginStatus(status);
+
+        final dynamicsNotifier = ref.read(dynamicsProvider.notifier);
+        dynamicsNotifier.state = dynamicsNotifier.state.copyWith(
+          userLogin: status,
+        );
+
+        final mediaNotifier = ref.read(mediaProvider.notifier);
+        mediaNotifier.state = mediaNotifier.state.copyWith(
+          userLogin: status,
+        );
       }
-
-      HomeController homeCtr = Get.find<HomeController>();
-      homeCtr.updateLoginStatus(status);
-
-      DynamicsController dynamicsCtr = Get.find<DynamicsController>();
-      dynamicsCtr.userLogin.value = status;
-
-      MediaController mediaCtr = Get.find<MediaController>();
-      mediaCtr.userLogin.value = status;
     } catch (err) {
       SmartDialog.showToast('刷新状态失败: ${err.toString()}');
     }
   }
 
-  // 用于 WebView 登录确认（B站登录方式已废弃，Ottohub 使用自己的登录）
   static Future confirmLogin(String? url, WebViewController? controller) async {
     SmartDialog.showToast('Ottohub 请使用应用内登录功能');
-    if (controller != null) {
-      // 关闭 webview
-      Get.back();
+    final BuildContext? context = rootNavigatorKey.currentContext;
+    if (controller != null && context != null) {
+      Navigator.of(context).pop();
     }
-    // 跳转到登录页面
-    Get.toNamed('/loginPage');
+    if (context != null) {
+      context.push('/loginPage');
+    }
   }
 }

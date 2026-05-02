@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:piliotto/common/skeleton/video_card_h.dart';
 import 'package:piliotto/common/widgets/http_error.dart';
 import 'package:piliotto/common/widgets/video_card_h.dart';
+import 'package:piliotto/utils/route_arguments.dart';
 import './controller.dart';
 
 class RelatedVideoPanel extends StatefulWidget {
@@ -24,7 +25,7 @@ class _RelatedVideoPanelState extends State<RelatedVideoPanel>
   void initState() {
     super.initState();
     _releatedController =
-        Get.put(RelatedController(), tag: Get.arguments?['heroTag']);
+        Get.put(RelatedController(), tag: routeArguments['heroTag']);
     _futureBuilder = _releatedController.queryRelatedVideo();
   }
 
@@ -60,7 +61,7 @@ class _RelatedVideoPanelState extends State<RelatedVideoPanel>
             );
           } else {
             // 请求错误
-            return HttpError(errMsg: '出错了', fn: () {});
+            return HttpError(isSliver: true, errMsg: '出错了', fn: () {});
           }
         } else {
           // 骨架屏

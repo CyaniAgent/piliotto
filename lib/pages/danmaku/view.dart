@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:hive/hive.dart';
 import 'package:canvas_danmaku/canvas_danmaku.dart';
 import 'package:piliotto/ottohub/api/models/danmaku.dart';
 import 'package:piliotto/pages/danmaku/index.dart';
@@ -31,7 +30,6 @@ class _PlDanmakuState extends State<PlDanmaku> {
   late PlPlayerController playerController;
   late PlDanmakuController _plDanmakuController;
   DanmakuController? _controller;
-  Box setting = GStrorage.setting;
   late bool enableShowDanmaku;
   late List blockTypes;
   late double showArea;
@@ -46,8 +44,12 @@ class _PlDanmakuState extends State<PlDanmaku> {
   @override
   void initState() {
     super.initState();
-    enableShowDanmaku =
-        setting.get(SettingBoxKey.enableShowDanmaku, defaultValue: false);
+    try {
+      enableShowDanmaku = GStrorage.setting.get(
+          SettingBoxKey.enableShowDanmaku, defaultValue: false);
+    } catch (_) {
+      enableShowDanmaku = false;
+    }
     _plDanmakuController = PlDanmakuController(_videoId);
     playerController = widget.playerController;
     if (mounted && widget.type == 'video') {

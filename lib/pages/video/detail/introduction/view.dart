@@ -1,58 +1,45 @@
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:get/get.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:flutter/material.dart';
-import 'package:hive/hive.dart';
 import 'package:piliotto/common/constants.dart';
 import 'package:piliotto/common/skeleton/video_intro.dart';
-import 'package:piliotto/pages/video/detail/index.dart';
 import 'package:piliotto/common/widgets/markdown_text.dart';
 import 'package:piliotto/common/widgets/network_img_layer.dart';
 import 'package:piliotto/common/widgets/stat/danmu.dart';
 import 'package:piliotto/common/widgets/stat/view.dart';
-import 'package:piliotto/pages/video/detail/introduction/controller.dart';
+import 'package:piliotto/pages/video/detail/introduction/provider.dart';
 
 import 'package:piliotto/utils/feed_back.dart';
 import 'package:piliotto/utils/global_data_cache.dart';
-import 'package:piliotto/services/loggeer.dart';
+import 'package:piliotto/utils/route_arguments.dart';
 import 'package:piliotto/utils/storage.dart';
 import 'package:piliotto/utils/utils.dart';
 import 'widgets/action_item.dart';
 
-class VideoIntroPanel extends StatefulWidget {
+class VideoIntroPanel extends ConsumerStatefulWidget {
   final int vid;
 
   const VideoIntroPanel({super.key, required this.vid});
 
   @override
-  State<VideoIntroPanel> createState() => _VideoIntroPanelState();
+  ConsumerState<VideoIntroPanel> createState() => _VideoIntroPanelState();
 }
 
-class _VideoIntroPanelState extends State<VideoIntroPanel>
+class _VideoIntroPanelState extends ConsumerState<VideoIntroPanel>
     with AutomaticKeepAliveClientMixin {
   late String heroTag;
-  late VideoIntroController videoIntroController;
   late Future? _futureBuilderFuture;
 
-  // 添加页面缓存
   @override
   bool get wantKeepAlive => true;
 
   @override
   void initState() {
     super.initState();
-
-    /// fix 全屏时参数丢失
-    heroTag = Get.arguments?['heroTag'] ?? 'default_${widget.vid}';
-    videoIntroController =
-        Get.put(VideoIntroController(vid: widget.vid), tag: heroTag);
-    _futureBuilderFuture = videoIntroController.queryVideoIntro();
-  }
-
-  @override
-  void dispose() {
-    videoIntroController.onClose();
-    super.dispose();
+    heroTag = routeArguments['heroTag'] ?? 'default_${widget.vid}';
+    _futureBuilderFuture = ref.read(videoIntroProvider(widget.vid).notifier).queryVideoIntro();
   }
 
   @override
@@ -62,12 +49,9 @@ class _VideoIntroPanelState extends State<VideoIntroPanel>
       future: _futureBuilderFuture,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.done) {
-          return Obx(
-            () => VideoInfo(
-              videoDetail: videoIntroController.videoDetail.value,
-              heroTag: heroTag,
-              vid: widget.vid,
-            ),
+          return VideoInfo(
+            vid: widget.vid,
+            heroTag: heroTag,
           );
         } else {
           return const SliverToBoxAdapter(
@@ -79,29 +63,23 @@ class _VideoIntroPanelState extends State<VideoIntroPanel>
   }
 }
 
-class VideoInfo extends StatefulWidget {
-  final dynamic videoDetail;
+class VideoInfo extends ConsumerStatefulWidget {
   final String? heroTag;
   final int vid;
 
   const VideoInfo({
     super.key,
-    this.videoDetail,
     this.heroTag,
     required this.vid,
   });
 
   @override
-  State<VideoInfo> createState() => _VideoInfoState();
+  ConsumerState<VideoInfo> createState() => _VideoInfoState();
 }
 
-class _VideoInfoState extends State<VideoInfo>
+class _VideoInfoState extends ConsumerState<VideoInfo>
     with AutomaticKeepAliveClientMixin {
   late String heroTag;
-  late final VideoIntroController videoIntroController;
-  VideoDetailController? videoDetailCtr;
-  final Box<dynamic> localCache = GStrorage.localCache;
-  final Box<dynamic> setting = GStrorage.setting;
   late double sheetHeight;
   late int mid;
   late String memberHeroTag;
@@ -124,40 +102,32 @@ class _VideoInfoState extends State<VideoInfo>
   @override
   void initState() {
     super.initState();
-    heroTag = widget.heroTag!;
-    videoIntroController =
-        Get.put(VideoIntroController(vid: widget.vid), tag: heroTag);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      try {
-        videoDetailCtr = Get.find<VideoDetailController>(tag: heroTag);
-        if (mounted) {
-          setState(() {});
-        }
-      } catch (e) {
-        getLogger().d('VideoDetailController not found: $e');
-      }
-    });
-    sheetHeight = localCache.get('sheetHeight');
+    heroTag = widget.heroTag ?? 'default_${widget.vid}';
+    try {
+      sheetHeight = GStrorage.localCache.get('sheetHeight') ?? 0.0;
+    } catch (_) {
+      sheetHeight = 0.0;
+    }
   }
 
-  // 收藏
   void showFavBottomSheet({String type = 'tap'}) {
-    if (videoIntroController.userInfo == null) {
+    final introState = ref.read(videoIntroProvider(widget.vid));
+    if (introState.userInfo == null) {
       SmartDialog.showToast('账号未登录');
       return;
     }
-    videoIntroController.actionFavVideo();
+    ref.read(videoIntroProvider(widget.vid).notifier).actionFavVideo();
   }
 
-  // 用户主页
   void onPushMember() {
     feedBack();
-    if (widget.videoDetail.uid != null) {
-      mid = widget.videoDetail.uid!;
+    final introState = ref.read(videoIntroProvider(widget.vid));
+    if (introState.videoDetail?.uid != null) {
+      mid = introState.videoDetail!.uid;
       memberHeroTag = Utils.makeHeroTag(mid);
-      String face = widget.videoDetail.avatarUrl ?? '';
-      Get.toNamed('/member?mid=$mid',
-          arguments: {'face': face, 'heroTag': memberHeroTag});
+      String face = introState.videoDetail?.avatarUrl ?? '';
+      context.push('/member?mid=$mid',
+          extra: {'face': face, 'heroTag': memberHeroTag});
     }
   }
 
@@ -166,6 +136,16 @@ class _VideoInfoState extends State<VideoInfo>
     super.build(context);
     final ThemeData t = Theme.of(context);
     final Color outline = t.colorScheme.outline;
+    final introState = ref.watch(videoIntroProvider(widget.vid));
+    final introNotifier = ref.read(videoIntroProvider(widget.vid).notifier);
+    final videoDetail = introState.videoDetail;
+
+    if (videoDetail == null) {
+      return const SliverToBoxAdapter(
+        child: VideoIntroSkeleton(),
+      );
+    }
+
     return SliverPadding(
       padding: const EdgeInsets.only(
         left: StyleString.safeSpace,
@@ -177,7 +157,7 @@ class _VideoInfoState extends State<VideoInfo>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SelectableText(
-            widget.videoDetail.title!,
+            videoDetail.title,
             maxLines: 2,
             style: const TextStyle(
               fontSize: 18,
@@ -189,19 +169,17 @@ class _VideoInfoState extends State<VideoInfo>
             child: Row(
               children: [
                 StatView(
-                  view: widget.videoDetail.viewCount ?? 0,
+                  view: videoDetail.viewCount,
                   size: 'medium',
                 ),
                 const SizedBox(width: 10),
-                Obx(
-                  () => StatDanMu(
-                    danmu: videoIntroController.danmakuCount,
-                    size: 'medium',
-                  ),
+                StatDanMu(
+                  danmu: 0,
+                  size: 'medium',
                 ),
                 const SizedBox(width: 10),
                 Text(
-                  widget.videoDetail.time ?? '',
+                  videoDetail.time,
                   style: TextStyle(
                     fontSize: 12,
                     color: t.colorScheme.outline,
@@ -219,13 +197,12 @@ class _VideoInfoState extends State<VideoInfo>
             ),
           ),
 
-          /// 视频简介
-          if (widget.videoDetail.intro != null &&
-              widget.videoDetail.intro!.isNotEmpty)
+          if (videoDetail.intro != null &&
+              videoDetail.intro!.isNotEmpty)
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 8),
               child: MarkdownText(
-                text: widget.videoDetail.intro ?? '',
+                text: videoDetail.intro ?? '',
                 style: TextStyle(
                   fontSize: 14,
                   color: t.colorScheme.onSurface,
@@ -233,10 +210,8 @@ class _VideoInfoState extends State<VideoInfo>
               ),
             ),
 
-          /// 点赞收藏转发
-          Material(child: actionGrid(context, videoIntroController)),
+          Material(child: actionGrid(context, introState, introNotifier)),
 
-          // 作者信息
           Container(
             margin: const EdgeInsets.symmetric(vertical: 8),
             decoration: BoxDecoration(
@@ -247,12 +222,12 @@ class _VideoInfoState extends State<VideoInfo>
               color: Colors.transparent,
               child: InkWell(
                 onTap: () {
-                  if (widget.videoDetail.uid != null) {
-                    mid = widget.videoDetail.uid!;
+                  if (videoDetail.uid != 0) {
+                    mid = videoDetail.uid;
                     memberHeroTag = Utils.makeHeroTag(mid);
-                    String face = widget.videoDetail.avatarUrl ?? '';
-                    Get.toNamed('/member?mid=$mid',
-                        arguments: {'face': face, 'heroTag': memberHeroTag});
+                    String face = videoDetail.avatarUrl;
+                    context.push('/member?mid=$mid',
+                        extra: {'face': face, 'heroTag': memberHeroTag});
                   }
                 },
                 borderRadius: BorderRadius.circular(12),
@@ -262,7 +237,7 @@ class _VideoInfoState extends State<VideoInfo>
                     children: [
                       NetworkImgLayer(
                         type: 'avatar',
-                        src: widget.videoDetail.avatarUrl,
+                        src: videoDetail.avatarUrl,
                         width: 40,
                         height: 40,
                         fadeInDuration: Duration.zero,
@@ -274,52 +249,44 @@ class _VideoInfoState extends State<VideoInfo>
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              widget.videoDetail.username!,
+                              videoDetail.username,
                               style: const TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w500,
                               ),
                             ),
                             const SizedBox(height: 2),
-                            Obx(
-                              () => Text(
-                                '${Utils.numFormat(videoIntroController.follower.value)} 粉丝',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: outline,
-                                ),
+                            Text(
+                              '${Utils.numFormat(introState.follower)} 粉丝',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: outline,
                               ),
                             ),
                           ],
                         ),
                       ),
-                      Obx(
-                        () {
-                          final bool isFollowed =
-                              videoIntroController.followStatus.value;
-                          return SizedBox(
-                            height: 32,
-                            child: FilledButton.tonal(
-                              onPressed: videoIntroController.actionRelationMod,
-                              style: FilledButton.styleFrom(
-                                padding:
-                                    const EdgeInsets.symmetric(horizontal: 16),
-                                backgroundColor: isFollowed
-                                    ? t.colorScheme.surfaceContainerHighest
-                                    : null,
-                              ),
-                              child: Text(
-                                isFollowed ? '已关注' : '关注',
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  color: isFollowed
-                                      ? t.colorScheme.onSurfaceVariant
-                                      : null,
-                                ),
-                              ),
+                      SizedBox(
+                        height: 32,
+                        child: FilledButton.tonal(
+                          onPressed: introNotifier.actionRelationMod,
+                          style: FilledButton.styleFrom(
+                            padding:
+                                const EdgeInsets.symmetric(horizontal: 16),
+                            backgroundColor: introState.followStatus
+                                ? t.colorScheme.surfaceContainerHighest
+                                : null,
+                          ),
+                          child: Text(
+                            introState.followStatus ? '已关注' : '关注',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: introState.followStatus
+                                  ? t.colorScheme.onSurfaceVariant
+                                  : null,
                             ),
-                          );
-                        },
+                          ),
+                        ),
                       )
                     ],
                   ),
@@ -332,33 +299,34 @@ class _VideoInfoState extends State<VideoInfo>
     );
   }
 
-  Widget actionGrid(BuildContext context, videoIntroController) {
+  Widget actionGrid(BuildContext context, VideoIntroState introState, VideoIntroNotifier introNotifier) {
     final actionTypeSort = GlobalDataCache().actionTypeSort;
+    final videoDetail = introState.videoDetail;
+
+    if (videoDetail == null) {
+      return const SizedBox();
+    }
 
     Map<String, Widget> menuListWidgets = {
-      'like': Obx(
-        () => ActionItem(
-          icon: FontAwesomeIcons.thumbsUp,
-          selectIcon: FontAwesomeIcons.solidThumbsUp,
-          onTap: handleState(videoIntroController.actionLikeVideo),
-          onLongPress: () => videoIntroController.oneThreeDialog(),
-          selectStatus: videoIntroController.hasLike.value,
-          text: (widget.videoDetail.likeCount ?? 0).toString(),
-        ),
+      'like': ActionItem(
+        icon: FontAwesomeIcons.thumbsUp,
+        selectIcon: FontAwesomeIcons.solidThumbsUp,
+        onTap: handleState(introNotifier.actionLikeVideo),
+        onLongPress: () => introNotifier.oneThreeDialog(),
+        selectStatus: introState.hasLike,
+        text: videoDetail.likeCount.toString(),
       ),
-      'collect': Obx(
-        () => ActionItem(
-          icon: FontAwesomeIcons.star,
-          selectIcon: FontAwesomeIcons.solidStar,
-          onTap: () => showFavBottomSheet(),
-          onLongPress: () => showFavBottomSheet(type: 'longPress'),
-          selectStatus: videoIntroController.hasFav.value,
-          text: (widget.videoDetail.favoriteCount ?? 0).toString(),
-        ),
+      'collect': ActionItem(
+        icon: FontAwesomeIcons.star,
+        selectIcon: FontAwesomeIcons.solidStar,
+        onTap: () => showFavBottomSheet(),
+        onLongPress: () => showFavBottomSheet(type: 'longPress'),
+        selectStatus: introState.hasFav,
+        text: videoDetail.favoriteCount.toString(),
       ),
       'share': ActionItem(
         icon: FontAwesomeIcons.shareFromSquare,
-        onTap: () => videoIntroController.actionShareVideo(),
+        onTap: () => introNotifier.actionShareVideo(),
         selectStatus: false,
         text: '分享',
       ),

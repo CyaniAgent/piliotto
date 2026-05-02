@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
-import 'package:hive/hive.dart';
 import 'package:piliotto/utils/storage.dart';
 import 'package:piliotto/utils/utils.dart';
 
@@ -27,19 +26,23 @@ class SetSwitchItem extends StatefulWidget {
 }
 
 class _SetSwitchItemState extends State<SetSwitchItem> {
-  // ignore: non_constant_identifier_names
-  Box Setting = GStrorage.setting;
   late bool val;
 
   @override
   void initState() {
     super.initState();
-    val = Setting.get(widget.setKey, defaultValue: widget.defaultVal ?? false);
+    try {
+      val = GStrorage.setting.get(widget.setKey, defaultValue: widget.defaultVal ?? false);
+    } catch (_) {
+      val = widget.defaultVal ?? false;
+    }
   }
 
   void switchChange(bool? value) async {
     val = value ?? !val;
-    await Setting.put(widget.setKey, val);
+    try {
+      await GStrorage.setting.put(widget.setKey, val);
+    } catch (_) {}
     if (widget.setKey == SettingBoxKey.autoUpdate && value == true) {
       Utils.checkUpdata();
     }

@@ -7,12 +7,14 @@ class ApiException implements Exception {
   final int? statusCode;
   final bool isNetworkError;
   final bool isTimeout;
+  final bool isUnauthorized;
 
   ApiException(
     this.message, [
     this.statusCode,
     this.isNetworkError = false,
     this.isTimeout = false,
+    this.isUnauthorized = false,
   ]);
 
   @override
@@ -59,7 +61,13 @@ class ApiService {
       },
       onError: (error, handler) {
         final logger = getLogger();
-        logger.e('API Error: ${error.message}');
+        final statusCode = error.response?.statusCode;
+        final isSilent = error.requestOptions.extra['silent'] == true;
+
+        if (!isSilent) {
+          logger.e('API Error: ${error.message}, Status: $statusCode');
+        }
+
         return handler.next(error);
       },
     ));
@@ -71,15 +79,23 @@ class ApiService {
   }
 
   static void setToken(String token) {
-    GStrorage.setting.put(_tokenKey, token);
+    try {
+      GStrorage.setting.put(_tokenKey, token);
+    } catch (_) {}
   }
 
   static String? getToken() {
-    return GStrorage.setting.get(_tokenKey);
+    try {
+      return GStrorage.setting.get(_tokenKey);
+    } catch (_) {
+      return null;
+    }
   }
 
   static void clearToken() {
-    GStrorage.setting.delete(_tokenKey);
+    try {
+      GStrorage.setting.delete(_tokenKey);
+    } catch (_) {}
   }
 
   static String _getFriendlyErrorMessage(DioException e) {
@@ -94,7 +110,7 @@ class ApiService {
         return '证书错误，请检查网络环境';
       case DioExceptionType.badResponse:
         final statusCode = e.response?.statusCode;
-        if (statusCode == 401) return '未授权，请重新登录';
+        if (statusCode == 401) return '请求未授权';
         if (statusCode == 403) return '访问被拒绝';
         if (statusCode == 404) return '资源不存在';
         if (statusCode == 500) return '服务器错误，请稍后重试';
@@ -113,7 +129,7 @@ class ApiService {
     }
   }
 
-  static Future<Map<String, dynamic>?> safeRequest(
+  static Future<Map<String, dynamic>?> silentRequest(
     String endpoint, {
     String method = 'GET',
     Map<String, dynamic>? body,
@@ -131,9 +147,8 @@ class ApiService {
         queryParams: queryParams,
         requireToken: requireToken,
         skipToken: skipToken,
+        silent: true,
       );
-    } on ApiException {
-      return null;
     } catch (e) {
       return null;
     }
@@ -147,6 +162,7 @@ class ApiService {
     Map<String, dynamic>? queryParams,
     bool requireToken = false,
     bool skipToken = false,
+    bool silent = false,
   }) async {
     init();
 
@@ -154,13 +170,13 @@ class ApiService {
 
     final token = getToken();
     if (requireToken && token == null) {
-      throw ApiException('请先登录');
+      throw ApiException('请先登录', null, false, false, true);
     }
 
     final options = Options(
       method: method,
       headers: headers,
-      extra: {'skipToken': skipToken},
+      extra: {'skipToken': skipToken, 'silent': silent},
     );
 
     try {
@@ -202,8 +218,10 @@ class ApiService {
           throw ApiException('不支持的请求方法');
       }
 
-      logger.d(
-          'API Request: ${response.requestOptions.uri}, Status: ${response.statusCode}');
+      if (!silent) {
+        logger.d(
+            'API Request: ${response.requestOptions.uri}, Status: ${response.statusCode}');
+      }
 
       final responseData = response.data as Map<String, dynamic>;
 
@@ -214,23 +232,27 @@ class ApiService {
 
       return responseData;
     } on DioException catch (e) {
-      logger.e('API Request Error: ${e.message}');
       final friendlyMessage = _getFriendlyErrorMessage(e);
       final isTimeout = e.type == DioExceptionType.connectionTimeout ||
           e.type == DioExceptionType.sendTimeout ||
           e.type == DioExceptionType.receiveTimeout;
       final isNetworkError = e.type == DioExceptionType.connectionError ||
           e.type == DioExceptionType.unknown;
+      final isUnauthorized = e.response?.statusCode == 401;
+
       throw ApiException(
         friendlyMessage,
         e.response?.statusCode,
         isNetworkError,
         isTimeout,
+        isUnauthorized,
       );
     } on ApiException {
       rethrow;
     } catch (e) {
-      logger.e('API Request Error: ${e.toString()}');
+      if (!silent) {
+        logger.e('API Request Error: ${e.toString()}');
+      }
       throw ApiException('请求失败，请稍后重试');
     }
   }

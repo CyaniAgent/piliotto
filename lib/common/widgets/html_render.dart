@@ -4,6 +4,7 @@ import 'package:flutter_html/flutter_html.dart';
 import 'package:piliotto/plugin/pl_gallery/hero_dialog_route.dart';
 import 'package:piliotto/plugin/pl_gallery/interactiveviewer_gallery.dart';
 import 'package:piliotto/utils/highlight.dart';
+import 'package:piliotto/utils/utils.dart';
 
 // ignore: must_be_immutable
 class HtmlRender extends StatelessWidget {
@@ -61,12 +62,18 @@ class HtmlRender extends StatelessWidget {
               }
               return InkWell(
                 onTap: () {
+                  final heroTags = (imgList ?? [imgUrl])
+                      .asMap()
+                      .entries
+                      .map((e) => Utils.makeHeroTag('${e.value}_${e.key}'))
+                      .toList();
                   Navigator.of(context).push(
                     HeroDialogRoute<void>(
                       builder: (BuildContext context) =>
                           InteractiveviewerGallery(
                         sources: imgList ?? [imgUrl],
                         initIndex: imgList?.indexOf(imgUrl) ?? 0,
+                        heroTags: heroTags,
                         itemBuilder: (
                           BuildContext context,
                           int index,
@@ -82,7 +89,7 @@ class HtmlRender extends StatelessWidget {
                             },
                             child: Center(
                               child: Hero(
-                                tag: imgList?[index] ?? imgUrl,
+                                tag: heroTags[index],
                                 child: CachedNetworkImage(
                                   fadeInDuration:
                                       const Duration(milliseconds: 0),

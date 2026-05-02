@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
+import 'package:go_router/go_router.dart';
 import 'package:piliotto/common/widgets/network_img_layer.dart';
 import 'package:piliotto/utils/feed_back.dart';
 import 'package:piliotto/utils/utils.dart';
@@ -31,9 +31,9 @@ class AuthorPanel extends StatelessWidget {
         GestureDetector(
           onTap: () {
             feedBack();
-            Get.toNamed(
+            context.push(
               '/member?mid=${author.mid}',
-              arguments: {
+              extra: {
                 'face': avatarUrl,
                 'heroTag': heroTag,
               },

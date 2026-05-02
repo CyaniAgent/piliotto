@@ -2,29 +2,26 @@ import 'dart:async';
 
 import 'package:easy_debounce/easy_throttle.dart';
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
-import 'package:piliotto/ottohub/api/models/video.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:piliotto/common/constants.dart';
 import 'package:piliotto/common/skeleton/video_card_v.dart';
 import 'package:piliotto/common/widgets/http_error.dart';
 import 'package:piliotto/common/widgets/no_data.dart';
 import 'package:piliotto/common/widgets/video_card_v.dart';
+import 'package:piliotto/pages/rcmd/provider.dart';
 import 'package:piliotto/utils/main_stream.dart';
 import 'package:piliotto/utils/responsive_util.dart';
 
-import 'controller.dart';
-
-class RcmdPage extends StatefulWidget {
+class RcmdPage extends ConsumerStatefulWidget {
   const RcmdPage({super.key});
 
   @override
-  State<RcmdPage> createState() => _RcmdPageState();
+  ConsumerState<RcmdPage> createState() => _RcmdPageState();
 }
 
-class _RcmdPageState extends State<RcmdPage>
+class _RcmdPageState extends ConsumerState<RcmdPage>
     with AutomaticKeepAliveClientMixin {
-  final RcmdController _rcmdController = Get.put(RcmdController());
-  late Future _futureBuilderFuture;
+  Future? _futureBuilderFuture;
 
   @override
   bool get wantKeepAlive => true;
@@ -32,48 +29,55 @@ class _RcmdPageState extends State<RcmdPage>
   @override
   void initState() {
     super.initState();
-    _futureBuilderFuture = _rcmdController.queryRcmdFeed('init');
-    ScrollController scrollController = _rcmdController.scrollController;
+    final scrollController = ref.read(rcmdProvider.notifier).scrollController;
     scrollController.addListener(
       () {
         if (scrollController.position.pixels >=
             scrollController.position.maxScrollExtent - 200) {
           EasyThrottle.throttle(
               'my-throttler', const Duration(milliseconds: 200), () {
-            _rcmdController.onLoad();
+            ref.read(rcmdProvider.notifier).onLoad();
           });
         }
-        handleScrollEvent(scrollController);
+        handleScrollEvent(scrollController, ref);
       },
     );
+    _futureBuilderFuture =
+        ref.read(rcmdProvider.notifier).queryRcmdFeed('init');
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // 初始计算列数
-    _rcmdController.updateCrossAxisCount();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        ref.read(rcmdProvider.notifier).updateCrossAxisCount();
+      }
+    });
   }
 
   @override
   void didUpdateWidget(covariant RcmdPage oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // 屏幕尺寸变化时更新列数（使用防抖处理）
-    EasyThrottle.throttle(
-        'updateCrossAxisCount', const Duration(milliseconds: 100), () {
-      _rcmdController.updateCrossAxisCount();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        ref.read(rcmdProvider.notifier).updateCrossAxisCount();
+      }
     });
   }
 
   @override
   void dispose() {
-    _rcmdController.scrollController.removeListener(() {});
+    ref.read(rcmdProvider.notifier).scrollController.removeListener(() {});
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     super.build(context);
+    final state = ref.watch(rcmdProvider);
+    final notifier = ref.read(rcmdProvider.notifier);
+
     return Container(
       clipBehavior: Clip.hardEdge,
       margin: const EdgeInsets.only(
@@ -84,28 +88,27 @@ class _RcmdPageState extends State<RcmdPage>
       child: FutureBuilder(
         future: _futureBuilderFuture,
         builder: (context, snapshot) {
+          if (_futureBuilderFuture == null ||
+              snapshot.connectionState == ConnectionState.none) {
+            return contentGrid(state.copyWith(videoList: []), notifier);
+          }
           if (snapshot.connectionState == ConnectionState.done) {
             if (snapshot.data != null) {
               Map data = snapshot.data as Map;
               if (data['status']) {
-                return Obx(() {
-                  return RefreshIndicator(
-                    onRefresh: () async {
-                      await _rcmdController.onRefresh();
-                      await Future.delayed(const Duration(milliseconds: 300));
-                    },
-                    child:
-                        contentGrid(_rcmdController, _rcmdController.videoList),
-                  );
-                });
+                return RefreshIndicator(
+                  onRefresh: () async {
+                    await notifier.onRefresh();
+                    await Future.delayed(const Duration(milliseconds: 300));
+                  },
+                  child: contentGrid(state, notifier),
+                );
               } else {
                 return HttpError(
                   errMsg: data['msg'],
                   fn: () {
                     setState(() {
-                      _rcmdController.isLoadingMore.value = true;
-                      _futureBuilderFuture =
-                          _rcmdController.queryRcmdFeed('init');
+                      _futureBuilderFuture = notifier.queryRcmdFeed('init');
                     });
                   },
                 );
@@ -114,18 +117,15 @@ class _RcmdPageState extends State<RcmdPage>
               return const NoData();
             }
           } else {
-            // 骨架屏
-            return Obx(() {
-              return contentGrid(_rcmdController, []);
-            });
+            return contentGrid(state.copyWith(videoList: []), notifier);
           }
         },
       ),
     );
   }
 
-  Widget contentGrid(RcmdController ctr, List<Video> videoList) {
-    int crossAxisCount = ctr.crossAxisCount.value;
+  Widget contentGrid(RcmdState state, RcmdNotifier notifier) {
+    int crossAxisCount = state.crossAxisCount;
     double mainAxisExtent = ResponsiveUtil.calculateMainAxisExtent(
       crossAxisCount: crossAxisCount,
       aspectRatio: StyleString.aspectRatio,
@@ -133,26 +133,23 @@ class _RcmdPageState extends State<RcmdPage>
           crossAxisCount == 1 ? 68 : MediaQuery.textScalerOf(context).scale(86),
     );
     return GridView.builder(
-      controller: ctr.scrollController,
+      controller: notifier.scrollController,
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        // 行间距
         mainAxisSpacing: StyleString.safeSpace,
-        // 列间距
         crossAxisSpacing: StyleString.safeSpace,
-        // 列数
         crossAxisCount: crossAxisCount,
         mainAxisExtent: mainAxisExtent,
       ),
       itemBuilder: (BuildContext context, int index) {
-        return videoList.isNotEmpty
+        return state.videoList.isNotEmpty
             ? VideoCardV(
-                videoItem: videoList[index],
+                videoItem: state.videoList[index],
                 crossAxisCount: crossAxisCount,
-                blockUserCb: (mid) => ctr.blockUserCb(mid),
+                blockUserCb: (mid) => notifier.blockUserCb(mid),
               )
             : const VideoCardVSkeleton();
       },
-      itemCount: videoList.isNotEmpty ? videoList.length : 10,
+      itemCount: state.videoList.isNotEmpty ? state.videoList.length : 10,
       padding: const EdgeInsets.fromLTRB(
           0, StyleString.safeSpace, 0, StyleString.safeSpace),
     );

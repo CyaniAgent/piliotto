@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
+import 'package:go_router/go_router.dart';
 import 'package:piliotto/common/constants.dart';
 import 'package:piliotto/common/widgets/network_img_layer.dart';
 import 'package:piliotto/utils/utils.dart';
@@ -16,14 +16,9 @@ class FavItem extends StatelessWidget {
     String heroTag = Utils.makeHeroTag(favFolderItem.fid);
     return InkWell(
       onTap: () async {
-        Get.toNamed(
+        context.push(
           '/favDetail',
-          arguments: favFolderItem,
-          parameters: {
-            'heroTag': heroTag,
-            'mediaId': favFolderItem.id.toString(),
-            'isOwner': isOwner ? '1' : '0',
-          },
+          extra: favFolderItem,
         );
       },
       child: Padding(

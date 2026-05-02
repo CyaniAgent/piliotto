@@ -6,13 +6,13 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_volume_controller/flutter_volume_controller.dart';
 import 'package:get/get.dart';
-import 'package:hive/hive.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 import 'package:canvas_danmaku/canvas_danmaku.dart';
 import 'package:piliotto/ottohub/api/services/video_service.dart';
 import 'package:piliotto/plugin/pl_player/index.dart';
 import 'package:piliotto/plugin/pl_player/models/play_repeat.dart';
+import 'package:piliotto/router/app_router.dart';
 import 'package:piliotto/utils/feed_back.dart';
 import 'package:piliotto/utils/global_data_cache.dart';
 import 'package:piliotto/utils/storage.dart';
@@ -20,10 +20,6 @@ import 'package:screen_brightness/screen_brightness.dart';
 import 'package:status_bar_control_plus/status_bar_control_plus.dart';
 import 'package:universal_platform/universal_platform.dart';
 import '../../services/loggeer.dart';
-
-Box videoStorage = GStrorage.video;
-Box setting = GStrorage.setting;
-Box localCache = GStrorage.localCache;
 
 class PlPlayerController {
   Player? _videoPlayerController;
@@ -130,6 +126,7 @@ class PlPlayerController {
 
   /// 视频播放速度
   double get playbackSpeed => _playbackSpeed.value;
+  Rx<double> get playbackSpeedRx => _playbackSpeed;
 
   // 长按倍速
   double get longPressSpeed => _longPressSpeed.value;
@@ -353,8 +350,11 @@ class PlPlayerController {
         startListeners();
       }
       await _initializePlayer(duration: _duration.value);
-      bool autoEnterFullcreen =
-          setting.get(SettingBoxKey.enableAutoEnter, defaultValue: false);
+      bool autoEnterFullcreen = false;
+      try {
+        autoEnterFullcreen = GStrorage.setting
+            .get(SettingBoxKey.enableAutoEnter, defaultValue: false);
+      } catch (_) {}
       if (autoEnterFullcreen && _isFirstTime) {
         await Future.delayed(const Duration(milliseconds: 100));
         triggerFullScreen();
@@ -605,8 +605,11 @@ class PlPlayerController {
 
   // 还原默认速度
   Future<void> setDefaultSpeed() async {
-    double speed =
-        videoStorage.get(VideoBoxKey.playSpeedDefault, defaultValue: 1.0);
+    double speed = 1.0;
+    try {
+      speed =
+          GStrorage.video.get(VideoBoxKey.playSpeedDefault, defaultValue: 1.0);
+    } catch (_) {}
     if (_videoPlayerController != null) {
       try {
         await _videoPlayerController!.setRate(speed);
@@ -787,7 +790,7 @@ class PlPlayerController {
   /// Toggle Change the videofit accordingly
   void toggleVideoFit() {
     showDialog(
-      context: Get.context!,
+      context: rootNavigatorKey.currentContext!,
       builder: (context) {
         return AlertDialog(
           title: const Text('画面比例'),
@@ -804,7 +807,10 @@ class PlPlayerController {
                         _videoFit.value = i['attr'];
                         _videoFitDesc.value = i['desc'];
                         setVideoFit();
-                        Get.back();
+                        final ctx = rootNavigatorKey.currentContext;
+                        if (ctx != null) {
+                          Navigator.of(ctx).pop();
+                        }
                       },
                       child: Text(i['desc']),
                     ),
@@ -814,7 +820,10 @@ class PlPlayerController {
                         _videoFit.value = i['attr'];
                         _videoFitDesc.value = i['desc'];
                         setVideoFit();
-                        Get.back();
+                        final ctx = rootNavigatorKey.currentContext;
+                        if (ctx != null) {
+                          Navigator.of(ctx).pop();
+                        }
                       },
                       child: Text(i['desc']),
                     ),
@@ -832,14 +841,22 @@ class PlPlayerController {
   Future<void> setVideoFit() async {
     List attrs = videoFitType.map((e) => e['attr']).toList();
     int index = attrs.indexOf(_videoFit.value);
-    videoStorage.put(VideoBoxKey.cacheVideoFit, index);
+    try {
+      GStrorage.video.put(VideoBoxKey.cacheVideoFit, index);
+    } catch (_) {}
   }
 
   /// 读取fit
   Future<void> getVideoFit() async {
-    int fitValue = videoStorage.get(VideoBoxKey.cacheVideoFit, defaultValue: 0);
-    _videoFit.value = videoFitType[fitValue]['attr'];
-    _videoFitDesc.value = videoFitType[fitValue]['desc'];
+    try {
+      int fitValue =
+          GStrorage.video.get(VideoBoxKey.cacheVideoFit, defaultValue: 0);
+      _videoFit.value = videoFitType[fitValue]['attr'];
+      _videoFitDesc.value = videoFitType[fitValue]['desc'];
+    } catch (_) {
+      _videoFit.value = videoFitType[0]['attr'];
+      _videoFitDesc.value = videoFitType[0]['desc'];
+    }
   }
 
   /// 读取亮度
@@ -892,8 +909,11 @@ class PlPlayerController {
 
   // 全屏
   Future<void> triggerFullScreen({bool status = true}) async {
-    FullScreenMode mode = FullScreenModeCode.fromCode(
-        setting.get(SettingBoxKey.fullScreenMode, defaultValue: 0))!;
+    FullScreenMode mode = FullScreenMode.values.first;
+    try {
+      mode = FullScreenModeCode.fromCode(GStrorage.setting
+          .get(SettingBoxKey.fullScreenMode, defaultValue: 0))!;
+    } catch (_) {}
 
     // 只在移动平台上使用StatusBarControl
     if (UniversalPlatform.isAndroid || UniversalPlatform.isIOS) {
@@ -958,37 +978,47 @@ class PlPlayerController {
     if (videoType == 'live') {
       return;
     }
-    // 播放状态变化时，更新
-    if (type == 'status') {
-      await VideoService.saveWatchHistory(
-        vid: _vid,
-        lastWatchSecond:
-            playerStatus.status.value == PlayerStatus.completed ? -1 : progress,
-      );
-    } else
-    // 正常播放时，间隔5秒更新一次
-    if (progress - _heartDuration >= 5) {
-      _heartDuration = progress;
-      await VideoService.saveWatchHistory(
-        vid: _vid,
-        lastWatchSecond: progress,
-      );
+    try {
+      // 播放状态变化时，更新
+      if (type == 'status') {
+        await VideoService.saveWatchHistory(
+          vid: _vid,
+          lastWatchSecond: playerStatus.status.value == PlayerStatus.completed
+              ? -1
+              : progress,
+        );
+      } else
+      // 正常播放时，间隔5秒更新一次
+      if (progress - _heartDuration >= 5) {
+        _heartDuration = progress;
+        await VideoService.saveWatchHistory(
+          vid: _vid,
+          lastWatchSecond: progress,
+        );
+      }
+    } catch (e) {
+      // 忽略心跳错误（如未登录、网络错误等）
     }
   }
 
   void setPlayRepeat(PlayRepeat type) {
     playRepeat = type;
-    videoStorage.put(VideoBoxKey.playRepeat, type.value);
+    try {
+      GStrorage.video.put(VideoBoxKey.playRepeat, type.value);
+    } catch (_) {}
   }
 
   /// 缓存本次弹幕选项
   void cacheDanmakuOption() {
-    localCache.put(LocalCacheKey.danmakuBlockType, blockTypes);
-    localCache.put(LocalCacheKey.danmakuShowArea, showArea);
-    localCache.put(LocalCacheKey.danmakuOpacity, opacityVal);
-    localCache.put(LocalCacheKey.danmakuFontScale, fontSizeVal);
-    localCache.put(LocalCacheKey.danmakuDuration, danmakuDurationVal);
-    localCache.put(LocalCacheKey.strokeWidth, strokeWidth);
+    try {
+      GStrorage.localCache.put(LocalCacheKey.danmakuBlockType, blockTypes);
+      GStrorage.localCache.put(LocalCacheKey.danmakuShowArea, showArea);
+      GStrorage.localCache.put(LocalCacheKey.danmakuOpacity, opacityVal);
+      GStrorage.localCache.put(LocalCacheKey.danmakuFontScale, fontSizeVal);
+      GStrorage.localCache
+          .put(LocalCacheKey.danmakuDuration, danmakuDurationVal);
+      GStrorage.localCache.put(LocalCacheKey.strokeWidth, strokeWidth);
+    } catch (_) {}
   }
 
   Future<void> dispose() async {

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
+import 'package:go_router/go_router.dart';
 import 'package:piliotto/common/widgets/markdown_text.dart';
 import 'package:piliotto/common/widgets/network_img_layer.dart';
 import 'package:piliotto/plugin/pl_gallery/index.dart';
@@ -17,6 +17,7 @@ class DynamicDetailHeader extends StatefulWidget {
 
 class _DynamicDetailHeaderState extends State<DynamicDetailHeader> {
   List<String> picList = [];
+  List<String> heroTags = [];
   bool get hasPics => picList.isNotEmpty;
 
   @override
@@ -32,6 +33,11 @@ class _DynamicDetailHeaderState extends State<DynamicDetailHeader> {
           .map((item) => item.src ?? '')
           .cast<String>()
           .toList();
+      heroTags = picList
+          .asMap()
+          .entries
+          .map((e) => Utils.makeHeroTag('${e.value}_${e.key}'))
+          .toList();
     }
   }
 
@@ -42,6 +48,7 @@ class _DynamicDetailHeaderState extends State<DynamicDetailHeader> {
         builder: (context) => InteractiveviewerGallery(
           sources: picList,
           initIndex: initIndex,
+          heroTags: heroTags,
         ),
       ),
     );
@@ -97,9 +104,9 @@ class _DynamicDetailHeaderState extends State<DynamicDetailHeader> {
         GestureDetector(
           onTap: () {
             feedBack();
-            Get.toNamed(
+            context.push(
               '/member?mid=${author.mid}',
-              arguments: {
+              extra: {
                 'face': avatarUrl,
                 'heroTag': heroTag,
               },
@@ -175,7 +182,7 @@ class _DynamicDetailHeaderState extends State<DynamicDetailHeader> {
           child: ClipRRect(
             borderRadius: BorderRadius.circular(12),
             child: Hero(
-              tag: picList.first,
+              tag: heroTags.first,
               child: NetworkImgLayer(
                 src: picList.first,
                 width: maxWidth,
@@ -205,7 +212,7 @@ class _DynamicDetailHeaderState extends State<DynamicDetailHeader> {
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(8),
                 child: Hero(
-                  tag: picList[index],
+                  tag: heroTags[index],
                   child: NetworkImgLayer(
                     src: picList[index],
                     width: itemSize,

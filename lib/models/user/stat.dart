@@ -9,6 +9,18 @@ class UserStat {
   int? follower;
   int? dynamicCount;
 
+  UserStat copyWith({
+    int? following,
+    int? follower,
+    int? dynamicCount,
+  }) {
+    return UserStat(
+      following: following ?? this.following,
+      follower: follower ?? this.follower,
+      dynamicCount: dynamicCount ?? this.dynamicCount,
+    );
+  }
+
   UserStat.fromJson(Map<String, dynamic> json) {
     following = json['following'];
     follower = json['follower'];

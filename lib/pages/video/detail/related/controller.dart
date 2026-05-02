@@ -2,10 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:piliotto/repositories/i_video_repository.dart';
 import 'package:piliotto/ottohub/api/models/video.dart';
+import 'package:piliotto/utils/route_arguments.dart';
 
 class RelatedController extends GetxController {
   final IVideoRepository _videoRepo = Get.find<IVideoRepository>();
-  int vid = int.parse(Get.parameters['vid'] ?? '0');
+  int vid = int.parse(routeArguments.queryParameters['vid'] ?? '0');
   // 推荐视频列表
   RxList relatedVideoList = <Video>[].obs;
 

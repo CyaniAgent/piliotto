@@ -1,29 +1,25 @@
 import 'dart:async';
 
-import 'package:easy_debounce/easy_throttle.dart';
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:piliotto/common/constants.dart';
 import 'package:piliotto/common/skeleton/video_card_h.dart';
 import 'package:piliotto/common/widgets/http_error.dart';
 import 'package:piliotto/common/widgets/video_card_h.dart';
-import 'package:piliotto/pages/rank/zone/index.dart';
-import 'package:piliotto/utils/main_stream.dart';
+import 'package:piliotto/pages/rank/zone/provider.dart';
 
-class ZonePage extends StatefulWidget {
+class ZonePage extends ConsumerStatefulWidget {
   const ZonePage({super.key, required this.rid});
 
   final int rid;
 
   @override
-  State<ZonePage> createState() => _ZonePageState();
+  ConsumerState<ZonePage> createState() => _ZonePageState();
 }
 
-class _ZonePageState extends State<ZonePage>
+class _ZonePageState extends ConsumerState<ZonePage>
     with AutomaticKeepAliveClientMixin {
-  late ZoneController _zoneController;
-  List videoList = [];
-  Future? _futureBuilderFuture;
+  Future<Map<String, dynamic>>? _futureBuilderFuture;
   late ScrollController scrollController;
 
   @override
@@ -32,60 +28,64 @@ class _ZonePageState extends State<ZonePage>
   @override
   void initState() {
     super.initState();
-    _zoneController = Get.put(ZoneController(), tag: widget.rid.toString());
-    _futureBuilderFuture = _zoneController.queryRankFeed('init', widget.rid);
-    scrollController = _zoneController.scrollController;
-    scrollController.addListener(
-      () {
-        if (scrollController.position.pixels >=
-            scrollController.position.maxScrollExtent - 200) {
-          if (!_zoneController.isLoadingMore) {
-            _zoneController.isLoadingMore = true;
-            _zoneController.onLoad();
-          }
-        }
-        handleScrollEvent(scrollController);
-      },
-    );
+    final notifier = ref.read(zoneProvider.notifier);
+    scrollController = notifier.scrollController;
+    scrollController.addListener(_onScroll);
+    _futureBuilderFuture = notifier.queryRankFeed('init', widget.rid);
+  }
+
+  void _onScroll() {
+    final notifier = ref.read(zoneProvider.notifier);
+    final state = ref.read(zoneProvider);
+    if (scrollController.position.pixels >=
+        scrollController.position.maxScrollExtent - 200) {
+      if (!state.isLoadingMore) {
+        notifier.onLoad(widget.rid);
+      }
+    }
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // 初始计算列数
-    _zoneController.updateCrossAxisCount();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        ref.read(zoneProvider.notifier).updateCrossAxisCount();
+      }
+    });
   }
 
   @override
   void didUpdateWidget(covariant ZonePage oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // 屏幕尺寸变化时的防抖处理
-    EasyThrottle.throttle(
-        'zonePageDidChange', const Duration(milliseconds: 100), () {
-      // 更新列数
-      _zoneController.updateCrossAxisCount();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        ref.read(zoneProvider.notifier).updateCrossAxisCount();
+      }
     });
   }
 
   @override
   void dispose() {
-    scrollController.removeListener(() {});
+    scrollController.removeListener(_onScroll);
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     super.build(context);
+    final zoneState = ref.watch(zoneProvider);
+    final notifier = ref.read(zoneProvider.notifier);
     double screenWidth = MediaQuery.of(context).size.width;
     bool isWideScreen = screenWidth > 768;
     double maxContentWidth = 800;
 
     return RefreshIndicator(
       onRefresh: () async {
-        return await _zoneController.onRefresh();
+        await notifier.onRefresh(widget.rid);
       },
       child: CustomScrollView(
-        controller: _zoneController.scrollController,
+        controller: scrollController,
         slivers: [
           SliverPadding(
             padding: const EdgeInsets.fromLTRB(StyleString.safeSpace,
@@ -96,26 +96,21 @@ class _ZonePageState extends State<ZonePage>
                 if (snapshot.connectionState == ConnectionState.done) {
                   Map data = snapshot.data as Map;
                   if (data['status']) {
-                    return Obx(
-                      () {
-                        return SliverGrid(
-                          gridDelegate:
-                              SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount:
-                                _zoneController.crossAxisCount.value,
-                            mainAxisSpacing: 16,
-                            crossAxisSpacing: 16,
-                            childAspectRatio: 3 / 1,
-                          ),
-                          delegate:
-                              SliverChildBuilderDelegate((context, index) {
-                            return VideoCardH(
-                              videoItem: _zoneController.videoList[index],
-                              showPubdate: true,
-                            );
-                          }, childCount: _zoneController.videoList.length),
+                    return SliverGrid(
+                      gridDelegate:
+                          SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: zoneState.crossAxisCount,
+                        mainAxisSpacing: 16,
+                        crossAxisSpacing: 16,
+                        childAspectRatio: 3 / 1,
+                      ),
+                      delegate:
+                          SliverChildBuilderDelegate((context, index) {
+                        return VideoCardH(
+                          videoItem: zoneState.videoList[index],
+                          showPubdate: true,
                         );
-                      },
+                      }, childCount: zoneState.videoList.length),
                     );
                   } else {
                     return SliverPadding(
@@ -124,24 +119,22 @@ class _ZonePageState extends State<ZonePage>
                             ? (screenWidth - maxContentWidth) / 2
                             : 0,
                       ),
-                      sliver: SliverToBoxAdapter(
-                        child: HttpError(
-                          errMsg: data['msg'],
-                          fn: () {
-                            setState(() {
-                              _futureBuilderFuture = _zoneController
-                                  .queryRankFeed('init', widget.rid);
-                            });
-                          },
-                        ),
+                      sliver: HttpError(
+                        isSliver: true,
+                        errMsg: data['msg'],
+                        fn: () {
+                          setState(() {
+                            _futureBuilderFuture =
+                                notifier.queryRankFeed('init', widget.rid);
+                          });
+                        },
                       ),
                     );
                   }
                 } else {
-                  // 骨架屏
                   return SliverGrid(
                     gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: _zoneController.crossAxisCount.value,
+                      crossAxisCount: zoneState.crossAxisCount,
                       mainAxisSpacing: 16,
                       crossAxisSpacing: 16,
                       childAspectRatio: 3 / 1,

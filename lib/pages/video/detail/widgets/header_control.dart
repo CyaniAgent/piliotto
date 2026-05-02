@@ -5,22 +5,25 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:get/get.dart';
-import 'package:hive/hive.dart';
-import 'package:piliotto/repositories/i_danmaku_repository.dart';
+import 'package:go_router/go_router.dart';
+import 'package:piliotto/providers/repository_provider.dart';
 
-import 'package:piliotto/pages/video/detail/index.dart';
-import 'package:piliotto/pages/video/detail/introduction/controller.dart';
 import 'package:piliotto/pages/video/detail/introduction/widgets/menu_row.dart';
 import 'package:piliotto/plugin/pl_player/index.dart';
 import 'package:piliotto/plugin/pl_player/models/play_repeat.dart';
+import 'package:piliotto/utils/route_arguments.dart';
 import 'package:piliotto/utils/storage.dart';
 import 'package:piliotto/services/shutdown_timer_service.dart';
+import 'package:piliotto/pages/video/detail/provider.dart';
+import 'package:piliotto/pages/video/detail/introduction/provider.dart';
 
-class HeaderControl extends StatefulWidget implements PreferredSizeWidget {
+class HeaderControl extends ConsumerStatefulWidget
+    implements PreferredSizeWidget {
   const HeaderControl({
     this.controller,
-    this.videoDetailCtr,
+    this.videoDetailNotifier,
     this.floating,
     this.vid,
     this.videoType,
@@ -28,30 +31,27 @@ class HeaderControl extends StatefulWidget implements PreferredSizeWidget {
     super.key,
   });
   final PlPlayerController? controller;
-  final VideoDetailController? videoDetailCtr;
+  final VideoDetailNotifier? videoDetailNotifier;
   final Floating? floating;
   final int? vid;
   final String? videoType;
   final bool? showSubtitleBtn;
 
   @override
-  State<HeaderControl> createState() => _HeaderControlState();
+  ConsumerState<HeaderControl> createState() => _HeaderControlState();
 
   @override
   Size get preferredSize => const Size(double.infinity, kToolbarHeight);
 }
 
-class _HeaderControlState extends State<HeaderControl> {
+class _HeaderControlState extends ConsumerState<HeaderControl> {
   static const TextStyle subTitleStyle = TextStyle(fontSize: 12);
   static const TextStyle titleStyle = TextStyle(fontSize: 14);
   Size get preferredSize => const Size(double.infinity, kToolbarHeight);
-  final Box<dynamic> localCache = GStrorage.localCache;
-  final Box<dynamic> videoStorage = GStrorage.video;
   late List<double> speedsList;
   double buttonSpace = 8;
-  RxBool isFullScreen = false.obs;
+  bool isFullScreen = false;
   late String heroTag;
-  VideoIntroController? videoIntroController;
 
   @override
   void initState() {
@@ -59,17 +59,13 @@ class _HeaderControlState extends State<HeaderControl> {
     speedsList =
         widget.controller?.speedsList ?? [0.5, 0.75, 1.0, 1.25, 1.5, 2.0];
     fullScreenStatusListener();
-    heroTag = Get.arguments?['heroTag'] ?? '';
-    if (widget.vid != null) {
-      videoIntroController =
-          Get.put(VideoIntroController(vid: widget.vid!), tag: heroTag);
-    }
+    heroTag = routeArguments['heroTag'] ?? '';
   }
 
   void fullScreenStatusListener() {
-    if (widget.videoDetailCtr?.plPlayerController != null) {
-      widget.videoDetailCtr!.plPlayerController.isFullScreen.listen((bool val) {
-        isFullScreen.value = val;
+    if (widget.controller != null) {
+      widget.controller!.isFullScreen.listen((bool val) {
+        isFullScreen = val;
         if (mounted) {
           setState(() {});
         }
@@ -77,7 +73,6 @@ class _HeaderControlState extends State<HeaderControl> {
     }
   }
 
-  /// 设置面板
   void showSettingSheet() {
     showModalBottomSheet(
       elevation: 0,
@@ -105,7 +100,7 @@ class _HeaderControlState extends State<HeaderControl> {
                         color: Theme.of(context)
                             .colorScheme
                             .onSecondaryContainer
-                            .withValues(alpha: 0.5 * 255),
+                            .withValues(alpha: 0.5),
                         borderRadius:
                             const BorderRadius.all(Radius.circular(3))),
                   ),
@@ -115,40 +110,17 @@ class _HeaderControlState extends State<HeaderControl> {
                   child: Material(
                 child: ListView(
                   children: [
-                    // ListTile(
-                    //   onTap: () {},
-                    //   dense: true,
-                    //   enabled: false,
-                    //   leading:
-                    //       const Icon(Icons.network_cell_outlined, size: 20),
-                    //   title: Text('省流模式', style: titleStyle),
-                    //   subtitle: Text('低画质 ｜ 减少视频缓存', style: subTitleStyle),
-                    //   trailing: Transform.scale(
-                    //     scale: 0.75,
-                    //     child: Switch(
-                    //       thumbIcon: WidgetStateProperty.resolveWith<Icon?>(
-                    //           (Set<MaterialState> states) {
-                    //         if (states.isNotEmpty &&
-                    //             states.first == MaterialState.selected) {
-                    //           return const Icon(Icons.done);
-                    //         }
-                    //         return null; // All other states will use the default thumbIcon.
-                    //       }),
-                    //       value: false,
-                    //       onChanged: (value) => {},
-                    //     ),
-                    //   ),
-                    // ),
                     ListTile(
-                      onTap: () => {Get.back(), scheduleExit()},
+                      onTap: () =>
+                          {Navigator.of(context).pop(), scheduleExit()},
                       dense: true,
                       leading:
                           const Icon(Icons.hourglass_top_outlined, size: 20),
                       title: const Text('定时关闭', style: titleStyle),
                     ),
-
                     ListTile(
-                      onTap: () => {Get.back(), showSetRepeat()},
+                      onTap: () =>
+                          {Navigator.of(context).pop(), showSetRepeat()},
                       dense: true,
                       leading: const Icon(Icons.repeat, size: 20),
                       title: const Text('播放顺序', style: titleStyle),
@@ -156,7 +128,8 @@ class _HeaderControlState extends State<HeaderControl> {
                           style: subTitleStyle),
                     ),
                     ListTile(
-                      onTap: () => {Get.back(), showSetDanmaku()},
+                      onTap: () =>
+                          {Navigator.of(context).pop(), showSetDanmaku()},
                       dense: true,
                       leading: const Icon(Icons.subtitles_outlined, size: 20),
                       title: const Text('弹幕设置', style: titleStyle),
@@ -173,17 +146,16 @@ class _HeaderControlState extends State<HeaderControl> {
     );
   }
 
-  /// 发送弹幕
   void showShootDanmakuSheet() {
     if (widget.controller == null || widget.vid == null) {
       SmartDialog.showToast('无法发送弹幕');
       return;
     }
     final TextEditingController textController = TextEditingController();
-    bool isSending = false; // 追踪是否正在发送
+    bool isSending = false;
     showDialog(
-      context: Get.context!,
-      builder: (BuildContext context) {
+      context: context,
+      builder: (BuildContext dialogContext) {
         return AlertDialog(
           title: const Text('发送弹幕'),
           content: StatefulBuilder(
@@ -194,7 +166,7 @@ class _HeaderControlState extends State<HeaderControl> {
           }),
           actions: [
             TextButton(
-              onPressed: () => Get.back(),
+              onPressed: () => Navigator.of(dialogContext).pop(),
               child: Text(
                 '取消',
                 style: TextStyle(color: Theme.of(context).colorScheme.outline),
@@ -215,10 +187,12 @@ class _HeaderControlState extends State<HeaderControl> {
                           return;
                         }
                         setState(() {
-                          isSending = true; // 开始发送，更新状态
+                          isSending = true;
                         });
                         try {
-                          await Get.find<IDanmakuRepository>().sendDanmaku(
+                          final danmakuRepo =
+                              ref.read(danmakuRepositoryProvider);
+                          await danmakuRepo.sendDanmaku(
                             vid: widget.vid!,
                             text: msg,
                             time: widget.controller!.position.value.inSeconds,
@@ -228,12 +202,14 @@ class _HeaderControlState extends State<HeaderControl> {
                             render: '',
                           );
                           SmartDialog.showToast('发送成功');
-                          Get.back();
+                          if (dialogContext.mounted) {
+                            Navigator.of(dialogContext).pop();
+                          }
                         } catch (e) {
                           SmartDialog.showToast('发送失败：${e.toString()}');
                         } finally {
                           setState(() {
-                            isSending = false; // 发送结束，更新状态
+                            isSending = false;
                           });
                         }
                       },
@@ -246,7 +222,6 @@ class _HeaderControlState extends State<HeaderControl> {
     );
   }
 
-  /// 定时关闭
   void scheduleExit() async {
     const List<int> scheduleTimeChoices = [
       -1,
@@ -258,7 +233,7 @@ class _HeaderControlState extends State<HeaderControl> {
       context: context,
       elevation: 0,
       backgroundColor: Colors.transparent,
-      builder: (BuildContext context) {
+      builder: (BuildContext sheetContext) {
         return StatefulBuilder(
             builder: (BuildContext context, StateSetter setState) {
           return Container(
@@ -287,7 +262,7 @@ class _HeaderControlState extends State<HeaderControl> {
                             shutdownTimerService.scheduledExitInMinutes =
                                 choice;
                             shutdownTimerService.startShutdownTimer();
-                            Get.back();
+                            Navigator.of(sheetContext).pop();
                           },
                           contentPadding: const EdgeInsets.only(),
                           dense: true,
@@ -319,7 +294,6 @@ class _HeaderControlState extends State<HeaderControl> {
                         contentPadding: const EdgeInsets.only(),
                         title: const Text("额外等待视频播放完毕", style: titleStyle),
                         trailing: Switch(
-                          // thumb color (round icon)
                           activeThumbColor:
                               Theme.of(context).colorScheme.primary,
                           activeTrackColor:
@@ -329,9 +303,7 @@ class _HeaderControlState extends State<HeaderControl> {
                           inactiveTrackColor:
                               Theme.of(context).colorScheme.surface,
                           splashRadius: 10.0,
-                          // boolean variable value
                           value: shutdownTimerService.waitForPlayingCompleted,
-                          // changes the state of the switch
                           onChanged: (value) => setState(() =>
                               shutdownTimerService.waitForPlayingCompleted =
                                   value),
@@ -346,18 +318,15 @@ class _HeaderControlState extends State<HeaderControl> {
                             onTap: () {
                               shutdownTimerService.exitApp = false;
                               setState(() {});
-                              // Get.back();
                             },
                             text: " 暂停视频 ",
                             selectStatus: !shutdownTimerService.exitApp,
                           ),
                           const Spacer(),
-                          // const SizedBox(width: 10),
                           ActionRowLineItem(
                             onTap: () {
                               shutdownTimerService.exitApp = true;
                               setState(() {});
-                              // Get.back();
                             },
                             text: " 退出APP ",
                             selectStatus: shutdownTimerService.exitApp,
@@ -373,7 +342,6 @@ class _HeaderControlState extends State<HeaderControl> {
     );
   }
 
-  /// 选择倍速
   void showSetSpeedSheet() {
     if (widget.controller == null) {
       SmartDialog.showToast('无法设置播放速度');
@@ -381,8 +349,8 @@ class _HeaderControlState extends State<HeaderControl> {
     }
     final double currentSpeed = widget.controller!.playbackSpeed;
     showDialog(
-      context: Get.context!,
-      builder: (BuildContext context) {
+      context: context,
+      builder: (BuildContext dialogContext) {
         return AlertDialog(
           title: const Text('播放速度'),
           content: StatefulBuilder(
@@ -395,18 +363,20 @@ class _HeaderControlState extends State<HeaderControl> {
                   if (i == currentSpeed) ...<Widget>[
                     FilledButton(
                       onPressed: () async {
-                        // setState(() => currentSpeed = i),
                         await widget.controller!.setPlaybackSpeed(i);
-                        Get.back();
+                        if (context.mounted) {
+                          Navigator.of(dialogContext).pop();
+                        }
                       },
                       child: Text(i.toString()),
                     ),
                   ] else ...[
                     FilledButton.tonal(
                       onPressed: () async {
-                        // setState(() => currentSpeed = i),
                         await widget.controller!.setPlaybackSpeed(i);
-                        Get.back();
+                        if (context.mounted) {
+                          Navigator.of(dialogContext).pop();
+                        }
                       },
                       child: Text(i.toString()),
                     ),
@@ -417,7 +387,7 @@ class _HeaderControlState extends State<HeaderControl> {
           }),
           actions: <Widget>[
             TextButton(
-              onPressed: () => Get.back(),
+              onPressed: () => Navigator.of(dialogContext).pop(),
               child: Text(
                 '取消',
                 style: TextStyle(color: Theme.of(context).colorScheme.outline),
@@ -426,7 +396,9 @@ class _HeaderControlState extends State<HeaderControl> {
             TextButton(
               onPressed: () async {
                 await widget.controller!.setDefaultSpeed();
-                Get.back();
+                if (context.mounted) {
+                  Navigator.of(dialogContext).pop();
+                }
               },
               child: const Text('默认速度'),
             ),
@@ -460,13 +432,11 @@ class _HeaderControlState extends State<HeaderControl> {
         SettingBoxKey.enableShowDanmaku, widget.controller!.isOpenDanmu.value);
   }
 
-  /// 弹幕功能
   void showSetDanmaku() async {
     if (widget.controller == null) {
       SmartDialog.showToast('无法设置弹幕');
       return;
     }
-    // 屏蔽类型
     final List<Map<String, dynamic>> blockTypesList = [
       {'value': 5, 'label': '顶部'},
       {'value': 2, 'label': '滚动'},
@@ -474,7 +444,6 @@ class _HeaderControlState extends State<HeaderControl> {
       {'value': 6, 'label': '彩色'},
     ];
     final List blockTypes = widget.controller!.blockTypes;
-    // 显示区域
     final List<Map<String, dynamic>> showAreas = [
       {'value': 0.25, 'label': '1/4屏'},
       {'value': 0.5, 'label': '半屏'},
@@ -482,13 +451,9 @@ class _HeaderControlState extends State<HeaderControl> {
       {'value': 1.0, 'label': '满屏'},
     ];
     double showArea = widget.controller!.showArea;
-    // 不透明度
     double opacityVal = widget.controller!.opacityVal;
-    // 字体大小
     double fontSizeVal = widget.controller!.fontSizeVal;
-    // 弹幕速度
     double danmakuDurationVal = widget.controller!.danmakuDurationVal;
-    // 弹幕描边
     double strokeWidth = widget.controller!.strokeWidth;
 
     await showModalBottomSheet(
@@ -706,7 +671,6 @@ class _HeaderControlState extends State<HeaderControl> {
     });
   }
 
-  /// 播放顺序
   void showSetRepeat() async {
     if (widget.controller == null) {
       SmartDialog.showToast('无法设置播放顺序');
@@ -716,7 +680,7 @@ class _HeaderControlState extends State<HeaderControl> {
       context: context,
       elevation: 0,
       backgroundColor: Colors.transparent,
-      builder: (BuildContext context) {
+      builder: (BuildContext sheetContext) {
         return Container(
           width: double.infinity,
           height: 250,
@@ -742,7 +706,7 @@ class _HeaderControlState extends State<HeaderControl> {
                         onTap: () {
                           widget.controller!
                               .setPlayRepeat(PlayRepeat.singleCycle);
-                          Get.back();
+                          Navigator.of(sheetContext).pop();
                         },
                         dense: true,
                         contentPadding:
@@ -760,7 +724,7 @@ class _HeaderControlState extends State<HeaderControl> {
                         onTap: () {
                           widget.controller!
                               .setPlayRepeat(PlayRepeat.listCycle);
-                          Get.back();
+                          Navigator.of(sheetContext).pop();
                         },
                         dense: true,
                         contentPadding:
@@ -778,7 +742,7 @@ class _HeaderControlState extends State<HeaderControl> {
                         onTap: () {
                           widget.controller!
                               .setPlayRepeat(PlayRepeat.listOrder);
-                          Get.back();
+                          Navigator.of(sheetContext).pop();
                         },
                         dense: true,
                         contentPadding:
@@ -822,9 +786,7 @@ class _HeaderControlState extends State<HeaderControl> {
                 size: 15,
                 color: Colors.white,
               ),
-              fuc: () {
-                Get.back();
-              },
+              fuc: () => context.pop(),
             ),
           ],
         ),
@@ -854,39 +816,38 @@ class _HeaderControlState extends State<HeaderControl> {
               size: 15,
               color: Colors.white,
             ),
-            fuc: () => <Set<void>>{
-              if (widget.controller!.isFullScreen.value)
-                <void>{widget.controller!.triggerFullScreen(status: false)}
-              else
-                <void>{
-                  if (MediaQuery.of(context).orientation ==
-                      Orientation.landscape)
-                    {
-                      SystemChrome.setPreferredOrientations([
-                        DeviceOrientation.portraitUp,
-                      ])
-                    },
-                  Get.back()
+            fuc: () {
+              if (widget.controller!.isFullScreen.value) {
+                widget.controller!.triggerFullScreen(status: false);
+              } else {
+                if (MediaQuery.of(context).orientation ==
+                    Orientation.landscape) {
+                  SystemChrome.setPreferredOrientations(
+                      [DeviceOrientation.portraitUp]);
                 }
+                context.pop();
+              }
             },
           ),
           SizedBox(width: buttonSpace),
-          if (isFullScreen.value &&
-              isLandscape &&
-              widget.videoType == 'video') ...[
+          if (isFullScreen && isLandscape && widget.videoType == 'video') ...[
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 ConstrainedBox(
                   constraints: const BoxConstraints(maxWidth: 200),
-                  child: Obx(
-                    () => Text(
-                      videoIntroController?.videoDetail.value.title ?? '',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 16,
-                      ),
-                    ),
+                  child: Consumer(
+                    builder: (context, ref, child) {
+                      final introState =
+                          ref.watch(videoIntroProvider(widget.vid ?? 0));
+                      return Text(
+                        introState.videoDetail?.title ?? '',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                        ),
+                      );
+                    },
                   ),
                 ),
               ],
@@ -908,7 +869,7 @@ class _HeaderControlState extends State<HeaderControl> {
             ),
           ],
           const Spacer(),
-          if (isFullScreen.value) ...[
+          if (isFullScreen) ...[
             SizedBox(
               width: 56,
               height: 34,
@@ -926,25 +887,23 @@ class _HeaderControlState extends State<HeaderControl> {
             SizedBox(
               width: 34,
               height: 34,
-              child: Obx(
-                () => IconButton(
-                  style: ButtonStyle(
-                    padding: WidgetStateProperty.all(EdgeInsets.zero),
-                  ),
-                  onPressed: () {
-                    playerController.isOpenDanmu.value =
-                        !playerController.isOpenDanmu.value;
-                    _saveDanmakuStatus();
-                  },
-                  icon: Icon(
-                    playerController.isOpenDanmu.value
-                        ? Icons.subtitles_outlined
-                        : Icons.subtitles_off_outlined,
-                    size: 19,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
+              child: Obx(() => IconButton(
+                    style: ButtonStyle(
+                      padding: WidgetStateProperty.all(EdgeInsets.zero),
+                    ),
+                    onPressed: () {
+                      playerController.isOpenDanmu.value =
+                          !playerController.isOpenDanmu.value;
+                      _saveDanmakuStatus();
+                    },
+                    icon: Icon(
+                      playerController.isOpenDanmu.value
+                          ? Icons.subtitles_outlined
+                          : Icons.subtitles_off_outlined,
+                      size: 19,
+                      color: Colors.white,
+                    ),
+                  )),
             ),
           ],
           SizedBox(width: buttonSpace),
@@ -965,15 +924,14 @@ class _HeaderControlState extends State<HeaderControl> {
                     canUsePiP = false;
                   }
                   if (canUsePiP && widget.floating != null) {
-                    final videoWidth =
-                        widget.videoDetailCtr?.videoItem.videoWidth ?? 16;
-                    final videoHeight =
-                        widget.videoDetailCtr?.videoItem.videoHeight ?? 9;
+                    final videoState = ref.read(videoDetailProvider);
+                    final videoWidth = videoState.videoItem?.videoWidth ?? 16;
+                    final videoHeight = videoState.videoItem?.videoHeight ?? 9;
                     final Rational aspectRatio =
                         Rational(videoWidth, videoHeight);
                     await widget.floating!
                         .enable(ImmediatePiP(aspectRatio: aspectRatio));
-                  } else {}
+                  }
                 },
                 icon: const Icon(
                   Icons.picture_in_picture_outlined,
@@ -984,22 +942,20 @@ class _HeaderControlState extends State<HeaderControl> {
             ),
             SizedBox(width: buttonSpace),
           ],
-          Obx(
-            () => SizedBox(
-              width: 45,
-              height: 34,
-              child: TextButton(
-                style: ButtonStyle(
-                  padding: WidgetStateProperty.all(EdgeInsets.zero),
+          Obx(() => SizedBox(
+                width: 45,
+                height: 34,
+                child: TextButton(
+                  style: ButtonStyle(
+                    padding: WidgetStateProperty.all(EdgeInsets.zero),
+                  ),
+                  onPressed: () => showSetSpeedSheet(),
+                  child: Text(
+                    '${playerController.playbackSpeed}X',
+                    style: textStyle,
+                  ),
                 ),
-                onPressed: () => showSetSpeedSheet(),
-                child: Text(
-                  '${playerController.playbackSpeed}X',
-                  style: textStyle,
-                ),
-              ),
-            ),
-          ),
+              )),
           SizedBox(width: buttonSpace),
           ComBtn(
             icon: const Icon(

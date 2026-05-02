@@ -4,26 +4,26 @@ import 'dart:io';
 import 'package:easy_debounce/easy_throttle.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:get/get.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:piliotto/common/widgets/network_img_layer.dart';
-import 'package:piliotto/pages/main/controller.dart';
+import 'package:piliotto/pages/home/provider.dart';
+import 'package:piliotto/pages/main/view.dart';
 import 'package:piliotto/pages/mine/index.dart';
 import 'package:piliotto/services/search_history_service.dart';
 import 'package:piliotto/utils/feed_back.dart';
-import './controller.dart';
 
-class HomePage extends StatefulWidget {
+class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
 
   @override
-  State<HomePage> createState() => _HomePageState();
+  ConsumerState<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage>
+class _HomePageState extends ConsumerState<HomePage>
     with AutomaticKeepAliveClientMixin, TickerProviderStateMixin {
-  final HomeController _homeController = Get.put(HomeController());
-  List videoList = [];
-  late Stream<bool> stream;
+  late TabController _tabController;
+  late Stream<bool> _stream;
 
   @override
   bool get wantKeepAlive => true;
@@ -31,7 +31,13 @@ class _HomePageState extends State<HomePage>
   @override
   void initState() {
     super.initState();
-    stream = _homeController.searchBarStream.stream;
+    final state = ref.read(homeProvider);
+    _tabController = TabController(
+      initialIndex: state.initialIndex,
+      length: state.tabs.length,
+      vsync: this,
+    );
+    _stream = ref.read(homeProvider.notifier).searchBarStream.stream;
   }
 
   @override
@@ -43,10 +49,8 @@ class _HomePageState extends State<HomePage>
 
   void showUserBottomSheet() {
     feedBack();
-    // 不使用侧边栏时，跳转到"我的"页面
-    final mainController = Get.find<MainController>();
-    if (mainController.useDrawerForUser) {
-      // 使用侧边栏时，显示底页
+    final mainState = ref.read(mainAppProvider);
+    if (mainState.useDrawerForUser) {
       showModalBottomSheet(
         context: context,
         builder: (_) => const SizedBox(
@@ -57,15 +61,25 @@ class _HomePageState extends State<HomePage>
         isScrollControlled: true,
       );
     } else {
-      // 不使用侧边栏时，跳转到"我的"页面
-      Get.toNamed('/mine');
+      context.push('/mine');
     }
   }
 
   @override
   Widget build(BuildContext context) {
     super.build(context);
+    final state = ref.watch(homeProvider);
+    final notifier = ref.read(homeProvider.notifier);
     final isNarrowScreen = MediaQuery.of(context).size.width < 600;
+
+    if (_tabController.length != state.tabs.length) {
+      _tabController.dispose();
+      _tabController = TabController(
+        initialIndex: state.initialIndex,
+        length: state.tabs.length,
+        vsync: this,
+      );
+    }
 
     return Scaffold(
       extendBody: true,
@@ -89,14 +103,13 @@ class _HomePageState extends State<HomePage>
       body: Column(
         children: [
           CustomAppBar(
-            stream: _homeController.hideSearchBar
-                ? stream
+            stream: state.hideSearchBar
+                ? _stream
                 : StreamController<bool>.broadcast().stream,
-            ctr: _homeController,
-            callback: showUserBottomSheet,
             isNarrowScreen: isNarrowScreen,
+            callback: showUserBottomSheet,
           ),
-          if (_homeController.tabs.length > 1) ...[
+          if (state.tabs.length > 1) ...[
             const SizedBox(height: 4),
             SizedBox(
               width: double.infinity,
@@ -104,9 +117,9 @@ class _HomePageState extends State<HomePage>
               child: Align(
                 alignment: Alignment.center,
                 child: TabBar(
-                  controller: _homeController.tabController,
+                  controller: _tabController,
                   tabs: [
-                    for (var i in _homeController.tabs) Tab(text: i['label'])
+                    for (var i in state.tabs) Tab(text: i['label'])
                   ],
                   isScrollable: true,
                   dividerColor: Colors.transparent,
@@ -115,10 +128,11 @@ class _HomePageState extends State<HomePage>
                   tabAlignment: TabAlignment.center,
                   onTap: (value) {
                     feedBack();
-                    if (_homeController.initialIndex.value == value) {
-                      _homeController.tabsCtrList[value]().animateToTop();
+                    if (state.initialIndex == value) {
+                      final ctr = state.tabs[value]['ctr'] as Function;
+                      (ctr() as dynamic).animateToTop();
                     }
-                    _homeController.initialIndex.value = value;
+                    notifier.setInitialIndex(value);
                   },
                 ),
               ),
@@ -128,20 +142,25 @@ class _HomePageState extends State<HomePage>
           ],
           Expanded(
             child: TabBarView(
-              controller: _homeController.tabController,
-              children: _homeController.tabsPageList,
+              controller: _tabController,
+              children: state.tabs.map<Widget>((e) => e['page'] as Widget).toList(),
             ),
           ),
         ],
       ),
     );
   }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
 }
 
 class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   final double height;
   final Stream<bool>? stream;
-  final HomeController? ctr;
   final Function? callback;
   final bool isNarrowScreen;
 
@@ -149,7 +168,6 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
     super.key,
     this.height = kToolbarHeight,
     this.stream,
-    this.ctr,
     this.callback,
     this.isNarrowScreen = false,
   });
@@ -163,7 +181,6 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
       stream: stream!.distinct(),
       initialData: true,
       builder: (BuildContext context, AsyncSnapshot snapshot) {
-        final RxBool isUserLoggedIn = ctr!.userLogin;
         final double top = MediaQuery.of(context).padding.top;
         return AnimatedOpacity(
           opacity: snapshot.data ? 1 : 0,
@@ -173,12 +190,9 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
             duration: const Duration(milliseconds: 500),
             height: snapshot.data ? top + 52 : top,
             padding: EdgeInsets.fromLTRB(14, top + 6, 14, 0),
-            child: UserInfoWidget(
+            child: _AppBarContent(
               top: top,
-              ctr: ctr,
-              userLogin: isUserLoggedIn,
-              userFace: ctr?.userFace.value,
-              callback: () => callback!(),
+              callback: callback,
               isNarrowScreen: isNarrowScreen,
             ),
           ),
@@ -188,97 +202,52 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   }
 }
 
-class UserInfoWidget extends StatelessWidget {
-  const UserInfoWidget({
-    super.key,
+class _AppBarContent extends ConsumerWidget {
+  final double top;
+  final Function? callback;
+  final bool isNarrowScreen;
+
+  const _AppBarContent({
     required this.top,
-    required this.userLogin,
-    required this.userFace,
-    required this.callback,
-    required this.ctr,
+    this.callback,
     required this.isNarrowScreen,
   });
 
-  final double top;
-  final RxBool userLogin;
-  final String? userFace;
-  final VoidCallback? callback;
-  final HomeController? ctr;
-  final bool isNarrowScreen;
-
-  Widget buildLoggedInWidget(BuildContext context) {
-    return Stack(
-      children: [
-        NetworkImgLayer(
-          type: 'avatar',
-          width: 34,
-          height: 34,
-          src: userFace,
-        ),
-        Positioned.fill(
-          child: Material(
-            color: Colors.transparent,
-            child: InkWell(
-              onTap: () {
-                if (isNarrowScreen) {
-                  final mainController = Get.find<MainController>();
-                  if (mainController.useDrawerForUser) {
-                    mainController.scaffoldKey.currentState?.openDrawer();
-                  } else {
-                    Get.toNamed('/mine');
-                  }
-                } else {
-                  Get.toNamed('/mine');
-                }
-              },
-              splashColor: Theme.of(context)
-                  .colorScheme
-                  .primaryContainer
-                  .withValues(alpha: 0.3),
-              borderRadius: const BorderRadius.all(
-                Radius.circular(50),
-              ),
-            ),
-          ),
-        )
-      ],
-    );
-  }
-
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final state = ref.watch(homeProvider);
+    final mainState = ref.watch(mainAppProvider);
+
     return Row(
       children: [
         if (isNarrowScreen) ...[
-          Obx(
-            () => userLogin.value
-                ? buildLoggedInWidget(context)
-                : DefaultUser(
-                    callback: () => callback!(),
-                    isNarrowScreen: isNarrowScreen,
-                  ),
+          _UserAvatar(
+            userLogin: state.userLogin,
+            userFace: state.userFace,
+            useDrawer: mainState.useDrawerForUser,
+            callback: callback,
+            isNarrowScreen: isNarrowScreen,
           ),
           const SizedBox(width: 8),
         ],
-        HomeSearchBar(ctr: ctr),
+        HomeSearchBar(defaultSearch: state.defaultSearch),
         if (!isNarrowScreen) ...[
-          if (userLogin.value) ...[
+          if (state.userLogin) ...[
             const SizedBox(width: 4),
             ClipRect(
               child: IconButton(
-                onPressed: () => Get.toNamed('/whisper'),
+                onPressed: () => context.push('/message'),
                 icon: const Icon(Icons.notifications_none),
               ),
             ),
           ],
           const SizedBox(width: 8),
-          Obx(
-            () => userLogin.value
-                ? buildLoggedInWidget(context)
-                : DefaultUser(
-                    callback: () => callback!(),
-                    isNarrowScreen: isNarrowScreen,
-                  ),
+          _UserAvatar(
+            userLogin: state.userLogin,
+            userFace: state.userFace,
+            useDrawer: mainState.useDrawerForUser,
+            callback: callback,
+            isNarrowScreen: isNarrowScreen,
           ),
         ],
       ],
@@ -286,13 +255,58 @@ class UserInfoWidget extends StatelessWidget {
   }
 }
 
-class DefaultUser extends StatelessWidget {
-  const DefaultUser({super.key, this.callback, this.isNarrowScreen = false});
+class _UserAvatar extends ConsumerWidget {
+  final bool userLogin;
+  final String userFace;
+  final bool useDrawer;
   final Function? callback;
   final bool isNarrowScreen;
 
+  const _UserAvatar({
+    required this.userLogin,
+    required this.userFace,
+    required this.useDrawer,
+    this.callback,
+    required this.isNarrowScreen,
+  });
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    if (userLogin) {
+      return Stack(
+        children: [
+          NetworkImgLayer(
+            type: 'avatar',
+            width: 34,
+            height: 34,
+            src: userFace,
+          ),
+          Positioned.fill(
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: () {
+                  if (isNarrowScreen && useDrawer) {
+                    final mainNotifier = ref.read(mainAppProvider.notifier);
+                    mainNotifier.scaffoldKey.currentState?.openDrawer();
+                  } else {
+                    context.push('/mine');
+                  }
+                },
+                splashColor: Theme.of(context)
+                    .colorScheme
+                    .primaryContainer
+                    .withValues(alpha: 0.3),
+                borderRadius: const BorderRadius.all(
+                  Radius.circular(50),
+                ),
+              ),
+            ),
+          )
+        ],
+      );
+    }
+
     return SizedBox(
       width: 38,
       height: 38,
@@ -307,13 +321,9 @@ class DefaultUser extends StatelessWidget {
           }),
         ),
         onPressed: () {
-          if (isNarrowScreen) {
-            final mainController = Get.find<MainController>();
-            if (mainController.useDrawerForUser) {
-              mainController.scaffoldKey.currentState?.openDrawer();
-            } else {
-              callback?.call();
-            }
+          if (isNarrowScreen && useDrawer) {
+            final mainNotifier = ref.read(mainAppProvider.notifier);
+            mainNotifier.scaffoldKey.currentState?.openDrawer();
           } else {
             callback?.call();
           }
@@ -328,45 +338,13 @@ class DefaultUser extends StatelessWidget {
   }
 }
 
-class CustomTabs extends StatefulWidget {
-  const CustomTabs({super.key});
-
-  @override
-  State<CustomTabs> createState() => _CustomTabsState();
-}
-
-class _CustomTabsState extends State<CustomTabs> {
-  final HomeController _homeController = Get.put(HomeController());
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 36,
-      margin: const EdgeInsets.only(top: 4),
-      child: TabBar(
-        controller: _homeController.tabController,
-        tabs: [for (var i in _homeController.tabs) Tab(text: i['label'])],
-        isScrollable: true,
-        dividerColor: Colors.transparent,
-        onTap: (value) {
-          feedBack();
-          if (_homeController.initialIndex.value == value) {
-            _homeController.tabsCtrList[value]().animateToTop();
-          }
-          _homeController.initialIndex.value = value;
-        },
-      ),
-    );
-  }
-}
-
 class HomeSearchBar extends StatefulWidget {
+  final String defaultSearch;
+
   const HomeSearchBar({
     super.key,
-    required this.ctr,
+    required this.defaultSearch,
   });
-
-  final HomeController? ctr;
 
   @override
   State<HomeSearchBar> createState() => _HomeSearchBarState();
@@ -388,8 +366,11 @@ class _HomeSearchBarState extends State<HomeSearchBar> {
     if (closeView) {
       _searchController.closeView(null);
     }
+    final context = this.context;
     Future.delayed(const Duration(milliseconds: 100), () {
-      Get.toNamed('/search', parameters: {'keyword': keyword.trim()});
+      if (context.mounted) {
+        context.push('/search?keyword=${Uri.encodeComponent(keyword.trim())}');
+      }
     });
   }
 
@@ -398,131 +379,128 @@ class _HomeSearchBarState extends State<HomeSearchBar> {
     final isWideScreen = MediaQuery.of(context).size.width > 600;
     return Expanded(
       child: Center(
-        child: Obx(
-          () => ConstrainedBox(
-            constraints: BoxConstraints(
-              maxWidth: isWideScreen ? 500 : double.infinity,
-            ),
-            child: SearchAnchor(
-              searchController: _searchController,
-              viewHintText: widget.ctr!.defaultSearch.value,
-              viewOnSubmitted: (value) {
-                _onSearch(value);
-              },
-              viewTrailing: [
-                IconButton(
-                  onPressed: () {
-                    _onSearch(_searchController.text);
-                  },
-                  icon: const Icon(Icons.search),
-                ),
-              ],
-              builder: (context, controller) {
-                return SearchBar(
-                  controller: controller,
-                  hintText: widget.ctr!.defaultSearch.value,
-                  leading: const Icon(Icons.search_outlined),
-                  onTap: () {
-                    controller.openView();
-                  },
-                  onChanged: (_) {
-                    controller.openView();
-                  },
-                  onSubmitted: (value) {
-                    _onSearch(value);
-                  },
-                  elevation: WidgetStateProperty.resolveWith((states) {
-                    if (states.contains(WidgetState.focused)) {
-                      return 3.0;
-                    }
-                    return 0.0;
-                  }),
-                );
-              },
-              suggestionsBuilder: (context, controller) {
-                final query = controller.text;
-                final filteredHistory =
-                    _historyService.filterSearchHistory(query);
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxWidth: isWideScreen ? 500 : double.infinity,
+          ),
+          child: SearchAnchor(
+            searchController: _searchController,
+            viewHintText: widget.defaultSearch,
+            viewOnSubmitted: (value) {
+              _onSearch(value);
+            },
+            viewTrailing: [
+              IconButton(
+                onPressed: () {
+                  _onSearch(_searchController.text);
+                },
+                icon: const Icon(Icons.search),
+              ),
+            ],
+            builder: (context, controller) {
+              return SearchBar(
+                controller: controller,
+                hintText: widget.defaultSearch,
+                leading: const Icon(Icons.search_outlined),
+                onTap: () {
+                  controller.openView();
+                },
+                onChanged: (_) {
+                  controller.openView();
+                },
+                onSubmitted: (value) {
+                  _onSearch(value);
+                },
+                elevation: WidgetStateProperty.resolveWith((states) {
+                  if (states.contains(WidgetState.focused)) {
+                    return 3.0;
+                  }
+                  return 0.0;
+                }),
+              );
+            },
+            suggestionsBuilder: (context, controller) {
+              final query = controller.text;
+              final filteredHistory = _historyService.filterSearchHistory(query);
 
-                if (filteredHistory.isEmpty && query.isEmpty) {
-                  return [
-                    Center(
-                      child: Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Text(
-                          '暂无搜索历史',
-                          style: TextStyle(
-                            color: Theme.of(context).colorScheme.outline,
-                          ),
+              if (filteredHistory.isEmpty && query.isEmpty) {
+                return [
+                  Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Text(
+                        '暂无搜索历史',
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.outline,
                         ),
                       ),
                     ),
-                  ];
-                }
-
-                final List<Widget> suggestions = [
-                  if (_historyService.currentHistory.isNotEmpty) ...[
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16.0,
-                        vertical: 8.0,
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            '搜索历史',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Theme.of(context).colorScheme.outline,
-                            ),
-                          ),
-                          TextButton(
-                            onPressed: () {
-                              setState(() {});
-                              _historyService.clearSearchHistory();
-                            },
-                            style: TextButton.styleFrom(
-                              minimumSize: Size.zero,
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 4,
-                              ),
-                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                            ),
-                            child: const Text('清空'),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
+                  ),
                 ];
+              }
 
-                suggestions.addAll(
-                  filteredHistory.map((item) {
-                    return ListTile(
-                      leading: const Icon(Icons.history, size: 20),
-                      title: Text(item),
-                      trailing: IconButton(
-                        icon: const Icon(Icons.close, size: 18),
-                        onPressed: () {
-                          setState(() {});
-                          _historyService.removeSearchHistory(item);
-                        },
-                      ),
-                      onTap: () {
-                        controller.closeView(item);
-                        _onSearch(item, closeView: false);
+              final List<Widget> suggestions = [
+                if (_historyService.currentHistory.isNotEmpty) ...[
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16.0,
+                      vertical: 8.0,
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          '搜索历史',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Theme.of(context).colorScheme.outline,
+                          ),
+                        ),
+                        TextButton(
+                          onPressed: () {
+                            setState(() {});
+                            _historyService.clearSearchHistory();
+                          },
+                          style: TextButton.styleFrom(
+                            minimumSize: Size.zero,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          ),
+                          child: const Text('清空'),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ];
+
+              suggestions.addAll(
+                filteredHistory.map((item) {
+                  return ListTile(
+                    leading: const Icon(Icons.history, size: 20),
+                    title: Text(item),
+                    trailing: IconButton(
+                      icon: const Icon(Icons.close, size: 18),
+                      onPressed: () {
+                        setState(() {});
+                        _historyService.removeSearchHistory(item);
                       },
-                      dense: true,
-                      visualDensity: VisualDensity.compact,
-                    );
-                  }),
-                );
+                    ),
+                    onTap: () {
+                      controller.closeView(item);
+                      _onSearch(item, closeView: false);
+                    },
+                    dense: true,
+                    visualDensity: VisualDensity.compact,
+                  );
+                }),
+              );
 
-                return suggestions;
-              },
-            ),
+              return suggestions;
+            },
           ),
         ),
       ),

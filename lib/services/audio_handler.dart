@@ -1,5 +1,4 @@
 import 'package:audio_service/audio_service.dart';
-import 'package:hive/hive.dart';
 import 'package:piliotto/utils/storage.dart';
 
 Future<VideoPlayerServiceHandler> initAudioService() async {
@@ -20,7 +19,6 @@ Future<VideoPlayerServiceHandler> initAudioService() async {
 
 class VideoPlayerServiceHandler extends BaseAudioHandler with SeekHandler {
   static final List<MediaItem> _item = [];
-  Box setting = GStrorage.setting;
   bool enableBackgroundPlay = false;
 
   VideoPlayerServiceHandler() {
@@ -28,8 +26,12 @@ class VideoPlayerServiceHandler extends BaseAudioHandler with SeekHandler {
   }
 
   void revalidateSetting() {
-    enableBackgroundPlay =
-        setting.get(SettingBoxKey.enableBackgroundPlay, defaultValue: false);
+    try {
+      enableBackgroundPlay =
+          GStrorage.setting.get(SettingBoxKey.enableBackgroundPlay, defaultValue: false);
+    } catch (_) {
+      enableBackgroundPlay = false;
+    }
   }
 
   Future<void> setMediaItem(MediaItem newMediaItem) async {

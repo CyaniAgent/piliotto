@@ -1,4 +1,4 @@
-import 'package:get/get.dart';
+import 'package:flutter/widgets.dart';
 
 class ResponsiveUtil {
   // 响应式断点
@@ -10,12 +10,16 @@ class ResponsiveUtil {
 
   // 获取屏幕宽度
   static double get screenWidth {
-    return Get.size.width;
+    return WidgetsBinding
+            .instance.platformDispatcher.views.first.physicalSize.width /
+        WidgetsBinding.instance.platformDispatcher.views.first.devicePixelRatio;
   }
 
   // 获取屏幕高度
   static double get screenHeight {
-    return Get.size.height;
+    return WidgetsBinding
+            .instance.platformDispatcher.views.first.physicalSize.height /
+        WidgetsBinding.instance.platformDispatcher.views.first.devicePixelRatio;
   }
 
   // 判断是否为超小屏幕

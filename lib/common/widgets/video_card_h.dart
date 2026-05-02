@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
+import 'package:go_router/go_router.dart';
 
 import 'package:piliotto/utils/feed_back.dart';
 import 'package:piliotto/utils/image_save.dart';
@@ -107,7 +108,8 @@ class VideoCardH extends StatelessWidget {
     final String heroTag = Utils.makeHeroTag(_videoId);
     return InkWell(
       onTap: () async {
-        Get.toNamed('/video?vid=$_videoId', arguments: {
+        context.push('/video', extra: {
+          'vid': _videoId,
           'pic': _coverUrl,
           'heroTag': heroTag,
         });
@@ -354,7 +356,8 @@ class MorePanel extends StatelessWidget {
             TextButton(
               onPressed: () async {
                 try {
-                  await Get.find<IUserRepository>().blockUser(blockedId: _ownerId);
+                  await Get.find<IUserRepository>()
+                      .blockUser(blockedId: _ownerId);
                   SmartDialog.dismiss();
                   SmartDialog.showToast('拉黑成功');
                 } catch (error) {
@@ -378,7 +381,7 @@ class MorePanel extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           InkWell(
-            onTap: () => Get.back(),
+            onTap: () => Navigator.of(context).pop(),
             child: Container(
               height: 35,
               padding: const EdgeInsets.only(bottom: 2),

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:get/get.dart';
 import 'package:piliotto/common/constants.dart';
 import 'package:piliotto/utils/feed_back.dart';
 
@@ -57,7 +56,7 @@ class ActionItem extends StatelessWidget {
       },
       borderRadius: StyleString.mdRadius,
       child: SizedBox(
-        width: (Get.size.width - 24) / 5,
+        width: (MediaQuery.sizeOf(context).width - 24) / 5,
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [

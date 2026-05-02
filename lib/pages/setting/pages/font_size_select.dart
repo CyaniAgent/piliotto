@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:hive/hive.dart';
 import 'package:piliotto/utils/storage.dart';
 
 class FontSizeSelectPage extends StatefulWidget {
@@ -11,7 +10,6 @@ class FontSizeSelectPage extends StatefulWidget {
 }
 
 class _FontSizeSelectPageState extends State<FontSizeSelectPage> {
-  Box setting = GStrorage.setting;
   List<double> list = [0.9, 0.95, 1.0, 1.05, 1.1, 1.15, 1.2, 1.25, 1.3];
   late double minsize;
   late double maxSize;
@@ -22,14 +20,20 @@ class _FontSizeSelectPageState extends State<FontSizeSelectPage> {
     super.initState();
     minsize = list.first;
     maxSize = list.last;
-    currentSize =
-        setting.get(SettingBoxKey.defaultTextScale, defaultValue: 1.0);
+    try {
+      currentSize =
+          GStrorage.setting.get(SettingBoxKey.defaultTextScale, defaultValue: 1.0);
+    } catch (_) {
+      currentSize = 1.0;
+    }
   }
 
   void setFontSize() {
-    setting.put(SettingBoxKey.defaultTextScale, currentSize);
+    try {
+      GStrorage.setting.put(SettingBoxKey.defaultTextScale, currentSize);
+    } catch (_) {}
     Get.forceAppUpdate();
-    Get.back();
+    Navigator.of(context).pop();
   }
 
   @override

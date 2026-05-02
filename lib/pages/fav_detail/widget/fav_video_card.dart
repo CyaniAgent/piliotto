@@ -1,10 +1,10 @@
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
-import 'package:get/get.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:piliotto/common/constants.dart';
 import 'package:piliotto/common/widgets/stat/danmu.dart';
 import 'package:piliotto/common/widgets/stat/view.dart';
-import 'package:piliotto/utils/id_utils.dart';
+import 'package:piliotto/router/app_router.dart';
 import 'package:piliotto/utils/image_save.dart';
 import 'package:piliotto/utils/utils.dart';
 import 'package:piliotto/common/widgets/network_img_layer.dart';
@@ -27,14 +27,11 @@ class FavVideoCardH extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     int id = videoItem.id;
-    String bvid = videoItem.bvid ?? IdUtils.av2bv(id);
     String heroTag = Utils.makeHeroTag(id);
     return InkWell(
       onTap: () async {
-        Map<String, String> parameters = {
-          'bvid': bvid,
-        };
-        Get.toNamed('/video', parameters: parameters, arguments: {
+        context.push('/video', extra: {
+          'vid': id,
           'videoItem': videoItem,
           'heroTag': heroTag,
           'videoType': 'video',
@@ -196,15 +193,18 @@ class VideoContent extends StatelessWidget {
                         padding: WidgetStateProperty.all(EdgeInsets.zero),
                       ),
                       onPressed: () {
+                        final ctx = rootNavigatorKey.currentContext;
+                        if (ctx == null) return;
                         showDialog(
-                          context: Get.context!,
+                          context: ctx,
                           builder: (context) {
                             return AlertDialog(
                               title: const Text('提示'),
                               content: const Text('要取消收藏吗?'),
                               actions: [
                                 TextButton(
-                                    onPressed: () => Get.back(),
+                                    onPressed: () =>
+                                        Navigator.of(context).pop(),
                                     child: Text(
                                       '取消',
                                       style: TextStyle(
@@ -215,7 +215,9 @@ class VideoContent extends StatelessWidget {
                                 TextButton(
                                   onPressed: () async {
                                     await callFn!();
-                                    Get.back();
+                                    if (context.mounted) {
+                                      Navigator.of(context).pop();
+                                    }
                                   },
                                   child: const Text('确定取消'),
                                 )

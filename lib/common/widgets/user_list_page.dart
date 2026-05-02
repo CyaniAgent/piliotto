@@ -1,6 +1,6 @@
 import 'package:easy_debounce/easy_throttle.dart';
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
+import 'package:go_router/go_router.dart';
 import 'package:piliotto/ottohub/api/models/following.dart';
 import 'package:piliotto/common/widgets/network_img_layer.dart';
 import 'package:piliotto/common/widgets/no_data.dart';
@@ -12,10 +12,10 @@ class UserListPage extends StatefulWidget {
   final Future<void> Function() onRefresh;
   final Future<void> Function() onLoad;
   final Future<void> Function() onInit;
-  final RxList<FollowingUser> userList;
-  final RxBool isLoading;
-  final RxBool hasMore;
-  final RxString loadingText;
+  final List<FollowingUser> userList;
+  final bool isLoading;
+  final bool hasMore;
+  final String loadingText;
 
   const UserListPage({
     super.key,
@@ -73,82 +73,84 @@ class _UserListPageState extends State<UserListPage> {
       ),
       body: RefreshIndicator(
         onRefresh: widget.onRefresh,
-        child: Obx(() {
-          if (widget.isLoading.value && widget.userList.isEmpty) {
-            return const Center(child: CircularProgressIndicator());
-          }
+        child: Builder(
+          builder: (context) {
+            if (widget.isLoading && widget.userList.isEmpty) {
+              return const Center(child: CircularProgressIndicator());
+            }
 
-          if (widget.userList.isEmpty) {
-            return const CustomScrollView(
-              slivers: [
-                SliverToBoxAdapter(child: NoData()),
-              ],
-              physics: AlwaysScrollableScrollPhysics(),
-            );
-          }
+            if (widget.userList.isEmpty) {
+              return const CustomScrollView(
+                slivers: [
+                  SliverToBoxAdapter(child: NoData()),
+                ],
+                physics: AlwaysScrollableScrollPhysics(),
+              );
+            }
 
-          return ListView.builder(
-            controller: _scrollController,
-            itemCount: widget.userList.length + 1,
-            itemBuilder: (context, index) {
-              if (index == widget.userList.length) {
-                return Container(
-                  height: MediaQuery.of(context).padding.bottom + 60,
-                  padding: EdgeInsets.only(
-                    bottom: MediaQuery.of(context).padding.bottom,
+            return ListView.builder(
+              controller: _scrollController,
+              itemCount: widget.userList.length + 1,
+              itemBuilder: (context, index) {
+                if (index == widget.userList.length) {
+                  return Container(
+                    height: MediaQuery.of(context).padding.bottom + 60,
+                    padding: EdgeInsets.only(
+                      bottom: MediaQuery.of(context).padding.bottom,
+                    ),
+                    child: Center(
+                      child: Text(
+                        widget.loadingText,
+                        style: TextStyle(
+                          color: colorScheme.outline,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ),
+                  );
+                }
+
+                final user = widget.userList[index];
+                final heroTag = Utils.makeHeroTag(user.uid);
+
+                return ListTile(
+                  onTap: () {
+                    feedBack();
+                    context.push(
+                      '/member?mid=${user.uid}',
+                      extra: {
+                        'face': user.avatarUrl,
+                        'heroTag': heroTag,
+                      },
+                    );
+                  },
+                  leading: Hero(
+                    tag: heroTag,
+                    child: NetworkImgLayer(
+                      width: 40,
+                      height: 40,
+                      type: 'avatar',
+                      src: user.avatarUrl,
+                    ),
                   ),
-                  child: Center(
-                    child: Obx(() => Text(
-                          widget.loadingText.value,
-                          style: TextStyle(
-                            color: colorScheme.outline,
-                            fontSize: 13,
-                          ),
-                        )),
+                  title: Text(
+                    user.username,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 15,
+                      color: colorScheme.onSurface,
+                    ),
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 4,
                   ),
                 );
-              }
-
-              final user = widget.userList[index];
-              final heroTag = Utils.makeHeroTag(user.uid);
-
-              return ListTile(
-                onTap: () {
-                  feedBack();
-                  Get.toNamed(
-                    '/member?mid=${user.uid}',
-                    arguments: {
-                      'face': user.avatarUrl,
-                      'heroTag': heroTag,
-                    },
-                  );
-                },
-                leading: Hero(
-                  tag: heroTag,
-                  child: NetworkImgLayer(
-                    width: 40,
-                    height: 40,
-                    type: 'avatar',
-                    src: user.avatarUrl,
-                  ),
-                ),
-                title: Text(
-                  user.username,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 15,
-                    color: colorScheme.onSurface,
-                  ),
-                ),
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 4,
-                ),
-              );
-            },
-          );
-        }),
+              },
+            );
+          },
+        ),
       ),
     );
   }

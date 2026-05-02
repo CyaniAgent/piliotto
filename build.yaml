@@ -1,0 +1,7 @@
+targets:
+  $default:
+    builders:
+      riverpod_generator:riverpod_generator:
+        generate_for:
+          - lib/**/*.dart
+          - test/**/*.dart

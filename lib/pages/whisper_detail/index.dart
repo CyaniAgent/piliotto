@@ -1,2 +1,2 @@
-export 'controller.dart';
+export 'provider.dart';
 export 'view.dart';

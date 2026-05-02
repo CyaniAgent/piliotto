@@ -2,7 +2,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
-import 'package:get/get.dart';
+import 'package:go_router/go_router.dart';
 import 'package:piliotto/utils/feed_back.dart';
 import 'package:piliotto/utils/utils.dart';
 
@@ -99,11 +99,10 @@ class IntroDetail extends StatelessWidget {
                     color: Theme.of(context).colorScheme.primary), // 设置颜色为蓝色
                 recognizer: TapGestureRecognizer()
                   ..onTap = () {
-                    // 处理点击事件
                     try {
-                      Get.toNamed(
+                      context.push(
                         '/webview',
-                        parameters: {
+                        extra: {
                           'url': match.group(0)!,
                           'type': 'url',
                           'pageTitle': match.group(0)!,
@@ -134,9 +133,9 @@ class IntroDetail extends StatelessWidget {
             style: TextStyle(color: colorSchemePrimary),
             recognizer: TapGestureRecognizer()
               ..onTap = () {
-                Get.toNamed(
+                context.push(
                   '/member?mid=${currentDesc.bizId}',
-                  arguments: {'face': '', 'heroTag': heroTag},
+                  extra: {'face': '', 'heroTag': heroTag},
                 );
               },
           );

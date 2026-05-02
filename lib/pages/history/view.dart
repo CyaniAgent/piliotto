@@ -1,49 +1,54 @@
 import 'package:easy_debounce/easy_throttle.dart';
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:piliotto/common/skeleton/video_card_h.dart';
 import 'package:piliotto/common/widgets/http_error.dart';
 import 'package:piliotto/common/widgets/no_data.dart';
-import 'package:piliotto/pages/history/index.dart';
+import 'package:piliotto/pages/history/provider.dart';
 import 'package:piliotto/utils/route_push.dart';
 
 import 'widgets/item.dart';
 
-class HistoryPage extends StatefulWidget {
+class HistoryPage extends ConsumerStatefulWidget {
   const HistoryPage({super.key});
 
   @override
-  State<HistoryPage> createState() => _HistoryPageState();
+  ConsumerState<HistoryPage> createState() => _HistoryPageState();
 }
 
-class _HistoryPageState extends State<HistoryPage> {
-  final HistoryController _historyController = Get.put(HistoryController());
-  Future? _futureBuilderFuture;
+class _HistoryPageState extends ConsumerState<HistoryPage> {
+  Future<Map<String, dynamic>>? _futureBuilderFuture;
   late ScrollController scrollController;
 
   @override
   void initState() {
-    _futureBuilderFuture = _historyController.queryHistoryList();
     super.initState();
-    scrollController = _historyController.scrollController;
+    final notifier = ref.read(historyProvider.notifier);
+    scrollController = notifier.scrollController;
     scrollController.addListener(
       () {
+        final state = ref.read(historyProvider);
         if (scrollController.position.pixels >=
             scrollController.position.maxScrollExtent - 300) {
-          if (!_historyController.isLoadingMore.value) {
+          if (!state.isLoadingMore) {
             EasyThrottle.throttle('history', const Duration(seconds: 1), () {
-              _historyController.onLoad();
+              notifier.onLoad();
             });
           }
         }
       },
     );
+    _futureBuilderFuture = notifier.queryHistoryList();
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _historyController.updateCrossAxisCount();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        ref.read(historyProvider.notifier).updateCrossAxisCount();
+      }
+    });
   }
 
   @override
@@ -54,6 +59,9 @@ class _HistoryPageState extends State<HistoryPage> {
 
   @override
   Widget build(BuildContext context) {
+    final state = ref.watch(historyProvider);
+    final notifier = ref.read(historyProvider.notifier);
+
     return Scaffold(
       appBar: AppBar(
         titleSpacing: 0,
@@ -67,7 +75,7 @@ class _HistoryPageState extends State<HistoryPage> {
             onSelected: (String type) {
               switch (type) {
                 case 'clear':
-                  _historyController.onClearHistory();
+                  notifier.onClearHistory();
                   break;
                 default:
               }
@@ -84,11 +92,11 @@ class _HistoryPageState extends State<HistoryPage> {
       ),
       body: RefreshIndicator(
         onRefresh: () async {
-          await _historyController.onRefresh();
+          await notifier.onRefresh();
           return;
         },
         child: CustomScrollView(
-          controller: _historyController.scrollController,
+          controller: scrollController,
           slivers: [
             SliverPadding(
               padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
@@ -101,57 +109,48 @@ class _HistoryPageState extends State<HistoryPage> {
                     }
                     Map? data = snapshot.data;
                     if (data != null && data['status']) {
-                      return Obx(
-                        () => _historyController.historyList.isNotEmpty
-                            ? SliverGrid(
-                                gridDelegate:
-                                    SliverGridDelegateWithFixedCrossAxisCount(
-                                  crossAxisCount:
-                                      _historyController.crossAxisCount.value,
-                                  mainAxisSpacing: 16,
-                                  crossAxisSpacing: 16,
-                                  childAspectRatio: 3 / 1,
-                                ),
-                                delegate: SliverChildBuilderDelegate(
-                                    (context, index) {
-                                  return HistoryItem(
-                                    videoItem:
-                                        _historyController.historyList[index],
-                                  );
-                                },
-                                    childCount:
-                                        _historyController.historyList.length),
-                              )
-                            : SliverToBoxAdapter(
-                                child: _historyController.isLoadingMore.value
-                                    ? const Center(child: Text('加载中'))
-                                    : const NoData(),
+                      return state.historyList.isNotEmpty
+                          ? SliverGrid(
+                              gridDelegate:
+                                  SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: state.crossAxisCount,
+                                mainAxisSpacing: 16,
+                                crossAxisSpacing: 16,
+                                childAspectRatio: 3 / 1,
                               ),
-                      );
+                              delegate:
+                                  SliverChildBuilderDelegate((context, index) {
+                                return HistoryItem(
+                                  videoItem: state.historyList[index],
+                                );
+                              }, childCount: state.historyList.length),
+                            )
+                          : SliverToBoxAdapter(
+                              child: state.isLoadingMore
+                                  ? const Center(child: Text('加载中'))
+                                  : const NoData(),
+                            );
                     } else {
-                      return SliverToBoxAdapter(
-                        child: HttpError(
-                          errMsg: data?['msg'] ?? '请求异常',
-                          btnText: data?['code'] == -101 ? '去登录' : null,
-                          fn: () {
-                            if (data?['code'] == -101) {
-                              RoutePush.loginRedirectPush();
-                            } else {
-                              setState(() {
-                                _futureBuilderFuture =
-                                    _historyController.queryHistoryList();
-                              });
-                            }
-                          },
-                        ),
+                      return HttpError(
+                        isSliver: true,
+                        errMsg: data?['msg'] ?? '请求异常',
+                        btnText: data?['code'] == -101 ? '去登录' : null,
+                        fn: () {
+                          if (data?['code'] == -101) {
+                            RoutePush.loginRedirectPush();
+                          } else {
+                            setState(() {
+                              _futureBuilderFuture =
+                                  notifier.queryHistoryList();
+                            });
+                          }
+                        },
                       );
                     }
                   } else {
                     return SliverGrid(
-                      gridDelegate:
-                          SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount:
-                            _historyController.crossAxisCount.value,
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: state.crossAxisCount,
                         mainAxisSpacing: 16,
                         crossAxisSpacing: 16,
                         childAspectRatio: 3 / 1,

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
+import 'package:go_router/go_router.dart';
 import 'package:piliotto/common/widgets/network_img_layer.dart';
 import 'package:piliotto/models/video_detail_res.dart';
 import 'package:piliotto/utils/utils.dart';
@@ -21,9 +21,9 @@ class StaffUpItem extends StatelessWidget {
       children: [
         const SizedBox(height: 15),
         GestureDetector(
-          onTap: () => Get.toNamed(
+          onTap: () => context.push(
             '/member?mid=${item.mid}',
-            arguments: {'face': item.face, 'heroTag': heroTag},
+            extra: {'face': item.face, 'heroTag': heroTag},
           ),
           child: Hero(
             tag: heroTag,
