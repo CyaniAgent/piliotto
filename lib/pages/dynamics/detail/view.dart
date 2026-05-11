@@ -67,6 +67,7 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
     scrollController = _dynamicDetailController.scrollController;
     scrollController.addListener(
       () {
+        if (!scrollController.hasClients) return;
         if (scrollController.position.pixels >=
             scrollController.position.maxScrollExtent - 300) {
           EasyThrottle.throttle('replylist', const Duration(seconds: 2), () {

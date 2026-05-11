@@ -218,14 +218,16 @@ class DynamicsController extends GetxController {
     }
   }
 
-  Future<List<DynamicItemModel>> _queryLatestBlogs({String type = 'init'}) async {
+  Future<List<DynamicItemModel>> _queryLatestBlogs(
+      {String type = 'init'}) async {
     return _dynamicsRepo.getNewBlogs(
       offset: _tabOffsetCache['latest']!,
       num: 10,
     );
   }
 
-  Future<List<DynamicItemModel>> _queryPopularBlogs({String type = 'init'}) async {
+  Future<List<DynamicItemModel>> _queryPopularBlogs(
+      {String type = 'init'}) async {
     return _dynamicsRepo.getPopularBlogs(
       offset: _tabOffsetCache['popular']!,
       num: 10,
@@ -259,10 +261,13 @@ class DynamicsController extends GetxController {
     page = 1;
     initialValue.value = value;
     await queryFollowDynamic();
-    scrollController.jumpTo(0);
+    if (scrollController.hasClients) {
+      scrollController.jumpTo(0);
+    }
   }
 
-  Future<bool> pushDetail(DynamicItemModel? item, int floor, {String action = 'all'}) async {
+  Future<bool> pushDetail(DynamicItemModel? item, int floor,
+      {String action = 'all'}) async {
     feedBack();
     if (action == 'comment') {
       Get.toNamed('/dynamicDetail',
@@ -291,6 +296,7 @@ class DynamicsController extends GetxController {
   }
 
   void animateToTop() async {
+    if (!scrollController.hasClients) return;
     if (scrollController.offset >=
         MediaQuery.of(Get.context!).size.height * 5) {
       scrollController.jumpTo(0);

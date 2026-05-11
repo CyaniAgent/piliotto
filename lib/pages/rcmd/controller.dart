@@ -93,6 +93,7 @@ class RcmdController extends GetxController {
 
   // 返回顶部
   void animateToTop() async {
+    if (!scrollController.hasClients) return;
     if (scrollController.offset >=
         MediaQuery.of(Get.context!).size.height * 5) {
       scrollController.jumpTo(0);
