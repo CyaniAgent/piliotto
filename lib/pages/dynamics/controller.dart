@@ -64,6 +64,10 @@ class DynamicsController extends GetxController {
     'latest': false,
     'popular': false,
   };
+  final Map<String, ScrollController> tabScrollControllers = {
+    'latest': ScrollController(),
+    'popular': ScrollController(),
+  };
   RxBool hasMore = true.obs;
   RxString wideScreenLayout = 'center'.obs;
 
@@ -92,6 +96,9 @@ class DynamicsController extends GetxController {
   void onClose() {
     _stopPolling();
     scrollController.dispose();
+    for (final controller in tabScrollControllers.values) {
+      controller.dispose();
+    }
     super.onClose();
   }
 
@@ -144,8 +151,23 @@ class DynamicsController extends GetxController {
 
     await queryFollowDynamic(type: 'init');
 
-    if (scrollController.hasClients) {
-      scrollController.jumpTo(0);
+    scrollToTop();
+  }
+
+  void scrollToTop([String? tab]) {
+    final targetTab = tab ?? currentTab.value;
+    final controller = tabScrollControllers[targetTab];
+
+    if (controller != null && controller.hasClients) {
+      if (controller.offset >= 1000) {
+        controller.jumpTo(0);
+      } else {
+        controller.animateTo(
+          0,
+          duration: const Duration(milliseconds: 500),
+          curve: Curves.easeInOut,
+        );
+      }
     }
   }
 

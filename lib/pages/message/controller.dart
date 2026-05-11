@@ -10,6 +10,8 @@ class MessageController extends GetxController {
   RxString errorMessage = ''.obs;
 
   Rxn<Friend> selectedFriend = Rxn<Friend>();
+  Rxn<Friend> currentUser = Rxn<Friend>();
+  RxList<Friend> userList = <Friend>[].obs;
 
   int _offset = 0;
   final int _pageSize = 20;
@@ -18,8 +20,20 @@ class MessageController extends GetxController {
   @override
   void onInit() {
     super.onInit();
+    _initCurrentUser();
     _checkInitialFriend();
     loadFriendList();
+  }
+
+  void _initCurrentUser() {
+    final userInfo = GStrorage.userInfo.get('userInfoCache');
+    if (userInfo != null) {
+      currentUser.value = Friend(
+        uid: userInfo.mid ?? 0,
+        username: userInfo.uname ?? '',
+        avatarUrl: userInfo.face,
+      );
+    }
   }
 
   void _checkInitialFriend() {
@@ -52,7 +66,7 @@ class MessageController extends GetxController {
     errorMessage.value = '';
 
     try {
-      final myUid = GStrorage.userInfo.get('userInfoCache')?.mid ?? 0;
+      final myUid = currentUser.value?.uid ?? GStrorage.userInfo.get('userInfoCache')?.mid ?? 0;
 
       final allFriends = await _messageRepo.getMergedFriendList(
         uid: myUid,
@@ -65,11 +79,20 @@ class MessageController extends GetxController {
       }
 
       friendList.addAll(allFriends);
+      _updateUserList(allFriends);
       _offset += allFriends.length;
     } catch (e) {
       errorMessage.value = '加载失败: $e';
     } finally {
       isLoading.value = false;
+    }
+  }
+
+  void _updateUserList(List<Friend> friends) {
+    for (final friend in friends) {
+      if (!userList.any((u) => u.uid == friend.uid)) {
+        userList.add(friend);
+      }
     }
   }
 
@@ -79,5 +102,15 @@ class MessageController extends GetxController {
 
   void clearSelection() {
     selectedFriend.value = null;
+  }
+
+  void switchUser(Friend user) {
+    currentUser.value = user;
+    selectedFriend.value = null;
+    friendList.clear();
+    userList.clear();
+    _offset = 0;
+    _hasMore = true;
+    loadFriendList(refresh: true);
   }
 }

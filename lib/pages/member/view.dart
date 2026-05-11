@@ -2,9 +2,11 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:piliotto/common/mixins/scroll_to_top.dart';
 import 'package:piliotto/common/skeleton/video_card_h.dart';
 import 'package:piliotto/common/widgets/network_img_layer.dart';
 import 'package:piliotto/common/widgets/no_data.dart';
+import 'package:piliotto/common/widgets/page_widgets.dart';
 import 'package:piliotto/common/widgets/video_card_h.dart';
 import 'package:piliotto/pages/dynamics/widgets/dynamic_panel.dart';
 import 'package:piliotto/pages/fav/index.dart';
@@ -21,7 +23,7 @@ class MemberPage extends StatefulWidget {
   State<MemberPage> createState() => _MemberPageState();
 }
 
-class _MemberPageState extends State<MemberPage> with TickerProviderStateMixin {
+class _MemberPageState extends State<MemberPage> with TickerProviderStateMixin, ScrollToTopMixin {
   late String heroTag;
   late MemberController _memberController;
   late MemberDynamicsController _dynamicsController;
@@ -60,23 +62,11 @@ class _MemberPageState extends State<MemberPage> with TickerProviderStateMixin {
   void _onTapTab(int index) {
     feedBack();
     if (index == _previousTabIndex) {
-      _scrollToTop();
+      scrollToTop(_scrollController);
     }
     _previousTabIndex = index;
     _tabController.animateTo(index);
     _loadTabData(index);
-  }
-
-  void _scrollToTop() {
-    if (_scrollController.hasClients) {
-      if (_scrollController.offset >= MediaQuery.of(context).size.height * 3) {
-        _scrollController.jumpTo(0);
-      } else {
-        _scrollController.animateTo(0,
-            duration: const Duration(milliseconds: 500),
-            curve: Curves.easeInOut);
-      }
-    }
   }
 
   Future<void> _loadTabData(int index) async {
@@ -170,7 +160,7 @@ class _MemberPageState extends State<MemberPage> with TickerProviderStateMixin {
         headerSliverBuilder: (context, innerBoxIsScrolled) => [
           _buildSliverAppBar(context, theme),
           SliverPersistentHeader(
-            delegate: _SliverTabBarDelegate(
+            delegate: SliverTabBarDelegate(
               TabBar(
                 controller: _tabController,
                 tabs: _tabs.map((t) => Tab(text: t)).toList(),
@@ -513,37 +503,6 @@ class _MemberPageState extends State<MemberPage> with TickerProviderStateMixin {
       ],
     );
   }
-}
-
-class _SliverTabBarDelegate extends SliverPersistentHeaderDelegate {
-  final TabBar tabBar;
-
-  _SliverTabBarDelegate(this.tabBar);
-
-  @override
-  double get minExtent => 42;
-
-  @override
-  double get maxExtent => 42;
-
-  @override
-  Widget build(
-      BuildContext context, double shrinkOffset, bool overlapsContent) {
-    return Container(
-      color: Theme.of(context).colorScheme.surface,
-      child: SizedBox(
-        width: double.infinity,
-        height: 42,
-        child: Align(
-          alignment: Alignment.center,
-          child: tabBar,
-        ),
-      ),
-    );
-  }
-
-  @override
-  bool shouldRebuild(_SliverTabBarDelegate oldDelegate) => false;
 }
 
 class _VideoTabPage extends StatefulWidget {

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:piliotto/ottohub/api/models/message.dart';
@@ -55,10 +57,69 @@ class _MessagePageState extends State<MessagePage> {
       appBar: AppBar(
         title: const Text('消息'),
         centerTitle: true,
+        actions: [
+          if (isWideScreen)
+            IconButton(
+              onPressed: () => _showUserSwitcher(context),
+              icon: const Icon(Icons.swap_horiz),
+              tooltip: '切换用户',
+            ),
+        ],
       ),
-      body: isWideScreen
-          ? _buildWideLayout(theme)
-          : _buildNarrowLayout(theme),
+      body: isWideScreen ? _buildWideLayout(theme) : _buildNarrowLayout(theme),
+    );
+  }
+
+  void _showUserSwitcher(BuildContext context) {
+    final theme = Theme.of(context);
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('切换用户'),
+        content: Obx(() {
+          if (controller.userList.isEmpty) {
+            return const Text('暂无其他用户');
+          }
+          return SizedBox(
+            width: 300,
+            height: 300,
+            child: ListView.builder(
+              shrinkWrap: true,
+              itemCount: controller.userList.length,
+              itemBuilder: (context, index) {
+                final user = controller.userList[index];
+                final isSelected =
+                    controller.currentUser.value?.uid == user.uid;
+                return ListTile(
+                  leading: CircleAvatar(
+                    radius: 20,
+                    backgroundImage:
+                        user.avatarUrl != null && user.avatarUrl!.isNotEmpty
+                            ? NetworkImage(user.avatarUrl!)
+                            : null,
+                    backgroundColor: theme.colorScheme.primaryContainer,
+                    child: user.avatarUrl == null || user.avatarUrl!.isEmpty
+                        ? Icon(Icons.person,
+                            color: theme.colorScheme.onPrimaryContainer)
+                        : null,
+                  ),
+                  title: Text(user.username),
+                  subtitle: Text('UID: ${user.uid}'),
+                  trailing: isSelected
+                      ? Icon(Icons.check_circle,
+                          color: theme.colorScheme.primary)
+                      : null,
+                  selected: isSelected,
+                  onTap: () {
+                    controller.switchUser(user);
+                    Navigator.of(context).pop();
+                  },
+                );
+              },
+            ),
+          );
+        }),
+      ),
     );
   }
 
@@ -98,6 +159,7 @@ class _MessagePageState extends State<MessagePage> {
               );
             }
             return _ChatDetailPanel(
+              key: ValueKey(friend.uid),
               friendUid: friend.uid,
               friendName: friend.username,
               friendAvatar: friend.avatarUrl,
@@ -159,7 +221,9 @@ class _MessagePageState extends State<MessagePage> {
     return Obx(() {
       final isSelected = controller.selectedFriend.value?.uid == friend.uid;
       return Container(
-        color: isSelected ? theme.colorScheme.primaryContainer.withAlpha(100) : null,
+        color: isSelected
+            ? theme.colorScheme.primaryContainer.withAlpha(100)
+            : null,
         child: ListTile(
           onTap: () {
             if (isWideScreen) {
@@ -175,9 +239,10 @@ class _MessagePageState extends State<MessagePage> {
           },
           leading: CircleAvatar(
             radius: 24,
-            backgroundImage: friend.avatarUrl != null && friend.avatarUrl!.isNotEmpty
-                ? NetworkImage(friend.avatarUrl!)
-                : null,
+            backgroundImage:
+                friend.avatarUrl != null && friend.avatarUrl!.isNotEmpty
+                    ? NetworkImage(friend.avatarUrl!)
+                    : null,
             backgroundColor: theme.colorScheme.primaryContainer,
             child: friend.avatarUrl == null || friend.avatarUrl!.isEmpty
                 ? Icon(Icons.person,
@@ -209,16 +274,20 @@ class _MessagePageState extends State<MessagePage> {
                         color: theme.colorScheme.onSurfaceVariant,
                       ),
                     ),
-                    if (friend.newMessageNum != null && friend.newMessageNum! > 0)
+                    if (friend.newMessageNum != null &&
+                        friend.newMessageNum! > 0)
                       Container(
                         margin: const EdgeInsets.only(top: 4),
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
                           color: theme.colorScheme.error,
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: Text(
-                          friend.newMessageNum! > 99 ? '99+' : friend.newMessageNum.toString(),
+                          friend.newMessageNum! > 99
+                              ? '99+'
+                              : friend.newMessageNum.toString(),
                           style: TextStyle(
                             fontSize: 11,
                             color: theme.colorScheme.onError,
@@ -260,6 +329,7 @@ class _ChatDetailPanel extends StatefulWidget {
   final String? friendAvatar;
 
   const _ChatDetailPanel({
+    super.key,
     required this.friendUid,
     required this.friendName,
     this.friendAvatar,
@@ -282,19 +352,68 @@ class _ChatDetailPanelState extends State<_ChatDetailPanel> {
   int _offset = 0;
   final int _pageSize = 20;
   bool _hasMore = true;
+  Timer? _pollTimer;
 
   @override
   void initState() {
     super.initState();
     loadMessages();
+    _startPolling();
   }
 
   @override
   void dispose() {
+    _stopPolling();
     scrollController.dispose();
     messageController.dispose();
     focusNode.dispose();
     super.dispose();
+  }
+
+  void _startPolling() {
+    _pollTimer?.cancel();
+    _pollTimer = Timer.periodic(const Duration(seconds: 10), (_) {
+      _pollNewMessages();
+    });
+  }
+
+  void _stopPolling() {
+    _pollTimer?.cancel();
+    _pollTimer = null;
+  }
+
+  Future<void> _pollNewMessages() async {
+    if (isLoading.value || isSending.value) return;
+
+    try {
+      final newMessages = await Get.find<IMessageRepository>().getFriendMessage(
+        friendUid: widget.friendUid,
+        offset: 0,
+        num: _pageSize,
+      );
+
+      if (newMessages.isNotEmpty && messages.isNotEmpty) {
+        final latestMsgId = messages.first.msgId;
+        final hasNew = newMessages.any((msg) => msg.msgId > latestMsgId);
+
+        if (hasNew) {
+          messages.assignAll(newMessages);
+          _offset = newMessages.length;
+
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (scrollController.hasClients) {
+              scrollController.animateTo(
+                0,
+                duration: const Duration(milliseconds: 300),
+                curve: Curves.easeOut,
+              );
+            }
+          });
+        }
+      }
+    } catch (e) {
+      // 静默处理轮询错误
+    }
   }
 
   Future loadMessages({bool refresh = false}) async {
@@ -312,7 +431,8 @@ class _ChatDetailPanelState extends State<_ChatDetailPanel> {
     errorMessage.value = '';
 
     try {
-      final List<Message> newMessages = await Get.find<IMessageRepository>().getFriendMessage(
+      final List<Message> newMessages =
+          await Get.find<IMessageRepository>().getFriendMessage(
         friendUid: widget.friendUid,
         offset: _offset,
         num: _pageSize,
@@ -391,7 +511,8 @@ class _ChatDetailPanelState extends State<_ChatDetailPanel> {
           ),
           child: Row(
             children: [
-              if (widget.friendAvatar != null && widget.friendAvatar!.isNotEmpty)
+              if (widget.friendAvatar != null &&
+                  widget.friendAvatar!.isNotEmpty)
                 Padding(
                   padding: const EdgeInsets.only(right: 12),
                   child: CircleAvatar(
@@ -468,9 +589,10 @@ class _ChatDetailPanelState extends State<_ChatDetailPanel> {
           if (!isMe) ...[
             CircleAvatar(
               radius: 16,
-              backgroundImage: widget.friendAvatar != null && widget.friendAvatar!.isNotEmpty
-                  ? NetworkImage(widget.friendAvatar!)
-                  : null,
+              backgroundImage:
+                  widget.friendAvatar != null && widget.friendAvatar!.isNotEmpty
+                      ? NetworkImage(widget.friendAvatar!)
+                      : null,
               backgroundColor: theme.colorScheme.primaryContainer,
               child: widget.friendAvatar == null || widget.friendAvatar!.isEmpty
                   ? Icon(Icons.person,

@@ -21,6 +21,7 @@ class _DynamicsPageState extends State<DynamicsPage>
     with AutomaticKeepAliveClientMixin, TickerProviderStateMixin {
   final DynamicsController _dynamicsController = Get.put(DynamicsController());
   late TabController _tabController;
+  int _previousTabIndex = 0;
 
   @override
   bool get wantKeepAlive => true;
@@ -48,8 +49,12 @@ class _DynamicsPageState extends State<DynamicsPage>
 
   void _onTapTab(int index) {
     feedBack();
-    final tabs = ['latest', 'popular'];
+    if (index == _previousTabIndex) {
+      _dynamicsController.scrollToTop();
+    }
+    _previousTabIndex = index;
     _tabController.animateTo(index);
+    final tabs = ['latest', 'popular'];
     _dynamicsController.onTabChanged(tabs[index]);
   }
 
@@ -161,25 +166,8 @@ class _TabPage extends StatefulWidget {
 }
 
 class _TabPageState extends State<_TabPage> with AutomaticKeepAliveClientMixin {
-  late ScrollController _centeredScrollController;
-  late ScrollController _waterfallScrollController;
-
   @override
   bool get wantKeepAlive => true;
-
-  @override
-  void initState() {
-    super.initState();
-    _centeredScrollController = ScrollController();
-    _waterfallScrollController = ScrollController();
-  }
-
-  @override
-  void dispose() {
-    _centeredScrollController.dispose();
-    _waterfallScrollController.dispose();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -211,7 +199,8 @@ class _TabPageState extends State<_TabPage> with AutomaticKeepAliveClientMixin {
               notification.metrics.pixels >=
                   notification.metrics.maxScrollExtent - 200) {
             EasyThrottle.throttle(
-                'queryFollowDynamic_${widget.tab}', const Duration(seconds: 1), () {
+                'queryFollowDynamic_${widget.tab}', const Duration(seconds: 1),
+                () {
               widget.dynamicsController.queryFollowDynamic(type: 'onLoad');
             });
           }
@@ -253,17 +242,20 @@ class _TabPageState extends State<_TabPage> with AutomaticKeepAliveClientMixin {
     double screenWidth,
   ) {
     const contentMaxWidth = 600.0;
+    final scrollController =
+        widget.dynamicsController.tabScrollControllers[widget.tab];
 
     return ListView.builder(
-      controller: _centeredScrollController,
+      controller: scrollController,
       padding:
           _buildCenteredListPadding(isWideScreen, screenWidth, contentMaxWidth),
-      itemCount: cachedList.length + 2,
+      itemCount: cachedList.length + 1,
       itemBuilder: (context, index) {
         if (index == 0) {
-          return _buildNewDynamicsBanner(colorScheme, isWideScreen, contentMaxWidth);
+          return _buildNewDynamicsBanner(
+              colorScheme, isWideScreen, contentMaxWidth);
         }
-        if (index == cachedList.length + 1) {
+        if (index == cachedList.length) {
           return _buildLoadingIndicator(colorScheme);
         }
 
@@ -272,15 +264,18 @@ class _TabPageState extends State<_TabPage> with AutomaticKeepAliveClientMixin {
           width: isWideScreen ? contentMaxWidth : null,
           child: DynamicPanel(
             item: cachedList[index - 1],
-            onTap: () => widget.dynamicsController.pushDetail(cachedList[index - 1], 1),
-            onCommentTap: () => widget.dynamicsController.pushDetail(cachedList[index - 1], 1, action: 'comment'),
+            onTap: () =>
+                widget.dynamicsController.pushDetail(cachedList[index - 1], 1),
+            onCommentTap: () => widget.dynamicsController
+                .pushDetail(cachedList[index - 1], 1, action: 'comment'),
           ),
         );
       },
     );
   }
 
-  Widget _buildNewDynamicsBanner(ColorScheme colorScheme, bool isWideScreen, double contentMaxWidth) {
+  Widget _buildNewDynamicsBanner(
+      ColorScheme colorScheme, bool isWideScreen, double contentMaxWidth) {
     return Obx(() {
       final count = widget.dynamicsController.newDynamicsCount.value;
       if (count == 0 || widget.tab != 'latest') {
@@ -338,8 +333,11 @@ class _TabPageState extends State<_TabPage> with AutomaticKeepAliveClientMixin {
       crossAxisCount = 2;
     }
 
+    final scrollController =
+        widget.dynamicsController.tabScrollControllers[widget.tab];
+
     return CustomScrollView(
-      controller: _waterfallScrollController,
+      controller: scrollController,
       slivers: [
         SliverToBoxAdapter(
           child: _buildWaterfallNewDynamicsBanner(colorScheme),
@@ -355,8 +353,10 @@ class _TabPageState extends State<_TabPage> with AutomaticKeepAliveClientMixin {
             }
             return DynamicPanel(
               item: cachedList[index],
-              onTap: () => widget.dynamicsController.pushDetail(cachedList[index], 1),
-              onCommentTap: () => widget.dynamicsController.pushDetail(cachedList[index], 1, action: 'comment'),
+              onTap: () =>
+                  widget.dynamicsController.pushDetail(cachedList[index], 1),
+              onCommentTap: () => widget.dynamicsController
+                  .pushDetail(cachedList[index], 1, action: 'comment'),
             );
           },
         ),

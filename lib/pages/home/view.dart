@@ -266,7 +266,7 @@ class UserInfoWidget extends StatelessWidget {
             const SizedBox(width: 4),
             ClipRect(
               child: IconButton(
-                onPressed: () => Get.toNamed('/whisper'),
+                onPressed: () => Get.toNamed('/message'),
                 icon: const Icon(Icons.notifications_none),
               ),
             ),
