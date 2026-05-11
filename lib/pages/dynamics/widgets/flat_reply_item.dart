@@ -45,7 +45,6 @@ class _FlatReplyItemState extends State<FlatReplyItem> {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final heroTag = Utils.makeHeroTag(widget.replyItem.mid);
 
     return Container(
       padding: const EdgeInsets.fromLTRB(12, 12, 8, 8),
@@ -60,7 +59,7 @@ class _FlatReplyItemState extends State<FlatReplyItem> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildHeader(context, colorScheme, heroTag),
+          _buildHeader(context, colorScheme),
           const SizedBox(height: 8),
           _buildContent(context),
           if (_needsExpandButton) _buildExpandButton(context),
@@ -74,20 +73,19 @@ class _FlatReplyItemState extends State<FlatReplyItem> {
     );
   }
 
-  Widget _buildHeader(BuildContext context, ColorScheme colorScheme, String heroTag) {
+  Widget _buildHeader(BuildContext context, ColorScheme colorScheme) {
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: () {
         feedBack();
         Get.toNamed('/member?mid=${widget.replyItem.mid}', arguments: {
           'face': widget.replyItem.member?.avatar,
-          'heroTag': heroTag,
         });
       },
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          _buildAvatar(context, heroTag),
+          _buildAvatar(context),
           const SizedBox(width: 10),
           Expanded(
             child: Column(
@@ -114,29 +112,31 @@ class _FlatReplyItemState extends State<FlatReplyItem> {
                         widget.replyItem.member!.ottohubData!['honour']
                             .toString()
                             .isNotEmpty)
-                      ...widget.replyItem.member!.ottohubData!['honour']
-                          .toString()
-                          .split(',')
-                          .where((e) => e.trim().isNotEmpty)
-                          .take(1)
-                          .map((title) => Container(
-                                margin: const EdgeInsets.only(left: 6),
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 6,
-                                  vertical: 1,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: colorScheme.secondaryContainer,
-                                  borderRadius: BorderRadius.circular(4),
-                                ),
-                                child: Text(
-                                  title.trim(),
-                                  style: TextStyle(
-                                    fontSize: 10,
-                                    color: colorScheme.onSecondaryContainer,
-                                  ),
-                                ),
-                              )),
+                      Flexible(
+                        child: Container(
+                          margin: const EdgeInsets.only(left: 6),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 1,
+                          ),
+                          decoration: BoxDecoration(
+                            color: colorScheme.secondaryContainer,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(
+                            widget.replyItem.member!.ottohubData!['honour']
+                                .toString()
+                                .split(',')
+                                .where((e) => e.trim().isNotEmpty)
+                                .firstOrNull ?? '',
+                            style: TextStyle(
+                              fontSize: 10,
+                              color: colorScheme.onSecondaryContainer,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ),
                     if (widget.replyItem.isUp == true)
                       const Padding(
                         padding: EdgeInsets.only(left: 6),
@@ -166,19 +166,16 @@ class _FlatReplyItemState extends State<FlatReplyItem> {
     );
   }
 
-  Widget _buildAvatar(BuildContext context, String heroTag) {
+  Widget _buildAvatar(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     return Stack(
       children: [
-        Hero(
-          tag: heroTag,
-          child: ClipOval(
-            child: NetworkImgLayer(
-              src: widget.replyItem.member?.avatar,
-              width: 36,
-              height: 36,
-              type: 'avatar',
-            ),
+        ClipOval(
+          child: NetworkImgLayer(
+            src: widget.replyItem.member?.avatar,
+            width: 36,
+            height: 36,
+            type: 'avatar',
           ),
         ),
         if (widget.replyItem.member?.officialVerify != null &&

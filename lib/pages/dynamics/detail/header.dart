@@ -4,7 +4,6 @@ import 'package:piliotto/common/widgets/markdown_text.dart';
 import 'package:piliotto/common/widgets/network_img_layer.dart';
 import 'package:piliotto/plugin/pl_gallery/index.dart';
 import 'package:piliotto/utils/feed_back.dart';
-import 'package:piliotto/utils/utils.dart';
 
 class DynamicDetailHeader extends StatefulWidget {
   final dynamic item;
@@ -53,6 +52,7 @@ class _DynamicDetailHeaderState extends State<DynamicDetailHeader> {
     final colorScheme = theme.colorScheme;
     final author = widget.item.modules?.moduleAuthor;
     final desc = widget.item.modules?.moduleDynamic?.desc;
+    final dynamicId = widget.item.idStr ?? '';
 
     return Padding(
       padding: const EdgeInsets.all(16),
@@ -62,12 +62,18 @@ class _DynamicDetailHeaderState extends State<DynamicDetailHeader> {
           _buildAuthorSection(theme, colorScheme, author),
           if (desc != null && desc.text != null && desc.text!.isNotEmpty) ...[
             const SizedBox(height: 12),
-            MarkdownText(
-              text: desc.text!,
-              selectable: true,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: colorScheme.onSurface,
-                height: 1.6,
+            Hero(
+              tag: 'content_$dynamicId',
+              child: Material(
+                color: Colors.transparent,
+                child: MarkdownText(
+                  text: desc.text!,
+                  selectable: true,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: colorScheme.onSurface,
+                    height: 1.6,
+                  ),
+                ),
               ),
             ),
           ],
@@ -84,7 +90,6 @@ class _DynamicDetailHeaderState extends State<DynamicDetailHeader> {
       ThemeData theme, ColorScheme colorScheme, dynamic author) {
     if (author == null) return const SizedBox.shrink();
 
-    final heroTag = Utils.makeHeroTag(author.mid);
     final avatarUrl = author.face ?? '';
     final pubTime = author.pubTime ?? '';
     final desc = widget.item.modules?.moduleDynamic?.desc;
@@ -101,27 +106,23 @@ class _DynamicDetailHeaderState extends State<DynamicDetailHeader> {
               '/member?mid=${author.mid}',
               arguments: {
                 'face': avatarUrl,
-                'heroTag': heroTag,
               },
             );
           },
-          child: Hero(
-            tag: heroTag,
-            child: Container(
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: colorScheme.primaryContainer,
-                  width: 2,
-                ),
+          child: Container(
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: colorScheme.primaryContainer,
+                width: 2,
               ),
-              child: ClipOval(
-                child: NetworkImgLayer(
-                  width: 44,
-                  height: 44,
-                  type: 'avatar',
-                  src: avatarUrl,
-                ),
+            ),
+            child: ClipOval(
+              child: NetworkImgLayer(
+                width: 44,
+                height: 44,
+                type: 'avatar',
+                src: avatarUrl,
               ),
             ),
           ),

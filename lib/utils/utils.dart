@@ -216,7 +216,7 @@ class Utils {
   }
 
   static String makeHeroTag(dynamic v) {
-    return v.toString() + random.nextInt(9999).toString();
+    return 'hero_${v.toString()}';
   }
 
   static int duration(String duration) {

@@ -376,13 +376,10 @@ class _InteractiveviewerGalleryState extends State<InteractiveviewerGallery>
         }
       },
       child: Center(
-        child: Hero(
-          tag: sources[index],
-          child: CachedNetworkImage(
-            fadeInDuration: const Duration(milliseconds: 0),
-            imageUrl: sources[index],
-            fit: BoxFit.contain,
-          ),
+        child: CachedNetworkImage(
+          fadeInDuration: const Duration(milliseconds: 0),
+          imageUrl: sources[index],
+          fit: BoxFit.contain,
         ),
       ),
     );

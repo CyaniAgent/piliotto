@@ -168,7 +168,8 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
                 builder: (context, snapshot) {
                   return Obx(() {
                     final replyList = _dynamicDetailController.replyList;
-                    final isLoading = _dynamicDetailController.isLoadingMore.value;
+                    final isLoading =
+                        _dynamicDetailController.isLoadingMore.value;
 
                     return ListView.builder(
                       controller: scrollController,
@@ -203,7 +204,8 @@ class _DynamicDetailPageState extends State<DynamicDetailPage>
                             );
                           },
                           onRefresh: () {
-                            _dynamicDetailController.queryReplyList(reqType: 'init');
+                            _dynamicDetailController.queryReplyList(
+                                reqType: 'init');
                           },
                         );
                       },

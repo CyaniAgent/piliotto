@@ -50,19 +50,26 @@ class _ContentState extends State<Content> {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final desc = widget.item.modules?.moduleDynamic?.desc;
+    final dynamicId = widget.item.idStr ?? '';
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         if (desc != null && desc.text != null && desc.text!.isNotEmpty)
-          MarkdownText(
-            text: desc.text!,
-            selectable: false,
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: colorScheme.onSurfaceVariant,
-              height: 1.5,
+          Hero(
+            tag: 'content_$dynamicId',
+            child: Material(
+              color: Colors.transparent,
+              child: MarkdownText(
+                text: desc.text!,
+                selectable: false,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                  height: 1.5,
+                ),
+                maxLines: widget.source == 'detail' ? null : 4,
+              ),
             ),
-            maxLines: widget.source == 'detail' ? null : 4,
           ),
         if (hasPics) ...[
           const SizedBox(height: 12),

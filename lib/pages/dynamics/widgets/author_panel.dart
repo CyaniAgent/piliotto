@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:piliotto/common/widgets/network_img_layer.dart';
 import 'package:piliotto/utils/feed_back.dart';
-import 'package:piliotto/utils/utils.dart';
 
 class AuthorPanel extends StatelessWidget {
   final dynamic item;
@@ -18,10 +17,8 @@ class AuthorPanel extends StatelessWidget {
 
     if (author == null) return const SizedBox.shrink();
 
-    final heroTag = Utils.makeHeroTag(author.mid);
     final avatarUrl = author.face ?? '';
     final pubTime = author.pubTime ?? '';
-    // 使用内容标题，如果没有标题则使用"动态"
     final title =
         (desc?.title != null && desc!.title!.isNotEmpty) ? desc.title! : '动态';
 
@@ -35,27 +32,23 @@ class AuthorPanel extends StatelessWidget {
               '/member?mid=${author.mid}',
               arguments: {
                 'face': avatarUrl,
-                'heroTag': heroTag,
               },
             );
           },
-          child: Hero(
-            tag: heroTag,
-            child: Container(
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: colorScheme.primaryContainer,
-                  width: 2,
-                ),
+          child: Container(
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: colorScheme.primaryContainer,
+                width: 2,
               ),
-              child: ClipOval(
-                child: NetworkImgLayer(
-                  width: 44,
-                  height: 44,
-                  type: 'avatar',
-                  src: avatarUrl,
-                ),
+            ),
+            child: ClipOval(
+              child: NetworkImgLayer(
+                width: 44,
+                height: 44,
+                type: 'avatar',
+                src: avatarUrl,
               ),
             ),
           ),
