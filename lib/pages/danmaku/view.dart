@@ -48,7 +48,7 @@ class _PlDanmakuState extends State<PlDanmaku> {
     super.initState();
     enableShowDanmaku =
         setting.get(SettingBoxKey.enableShowDanmaku, defaultValue: false);
-    _plDanmakuController = PlDanmakuController(_videoId);
+    _plDanmakuController = PlDanmakuController(vid: _videoId);
     playerController = widget.playerController;
     if (mounted && widget.type == 'video') {
       if (enableShowDanmaku || playerController.isOpenDanmu.value) {

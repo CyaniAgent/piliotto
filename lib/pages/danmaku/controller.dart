@@ -1,62 +1,97 @@
-import 'package:get/get.dart';
+import 'dart:collection';
 import 'package:piliotto/ottohub/api/models/danmaku.dart';
-import 'package:piliotto/repositories/i_danmaku_repository.dart';
+import 'package:piliotto/ottohub/api/services/danmaku_service.dart';
 import 'package:piliotto/services/loggeer.dart';
 
 class PlDanmakuController {
-  PlDanmakuController(this.vid);
   final int vid;
-  Map<int, List<Danmaku>> dmSegMap = {};
+  final Function(List<Danmaku>)? onLoaded;
+
+  PlDanmakuController({
+    required this.vid,
+    this.onLoaded,
+  });
+
+  static final Set<int> _loadingVids = {};
+  static final Map<int, List<Danmaku>> _cachedDanmaku = {};
+
+  SplayTreeMap<int, List<Danmaku>> _danmakuMap = SplayTreeMap();
   bool _loaded = false;
   bool _loading = false;
 
+  SplayTreeMap<int, List<Danmaku>> get danmakuMap => _danmakuMap;
+  bool get loaded => _loaded;
   bool get initiated => _loaded;
 
   void initiate(int videoDuration, int progress) async {
-    if (!_loaded && !_loading) {
-      await queryDanmaku();
-    }
-  }
+    if (_loaded || _loading) return;
+    if (_loadingVids.contains(vid)) return;
 
-  void dispose() {
-    dmSegMap.clear();
-    _loaded = false;
-    _loading = false;
+    _loading = true;
+    _loadingVids.add(vid);
+    await queryDanmaku();
   }
 
   Future<void> queryDanmaku() async {
-    if (_loading) return;
-    _loading = true;
-    final logger = getLogger();
-    try {
-      logger.d('开始获取弹幕，vid: $vid');
-      final List<Danmaku> danmakus = await Get.find<IDanmakuRepository>().getDanmakus(vid);
-      logger.d('获取到弹幕数量: ${danmakus.length}');
-      dmSegMap.clear();
-      for (var danmaku in danmakus) {
-        int pos = (danmaku.time * 10).toInt();
-        if (dmSegMap[pos] == null) {
-          dmSegMap[pos] = [];
-        }
-        dmSegMap[pos]!.add(danmaku);
-      }
+    if (_cachedDanmaku.containsKey(vid)) {
+      _danmakuMap = _mapDanmaku(_cachedDanmaku[vid]!);
       _loaded = true;
-      logger.d('弹幕映射完成，共 ${dmSegMap.length} 个时间点');
+      _loading = false;
+      _loadingVids.remove(vid);
+      onLoaded?.call(_cachedDanmaku[vid]!);
+      return;
+    }
+
+    getLogger().d('开始获取弹幕，vid: $vid');
+    try {
+      final response = await DanmakuService.getDanmakus(vid);
+      getLogger().d('获取到弹幕数量: ${response.length}');
+      _cachedDanmaku[vid] = response;
+      _danmakuMap = _mapDanmaku(response);
+      getLogger().d('弹幕映射完成，共 ${_danmakuMap.length} 个时间点');
+      _loaded = true;
+      onLoaded?.call(response);
     } catch (e) {
-      logger.e('获取弹幕失败: $e');
+      getLogger().e('获取弹幕失败: $e');
     } finally {
       _loading = false;
+      _loadingVids.remove(vid);
     }
+  }
+
+  SplayTreeMap<int, List<Danmaku>> _mapDanmaku(List<Danmaku> danmakuList) {
+    final map = SplayTreeMap<int, List<Danmaku>>();
+    for (final danmaku in danmakuList) {
+      final timeKey = danmaku.time.toInt();
+      map.putIfAbsent(timeKey, () => []).add(danmaku);
+    }
+    return map;
   }
 
   List<Danmaku>? getCurrentDanmaku(int progress) {
     if (!_loaded) {
-      if (!_loading) {
+      if (!_loading && !_loadingVids.contains(vid)) {
         queryDanmaku();
       }
       return null;
     }
-    int pos = (progress / 100).toInt();
-    return dmSegMap[pos];
+    return _danmakuMap[progress];
+  }
+
+  void clear() {
+    _danmakuMap.clear();
+    _loaded = false;
+    _loading = false;
+    _loadingVids.remove(vid);
+  }
+
+  static void clearCache(int vid) {
+    _cachedDanmaku.remove(vid);
+    _loadingVids.remove(vid);
+  }
+
+  static void clearAllCache() {
+    _cachedDanmaku.clear();
+    _loadingVids.clear();
   }
 }
