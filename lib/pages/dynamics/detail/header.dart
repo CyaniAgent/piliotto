@@ -17,6 +17,8 @@ class DynamicDetailHeader extends StatefulWidget {
 class _DynamicDetailHeaderState extends State<DynamicDetailHeader> {
   List<String> picList = [];
   bool get hasPics => picList.isNotEmpty;
+  String get _dynamicId => widget.item.idStr ?? '';
+  String _heroTag(int index) => '${_dynamicId}_$index';
 
   @override
   void initState() {
@@ -41,6 +43,7 @@ class _DynamicDetailHeaderState extends State<DynamicDetailHeader> {
         builder: (context) => InteractiveviewerGallery(
           sources: picList,
           initIndex: initIndex,
+          heroTagBuilder: (index) => _heroTag(index),
         ),
       ),
     );
@@ -176,7 +179,7 @@ class _DynamicDetailHeaderState extends State<DynamicDetailHeader> {
           child: ClipRRect(
             borderRadius: BorderRadius.circular(12),
             child: Hero(
-              tag: picList.first,
+              tag: _heroTag(0),
               child: NetworkImgLayer(
                 src: picList.first,
                 width: maxWidth,
@@ -206,7 +209,7 @@ class _DynamicDetailHeaderState extends State<DynamicDetailHeader> {
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(8),
                 child: Hero(
-                  tag: picList[index],
+                  tag: _heroTag(index),
                   child: NetworkImgLayer(
                     src: picList[index],
                     width: itemSize,

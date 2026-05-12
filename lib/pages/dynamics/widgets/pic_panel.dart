@@ -5,12 +5,13 @@ import 'package:piliotto/common/widgets/badge.dart';
 import 'package:piliotto/common/widgets/network_img_layer.dart';
 import 'package:piliotto/plugin/pl_gallery/index.dart';
 
-void onPreviewImg(String currentUrl, List<String> picList, int initIndex, BuildContext context) {
+void onPreviewImg(String currentUrl, List<String> picList, int initIndex, BuildContext context, String Function(int)? heroTagBuilder) {
   Navigator.of(context).push(
     HeroDialogRoute<void>(
       builder: (BuildContext context) => InteractiveviewerGallery(
         sources: picList,
         initIndex: initIndex,
+        heroTagBuilder: heroTagBuilder,
         onPageChanged: (int pageIndex) {},
       ),
     ),
@@ -19,6 +20,9 @@ void onPreviewImg(String currentUrl, List<String> picList, int initIndex, BuildC
 
 Widget picWidget(dynamic item, BuildContext context) {
   String type = item.modules.moduleDynamic.major.type;
+  String dynamicId = item.idStr ?? '';
+  String heroTag(int index) => '${dynamicId}_$index';
+
   List pictures = [];
   if (type == 'MAJOR_TYPE_OPUS') {
     /// fix 图片跟rich_node_panel重复
@@ -39,13 +43,13 @@ Widget picWidget(dynamic item, BuildContext context) {
       LayoutBuilder(
         builder: (context, BoxConstraints box) {
           return Hero(
-            tag: picList[i],
+            tag: heroTag(i),
             placeholderBuilder:
                 (BuildContext context, Size heroSize, Widget child) {
               return child;
             },
             child: GestureDetector(
-              onTap: () => onPreviewImg(picList[i], picList, i, context),
+              onTap: () => onPreviewImg(picList[i], picList, i, context, heroTag),
               child: NetworkImgLayer(
                 src: pictures[i].src ?? pictures[i].url,
                 width: box.maxWidth,

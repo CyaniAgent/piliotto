@@ -39,6 +39,7 @@ class InteractiveviewerGallery<T> extends StatefulWidget {
     this.minScale = 1.0,
     this.onPageChanged,
     this.onDismissed,
+    this.heroTagBuilder,
     super.key,
   });
 
@@ -58,6 +59,8 @@ class InteractiveviewerGallery<T> extends StatefulWidget {
   final ValueChanged<int>? onPageChanged;
 
   final ValueChanged<int>? onDismissed;
+
+  final IndexedTagStringBuilder? heroTagBuilder;
 
   @override
   State<InteractiveviewerGallery> createState() =>
@@ -368,6 +371,27 @@ class _InteractiveviewerGalleryState extends State<InteractiveviewerGallery>
   }
 
   Widget _itemBuilder(List<dynamic> sources, int index) {
+    final heroTag = widget.heroTagBuilder?.call(index);
+    final useHero = heroTag != null && heroTag.isNotEmpty;
+
+    final imageWidget = CachedNetworkImage(
+      fadeInDuration: const Duration(milliseconds: 0),
+      imageUrl: sources[index],
+      fit: BoxFit.contain,
+      placeholder: (context, url) => Container(
+        color: Colors.black,
+        child: const Center(
+          child: CircularProgressIndicator(color: Colors.white),
+        ),
+      ),
+      errorWidget: (context, url, error) => Container(
+        color: Colors.black,
+        child: const Center(
+          child: Icon(Icons.broken_image, color: Colors.white54, size: 48),
+        ),
+      ),
+    );
+
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: () {
@@ -376,11 +400,24 @@ class _InteractiveviewerGalleryState extends State<InteractiveviewerGallery>
         }
       },
       child: Center(
-        child: CachedNetworkImage(
-          fadeInDuration: const Duration(milliseconds: 0),
-          imageUrl: sources[index],
-          fit: BoxFit.contain,
-        ),
+        child: useHero
+            ? Hero(
+                tag: heroTag,
+                flightShuttleBuilder: (flightContext, animation, flightDirection, fromHeroContext, toHeroContext) {
+                  return AnimatedBuilder(
+                    animation: animation,
+                    builder: (context, child) {
+                      return Opacity(
+                        opacity: animation.value,
+                        child: child,
+                      );
+                    },
+                    child: imageWidget,
+                  );
+                },
+                child: imageWidget,
+              )
+            : imageWidget,
       ),
     );
   }

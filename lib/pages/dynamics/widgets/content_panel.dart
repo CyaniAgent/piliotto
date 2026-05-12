@@ -16,6 +16,9 @@ class Content extends StatefulWidget {
 class _ContentState extends State<Content> {
   List<String> picList = [];
   bool get hasPics => picList.isNotEmpty;
+  String get _dynamicId => widget.item.idStr ?? '';
+
+  String _heroTag(int index) => '${_dynamicId}_$index';
 
   @override
   void initState() {
@@ -40,6 +43,7 @@ class _ContentState extends State<Content> {
         builder: (context) => InteractiveviewerGallery(
           sources: picList,
           initIndex: initIndex,
+          heroTagBuilder: (index) => _heroTag(index),
         ),
       ),
     );
@@ -100,7 +104,7 @@ class _ContentState extends State<Content> {
           child: ClipRRect(
             borderRadius: BorderRadius.circular(12),
             child: Hero(
-              tag: picList.first,
+              tag: _heroTag(0),
               child: NetworkImgLayer(
                 src: picList.first,
                 width: maxWidth,
@@ -130,7 +134,7 @@ class _ContentState extends State<Content> {
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(8),
                 child: Hero(
-                  tag: picList[index],
+                  tag: _heroTag(index),
                   child: NetworkImgLayer(
                     src: picList[index],
                     width: itemSize,
