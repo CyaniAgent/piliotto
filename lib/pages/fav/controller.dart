@@ -24,7 +24,6 @@ class FavController extends GetxController {
   void onInit() {
     super.onInit();
     updateCrossAxisCount();
-    queryFavorites();
   }
 
   void updateCrossAxisCount() {
@@ -41,7 +40,12 @@ class FavController extends GetxController {
   }
 
   Future<void> queryFavorites({bool isLoadMore = false}) async {
-    if (isLoading.value || isLoadingMore.value) return;
+    if (isLoading.value || isLoadingMore.value) {
+      while (isLoading.value || isLoadingMore.value) {
+        await Future.delayed(const Duration(milliseconds: 50));
+      }
+      return;
+    }
 
     if (!isLoadMore) {
       isLoading.value = true;

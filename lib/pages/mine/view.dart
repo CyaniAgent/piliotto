@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:piliotto/common/widgets/network_img_layer.dart';
@@ -107,33 +108,38 @@ class _MinePageState extends State<MinePage> {
       final hasCover = cover != null && cover.isNotEmpty;
       return Container(
         height: 280,
-        decoration: BoxDecoration(
-          color: theme.colorScheme.secondaryContainer,
-          image: hasCover
-              ? DecorationImage(
-                  image: NetworkImage(cover),
-                  fit: BoxFit.cover,
-                  colorFilter: ColorFilter.mode(
-                    Colors.black.withAlpha(hasCover ? 100 : 0),
-                    BlendMode.darken,
+        color: theme.colorScheme.secondaryContainer,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            if (hasCover)
+              CachedNetworkImage(
+                imageUrl: cover.startsWith('//') ? 'https:$cover' : cover,
+                fit: BoxFit.cover,
+                fadeInDuration: const Duration(milliseconds: 300),
+                fadeOutDuration: const Duration(milliseconds: 120),
+                placeholder: (context, url) => const SizedBox.shrink(),
+                errorWidget: (context, url, error) => const SizedBox.shrink(),
+              ),
+            Container(
+              color: hasCover ? Colors.black.withAlpha(100) : Colors.transparent,
+            ),
+            SafeArea(
+              child: Align(
+                alignment: Alignment.bottomLeft,
+                child: Padding(
+                  padding: const EdgeInsets.only(left: 16, right: 16, bottom: 16),
+                  child: Row(
+                    children: [
+                      _buildAvatar(theme, hasCover),
+                      const SizedBox(width: 16),
+                      Expanded(child: _buildUserDetails(theme, hasCover)),
+                    ],
                   ),
-                )
-              : null,
-        ),
-        child: SafeArea(
-          child: Align(
-            alignment: Alignment.bottomLeft,
-            child: Padding(
-              padding: const EdgeInsets.only(left: 16, right: 16, bottom: 16),
-              child: Row(
-                children: [
-                  _buildAvatar(theme, hasCover),
-                  const SizedBox(width: 16),
-                  Expanded(child: _buildUserDetails(theme, hasCover)),
-                ],
+                ),
               ),
             ),
-          ),
+          ],
         ),
       );
     });

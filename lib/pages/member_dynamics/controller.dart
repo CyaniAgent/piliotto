@@ -11,6 +11,7 @@ class MemberDynamicsController extends GetxController {
   int count = 0;
   bool hasMore = true;
   RxList<DynamicItemModel> dynamicsList = <DynamicItemModel>[].obs;
+  RxBool isLoading = false.obs;
 
   @override
   void onInit() {
@@ -19,6 +20,7 @@ class MemberDynamicsController extends GetxController {
   }
 
   Future<Map<String, dynamic>> getMemberDynamic(String type) async {
+    if (isLoading.value) return {};
     if (type == 'onRefresh') {
       offset = 0;
       dynamicsList.clear();
@@ -28,6 +30,7 @@ class MemberDynamicsController extends GetxController {
     if (!hasMore) {
       return {};
     }
+    isLoading.value = true;
     try {
       final blogList = await _dynamicsRepo.getUserBlogs(uid: mid, offset: offset, num: 10);
       if (blogList.isNotEmpty) {
@@ -41,6 +44,8 @@ class MemberDynamicsController extends GetxController {
       return {'status': 'success'};
     } catch (e) {
       return {'status': 'fail', 'message': e.toString()};
+    } finally {
+      isLoading.value = false;
     }
   }
 

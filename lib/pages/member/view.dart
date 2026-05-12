@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:piliotto/common/mixins/scroll_to_top.dart';
@@ -23,16 +24,21 @@ class MemberPage extends StatefulWidget {
   State<MemberPage> createState() => _MemberPageState();
 }
 
-class _MemberPageState extends State<MemberPage> with TickerProviderStateMixin, ScrollToTopMixin {
+class _MemberPageState extends State<MemberPage>
+    with TickerProviderStateMixin, ScrollToTopMixin {
   late String heroTag;
   late MemberController _memberController;
   late MemberDynamicsController _dynamicsController;
+  late FavController _favController;
   late Future _futureBuilderFuture;
   final ScrollController _scrollController = ScrollController();
   late int mid;
-  late TabController _tabController;
-  late List<String> _tabs;
+  TabController? _tabController;
+  List<String> _tabs = [];
   int _previousTabIndex = 0;
+  final RxBool _hasVideoContent = false.obs;
+  final RxBool _hasDynamicContent = false.obs;
+  final RxBool _hasFavoriteContent = false.obs;
 
   @override
   void initState() {
@@ -41,23 +47,53 @@ class _MemberPageState extends State<MemberPage> with TickerProviderStateMixin, 
     heroTag = Get.arguments['heroTag'] ?? Utils.makeHeroTag(mid);
     _memberController = Get.put(MemberController(), tag: heroTag);
     _dynamicsController = Get.put(MemberDynamicsController(), tag: heroTag);
-    _tabs = ['视频', '动态'];
-    _tabController = TabController(length: _tabs.length, vsync: this);
-    _previousTabIndex = 0;
+    _favController = Get.put(FavController(), tag: heroTag);
     _futureBuilderFuture = _initData();
   }
 
   Future<void> _initData() async {
     await _memberController.getInfo();
-    final newTabs =
-        _memberController.isOwner.value ? ['视频', '动态', '收藏'] : ['视频', '动态'];
-    if (newTabs.length != _tabs.length) {
-      _tabController.dispose();
+    await Future.wait([
+      _memberController.getMemberArchive('init'),
+      _dynamicsController.getMemberDynamic('init'),
+      if (_memberController.isOwner.value) _favController.queryFavorites(),
+    ]);
+    _updateTabs();
+  }
+
+  void _updateTabs() {
+    _hasVideoContent.value = _memberController.archiveList.isNotEmpty;
+    _hasDynamicContent.value = _dynamicsController.dynamicsList.isNotEmpty;
+    _hasFavoriteContent.value = _favController.favoriteList.isNotEmpty;
+
+    final newTabs = <String>[];
+    if (_hasVideoContent.value) newTabs.add('视频');
+    if (_hasDynamicContent.value) newTabs.add('动态');
+    if (_memberController.isOwner.value && _hasFavoriteContent.value) {
+      newTabs.add('收藏');
+    }
+
+    if (newTabs.length != _tabs.length || !_listEquals(newTabs, _tabs)) {
+      _tabController?.dispose();
       _tabController = TabController(length: newTabs.length, vsync: this);
       _tabs = newTabs;
+      _previousTabIndex = 0;
     }
-    await _memberController.getMemberArchive('init');
+    setState(() {});
   }
+
+  bool _listEquals(List<String> a, List<String> b) {
+    if (a.length != b.length) return false;
+    for (int i = 0; i < a.length; i++) {
+      if (a[i] != b[i]) return false;
+    }
+    return true;
+  }
+
+  bool get _hasAnyContent =>
+      _hasVideoContent.value ||
+      _hasDynamicContent.value ||
+      (_memberController.isOwner.value && _hasFavoriteContent.value);
 
   void _onTapTab(int index) {
     feedBack();
@@ -65,30 +101,13 @@ class _MemberPageState extends State<MemberPage> with TickerProviderStateMixin, 
       scrollToTop(_scrollController);
     }
     _previousTabIndex = index;
-    _tabController.animateTo(index);
-    _loadTabData(index);
-  }
-
-  Future<void> _loadTabData(int index) async {
-    if (_memberController.isOwner.value) {
-      switch (index) {
-        case 1:
-          _dynamicsController.getMemberDynamic('onRefresh');
-          break;
-      }
-    } else {
-      switch (index) {
-        case 1:
-          _dynamicsController.getMemberDynamic('onRefresh');
-          break;
-      }
-    }
+    _tabController?.animateTo(index);
   }
 
   @override
   void dispose() {
     _scrollController.dispose();
-    _tabController.dispose();
+    _tabController?.dispose();
     super.dispose();
   }
 
@@ -154,6 +173,18 @@ class _MemberPageState extends State<MemberPage> with TickerProviderStateMixin, 
   }
 
   Widget _buildContentScaffold(BuildContext context, ThemeData theme) {
+    if (!_hasAnyContent) {
+      return Scaffold(
+        body: NestedScrollView(
+          controller: _scrollController,
+          headerSliverBuilder: (context, innerBoxIsScrolled) => [
+            _buildSliverAppBar(context, theme),
+          ],
+          body: const NoData(),
+        ),
+      );
+    }
+
     return Scaffold(
       body: NestedScrollView(
         controller: _scrollController,
@@ -183,18 +214,17 @@ class _MemberPageState extends State<MemberPage> with TickerProviderStateMixin, 
   }
 
   List<Widget> _buildTabPages() {
-    if (_memberController.isOwner.value) {
-      return [
-        _VideoTabPage(heroTag: heroTag),
-        _DynamicsTabPage(controller: _dynamicsController),
-        const _FavoriteTabPage(),
-      ];
-    } else {
-      return [
-        _VideoTabPage(heroTag: heroTag),
-        _DynamicsTabPage(controller: _dynamicsController),
-      ];
+    final pages = <Widget>[];
+    if (_hasVideoContent.value) {
+      pages.add(_VideoTabPage(heroTag: heroTag));
     }
+    if (_hasDynamicContent.value) {
+      pages.add(_DynamicsTabPage(controller: _dynamicsController));
+    }
+    if (_memberController.isOwner.value && _hasFavoriteContent.value) {
+      pages.add(_FavoriteTabPage(controller: _favController));
+    }
+    return pages;
   }
 
   Widget _buildSliverAppBar(BuildContext context, ThemeData theme) {
@@ -208,13 +238,13 @@ class _MemberPageState extends State<MemberPage> with TickerProviderStateMixin, 
         builder: (context, _) {
           final name = _memberController.memberInfo.value.name;
           if (name == null || name.isEmpty) return const SizedBox();
-          
+
           const maxOffset = kToolbarHeight + 50.0;
           final currentOffset = _scrollController.hasClients
               ? _scrollController.offset.clamp(0.0, maxOffset)
               : 0.0;
           final opacity = (currentOffset / maxOffset).clamp(0.0, 1.0);
-          
+
           return Opacity(
             opacity: opacity,
             child: Row(
@@ -332,47 +362,54 @@ class _MemberPageState extends State<MemberPage> with TickerProviderStateMixin, 
       final hasCover = cover != null && cover.isNotEmpty;
       return Container(
         height: 240,
-        decoration: BoxDecoration(
-          color: theme.colorScheme.secondaryContainer,
-          image: hasCover
-              ? DecorationImage(
-                  image: NetworkImage(cover),
-                  fit: BoxFit.cover,
-                  colorFilter: ColorFilter.mode(
-                    Colors.black.withAlpha(hasCover ? 100 : 0),
-                    BlendMode.darken,
-                  ),
-                )
-              : null,
-        ),
-        child: SafeArea(
-          child: Stack(
-            children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 60, 16, 16),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
+        color: theme.colorScheme.secondaryContainer,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            if (hasCover)
+              CachedNetworkImage(
+                imageUrl: cover.startsWith('//') ? 'https:$cover' : cover,
+                fit: BoxFit.cover,
+                fadeInDuration: const Duration(milliseconds: 300),
+                fadeOutDuration: const Duration(milliseconds: 120),
+                placeholder: (context, url) => const SizedBox.shrink(),
+                errorWidget: (context, url, error) => const SizedBox.shrink(),
+              ),
+            Container(
+              color:
+                  hasCover ? Colors.black.withAlpha(100) : Colors.transparent,
+            ),
+            SafeArea(
+              child: Stack(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 60, 16, 16),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.end,
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        _buildAvatar(theme, hasCover),
-                        const SizedBox(width: 16),
-                        Expanded(child: _buildUserDetails(theme, hasCover)),
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _buildAvatar(theme, hasCover),
+                            const SizedBox(width: 16),
+                            Expanded(child: _buildUserDetails(theme, hasCover)),
+                          ],
+                        ),
                       ],
                     ),
-                  ],
-                ),
+                  ),
+                  if (!_memberController.isOwner.value)
+                    Positioned(
+                      right: 16,
+                      bottom: 16,
+                      child:
+                          _buildActionButtons(theme, hasCover, isNarrowScreen),
+                    ),
+                ],
               ),
-              if (!_memberController.isOwner.value)
-                Positioned(
-                  right: 16,
-                  bottom: 16,
-                  child: _buildActionButtons(theme, hasCover, isNarrowScreen),
-                ),
-            ],
-          ),
+            ),
+          ],
         ),
       );
     });
@@ -593,6 +630,16 @@ class _DynamicsTabPageState extends State<_DynamicsTabPage>
 
     return Obx(() {
       final list = widget.controller.dynamicsList;
+      if (widget.controller.isLoading.value && list.isEmpty) {
+        return ListView.builder(
+          padding: _buildPadding(isWideScreen, screenWidth, maxContentWidth),
+          itemCount: 5,
+          itemBuilder: (context, index) => Container(
+            margin: const EdgeInsets.symmetric(vertical: 6),
+            child: const DynamicPanelSkeleton(),
+          ),
+        );
+      }
       if (list.isEmpty) {
         return const NoData();
       }
@@ -642,8 +689,95 @@ class _DynamicsTabPageState extends State<_DynamicsTabPage>
   }
 }
 
+class DynamicPanelSkeleton extends StatelessWidget {
+  const DynamicPanelSkeleton({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: colorScheme.surfaceContainerHighest,
+                  shape: BoxShape.circle,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      width: 100,
+                      height: 14,
+                      decoration: BoxDecoration(
+                        color: colorScheme.surfaceContainerHighest,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Container(
+                      width: 60,
+                      height: 12,
+                      decoration: BoxDecoration(
+                        color: colorScheme.surfaceContainerHighest,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Container(
+            width: double.infinity,
+            height: 14,
+            decoration: BoxDecoration(
+              color: colorScheme.surfaceContainerHighest,
+              borderRadius: BorderRadius.circular(4),
+            ),
+          ),
+          const SizedBox(height: 6),
+          Container(
+            width: double.infinity,
+            height: 14,
+            decoration: BoxDecoration(
+              color: colorScheme.surfaceContainerHighest,
+              borderRadius: BorderRadius.circular(4),
+            ),
+          ),
+          const SizedBox(height: 6),
+          Container(
+            width: 200,
+            height: 14,
+            decoration: BoxDecoration(
+              color: colorScheme.surfaceContainerHighest,
+              borderRadius: BorderRadius.circular(4),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _FavoriteTabPage extends StatefulWidget {
-  const _FavoriteTabPage();
+  final FavController controller;
+
+  const _FavoriteTabPage({required this.controller});
 
   @override
   State<_FavoriteTabPage> createState() => _FavoriteTabPageState();
@@ -651,30 +785,20 @@ class _FavoriteTabPage extends StatefulWidget {
 
 class _FavoriteTabPageState extends State<_FavoriteTabPage>
     with AutomaticKeepAliveClientMixin {
-  FavController? _controller;
-
   @override
   bool get wantKeepAlive => true;
 
   @override
-  void initState() {
-    super.initState();
-    _controller = Get.put(FavController());
-  }
-
-  @override
   Widget build(BuildContext context) {
     super.build(context);
-    if (_controller == null) {
-      return const Center(child: CircularProgressIndicator());
-    }
     return Obx(() {
-      if (_controller!.isLoading.value && _controller!.favoriteList.isEmpty) {
+      if (widget.controller.isLoading.value &&
+          widget.controller.favoriteList.isEmpty) {
         return GridView.builder(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: _controller!.crossAxisCount.value,
+            crossAxisCount: widget.controller.crossAxisCount.value,
             mainAxisSpacing: 16,
             crossAxisSpacing: 16,
             childAspectRatio: 3 / 1,
@@ -683,23 +807,23 @@ class _FavoriteTabPageState extends State<_FavoriteTabPage>
           itemBuilder: (_, __) => const VideoCardHSkeleton(),
         );
       }
-      if (_controller!.favoriteList.isEmpty) {
+      if (widget.controller.favoriteList.isEmpty) {
         return const NoData();
       }
       return GridView.builder(
         shrinkWrap: true,
         physics: const NeverScrollableScrollPhysics(),
         padding: EdgeInsets.zero,
-        controller: _controller!.scrollController,
+        controller: widget.controller.scrollController,
         gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: _controller!.crossAxisCount.value,
+          crossAxisCount: widget.controller.crossAxisCount.value,
           mainAxisSpacing: 16,
           crossAxisSpacing: 16,
           childAspectRatio: 3 / 1,
         ),
-        itemCount: _controller!.favoriteList.length,
+        itemCount: widget.controller.favoriteList.length,
         itemBuilder: (context, index) =>
-            VideoCardH(videoItem: _controller!.favoriteList[index]),
+            VideoCardH(videoItem: widget.controller.favoriteList[index]),
       );
     });
   }

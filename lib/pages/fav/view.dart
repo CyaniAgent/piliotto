@@ -30,6 +30,7 @@ class _FavPageState extends State<FavPage> {
         }
       },
     );
+    _favController.queryFavorites();
   }
 
   @override
