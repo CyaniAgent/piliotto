@@ -121,21 +121,17 @@ class _MinePageState extends State<MinePage> {
               : null,
         ),
         child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 60, 16, 16),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.end,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    _buildAvatar(theme, hasCover),
-                    const SizedBox(width: 16),
-                    Expanded(child: _buildUserDetails(theme, hasCover)),
-                  ],
-                ),
-              ],
+          child: Align(
+            alignment: Alignment.bottomLeft,
+            child: Padding(
+              padding: const EdgeInsets.only(left: 16, right: 16, bottom: 16),
+              child: Row(
+                children: [
+                  _buildAvatar(theme, hasCover),
+                  const SizedBox(width: 16),
+                  Expanded(child: _buildUserDetails(theme, hasCover)),
+                ],
+              ),
             ),
           ),
         ),
