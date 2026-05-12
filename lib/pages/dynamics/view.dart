@@ -128,6 +128,7 @@ class _DynamicsPageState extends State<DynamicsPage>
           if (isWideScreen)
             Obx(() => IconButton(
                   onPressed: () => _dynamicsController.toggleWideScreenLayout(),
+                  onLongPress: () => _showWaterfallConfigDialog(context),
                   icon: Icon(
                     _dynamicsController.wideScreenLayout.value == 'center'
                         ? Icons.view_column_outlined
@@ -145,6 +146,119 @@ class _DynamicsPageState extends State<DynamicsPage>
               Icons.edit_outlined,
               color: colorScheme.onSurface,
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showWaterfallConfigDialog(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final screenWidth = MediaQuery.of(context).size.width;
+    _dynamicsController.updateWaterfallCache(screenWidth);
+
+    final autoCrossAxisCount = _dynamicsController.cachedAutoCrossAxisCount;
+    final autoItemWidth = _dynamicsController.cachedItemWidth;
+
+    final columnItems = List.generate(
+      autoCrossAxisCount - 1,
+      (index) => DropdownMenuItem(
+        value: index + 2,
+        child: Text('${index + 2} 列'),
+      ),
+    );
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('瀑布流设置'),
+        content: AnimatedSize(
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeInOut,
+          alignment: Alignment.topCenter,
+          child: Obx(() {
+            final limitWidth = _dynamicsController.waterfallLimitWidth.value;
+            final useCustomWidth =
+                _dynamicsController.waterfallUseCustomItemWidth.value;
+            final customWidth =
+                _dynamicsController.waterfallCustomItemWidth.value;
+            final crossAxisCount =
+                _dynamicsController.waterfallCrossAxisCount.value;
+
+            return Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SwitchListTile(
+                  title: const Text('限制宽度'),
+                  subtitle: const Text('启用后可自定义列数'),
+                  value: limitWidth,
+                  onChanged: _dynamicsController.toggleWaterfallLimitWidth,
+                ),
+                SwitchListTile(
+                  title: const Text('自定义卡片宽度'),
+                  subtitle: Text(useCustomWidth
+                      ? '当前: ${customWidth.toStringAsFixed(0)}px'
+                      : '自动计算: ${autoItemWidth.toStringAsFixed(0)}px'),
+                  value: useCustomWidth,
+                  onChanged:
+                      _dynamicsController.toggleWaterfallUseCustomItemWidth,
+                ),
+                if (useCustomWidth) ...[
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      const Text('卡片宽度: '),
+                      Expanded(
+                        child: Slider(
+                          value: customWidth,
+                          min: 200,
+                          max: 600,
+                          divisions: 40,
+                          label: '${customWidth.toStringAsFixed(0)}px',
+                          onChanged:
+                              _dynamicsController.setWaterfallCustomItemWidth,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+                const Divider(),
+                Text(
+                  '当前屏幕自动计算列数: $autoCrossAxisCount',
+                  style: TextStyle(
+                    color: colorScheme.outline,
+                    fontSize: 12,
+                  ),
+                ),
+                if (limitWidth) ...[
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      const Text('瀑布流列数: '),
+                      const SizedBox(width: 8),
+                      DropdownButton<int>(
+                        value: crossAxisCount.clamp(2, autoCrossAxisCount),
+                        items: columnItems,
+                        onChanged: (value) {
+                          if (value != null) {
+                            _dynamicsController
+                                .setWaterfallCrossAxisCount(value);
+                          }
+                        },
+                        underline: const SizedBox(),
+                      ),
+                    ],
+                  ),
+                ],
+              ],
+            );
+          }),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('确定'),
           ),
         ],
       ),
@@ -324,17 +438,55 @@ class _TabPageState extends State<_TabPage> with AutomaticKeepAliveClientMixin {
     ColorScheme colorScheme,
     double screenWidth,
   ) {
-    int crossAxisCount;
-    if (screenWidth >= 1200) {
-      crossAxisCount = 4;
-    } else if (screenWidth >= 900) {
-      crossAxisCount = 3;
-    } else {
-      crossAxisCount = 2;
-    }
+    const crossAxisSpacing = 12.0;
+    widget.dynamicsController.updateWaterfallCache(screenWidth);
+
+    final effectiveCrossAxisCount =
+        widget.dynamicsController.cachedEffectiveCrossAxisCount;
+    final itemWidth = widget.dynamicsController.cachedItemWidth;
+    final limitWidth = widget.dynamicsController.waterfallLimitWidth.value;
 
     final scrollController =
         widget.dynamicsController.tabScrollControllers[widget.tab];
+
+    final gridContent = SliverMasonryGrid.count(
+      crossAxisCount: effectiveCrossAxisCount,
+      mainAxisSpacing: 12,
+      crossAxisSpacing: crossAxisSpacing,
+      childCount: cachedList.length + 1,
+      itemBuilder: (context, index) {
+        if (index == cachedList.length) {
+          return _buildLoadingIndicator(colorScheme);
+        }
+        return DynamicPanel(
+          item: cachedList[index],
+          onTap: () =>
+              widget.dynamicsController.pushDetail(cachedList[index], 1),
+          onCommentTap: () => widget.dynamicsController
+              .pushDetail(cachedList[index], 1, action: 'comment'),
+        );
+      },
+    );
+
+    if (limitWidth) {
+      final gridWidth = effectiveCrossAxisCount * itemWidth +
+          (effectiveCrossAxisCount - 1) * crossAxisSpacing;
+      final horizontalPadding = (screenWidth - gridWidth) / 2;
+
+      return CustomScrollView(
+        controller: scrollController,
+        slivers: [
+          SliverToBoxAdapter(
+            child: _buildWaterfallNewDynamicsBanner(colorScheme),
+          ),
+          SliverPadding(
+            padding: EdgeInsets.symmetric(
+                horizontal: horizontalPadding.clamp(12, double.infinity)),
+            sliver: gridContent,
+          ),
+        ],
+      );
+    }
 
     return CustomScrollView(
       controller: scrollController,
@@ -342,23 +494,9 @@ class _TabPageState extends State<_TabPage> with AutomaticKeepAliveClientMixin {
         SliverToBoxAdapter(
           child: _buildWaterfallNewDynamicsBanner(colorScheme),
         ),
-        SliverMasonryGrid.count(
-          crossAxisCount: crossAxisCount,
-          mainAxisSpacing: 12,
-          crossAxisSpacing: 12,
-          childCount: cachedList.length + 1,
-          itemBuilder: (context, index) {
-            if (index == cachedList.length) {
-              return _buildLoadingIndicator(colorScheme);
-            }
-            return DynamicPanel(
-              item: cachedList[index],
-              onTap: () =>
-                  widget.dynamicsController.pushDetail(cachedList[index], 1),
-              onCommentTap: () => widget.dynamicsController
-                  .pushDetail(cachedList[index], 1, action: 'comment'),
-            );
-          },
+        SliverPadding(
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          sliver: gridContent,
         ),
       ],
     );
@@ -431,13 +569,24 @@ class _TabPageState extends State<_TabPage> with AutomaticKeepAliveClientMixin {
   }
 
   Widget _buildWaterfallSkeletonList(double screenWidth) {
-    int crossAxisCount;
-    if (screenWidth >= 1200) {
-      crossAxisCount = 4;
-    } else if (screenWidth >= 900) {
-      crossAxisCount = 3;
-    } else {
-      crossAxisCount = 2;
+    const crossAxisSpacing = 12.0;
+    widget.dynamicsController.updateWaterfallCache(screenWidth);
+
+    final effectiveCrossAxisCount =
+        widget.dynamicsController.cachedEffectiveCrossAxisCount;
+    final itemWidth = widget.dynamicsController.cachedItemWidth;
+    final limitWidth = widget.dynamicsController.waterfallLimitWidth.value;
+
+    if (limitWidth) {
+      final gridWidth = effectiveCrossAxisCount * itemWidth +
+          (effectiveCrossAxisCount - 1) * crossAxisSpacing;
+      final horizontalPadding = (screenWidth - gridWidth) / 2;
+
+      return Padding(
+        padding: EdgeInsets.symmetric(
+            horizontal: horizontalPadding.clamp(12, double.infinity)),
+        child: WaterfallSkeleton(crossAxisCount: effectiveCrossAxisCount),
+      );
     }
 
     return Padding(
@@ -447,7 +596,7 @@ class _TabPageState extends State<_TabPage> with AutomaticKeepAliveClientMixin {
         top: 8,
         bottom: 80,
       ),
-      child: WaterfallSkeleton(crossAxisCount: crossAxisCount),
+      child: WaterfallSkeleton(crossAxisCount: effectiveCrossAxisCount),
     );
   }
 

@@ -70,6 +70,16 @@ class DynamicsController extends GetxController {
   };
   RxBool hasMore = true.obs;
   RxString wideScreenLayout = 'center'.obs;
+  RxInt waterfallCrossAxisCount = 3.obs;
+  RxBool waterfallLimitWidth = false.obs;
+  RxDouble waterfallCustomItemWidth = 300.0.obs;
+  RxBool waterfallUseCustomItemWidth = false.obs;
+
+  // 缓存的瀑布流计算结果
+  int _cachedAutoCrossAxisCount = 3;
+  double _cachedItemWidth = 300.0;
+  int _cachedEffectiveCrossAxisCount = 3;
+  double _lastScreenWidth = 0;
 
   Timer? _pollTimer;
   static const Duration _pollInterval = Duration(seconds: 30);
@@ -87,6 +97,22 @@ class DynamicsController extends GetxController {
     wideScreenLayout.value = setting.get(
       SettingBoxKey.dynamicWideScreenLayout,
       defaultValue: 'center',
+    );
+    waterfallCrossAxisCount.value = setting.get(
+      SettingBoxKey.waterfallCrossAxisCount,
+      defaultValue: 3,
+    );
+    waterfallLimitWidth.value = setting.get(
+      SettingBoxKey.waterfallLimitWidth,
+      defaultValue: false,
+    );
+    waterfallCustomItemWidth.value = setting.get(
+      SettingBoxKey.waterfallCustomItemWidth,
+      defaultValue: 300.0,
+    );
+    waterfallUseCustomItemWidth.value = setting.get(
+      SettingBoxKey.waterfallUseCustomItemWidth,
+      defaultValue: false,
     );
     updateCrossAxisCount();
     _startPolling();
@@ -178,6 +204,73 @@ class DynamicsController extends GetxController {
       wideScreenLayout.value = 'center';
     }
     setting.put(SettingBoxKey.dynamicWideScreenLayout, wideScreenLayout.value);
+  }
+
+  void setWaterfallCrossAxisCount(int count) {
+    waterfallCrossAxisCount.value = count.clamp(2, 6);
+    setting.put(
+        SettingBoxKey.waterfallCrossAxisCount, waterfallCrossAxisCount.value);
+  }
+
+  void toggleWaterfallLimitWidth() {
+    waterfallLimitWidth.value = !waterfallLimitWidth.value;
+    setting.put(SettingBoxKey.waterfallLimitWidth, waterfallLimitWidth.value);
+  }
+
+  void toggleWaterfallUseCustomItemWidth() {
+    waterfallUseCustomItemWidth.value = !waterfallUseCustomItemWidth.value;
+    setting.put(SettingBoxKey.waterfallUseCustomItemWidth,
+        waterfallUseCustomItemWidth.value);
+  }
+
+  void setWaterfallCustomItemWidth(double width) {
+    waterfallCustomItemWidth.value = width.clamp(200.0, 600.0);
+    setting.put(
+        SettingBoxKey.waterfallCustomItemWidth, waterfallCustomItemWidth.value);
+  }
+
+  double getEffectiveItemWidth(double screenWidth, int autoCrossAxisCount, double crossAxisSpacing) {
+    if (waterfallUseCustomItemWidth.value) {
+      return waterfallCustomItemWidth.value;
+    }
+    return calculateItemWidth(screenWidth, autoCrossAxisCount, crossAxisSpacing);
+  }
+
+  void updateWaterfallCache(double screenWidth, {double minItemWidth = 300.0, double crossAxisSpacing = 12.0}) {
+    if ((_lastScreenWidth - screenWidth).abs() < 1.0) {
+      return;
+    }
+    _lastScreenWidth = screenWidth;
+    _cachedAutoCrossAxisCount = calculateAutoCrossAxisCount(screenWidth, minItemWidth);
+    _cachedItemWidth = waterfallUseCustomItemWidth.value
+        ? waterfallCustomItemWidth.value
+        : calculateItemWidth(screenWidth, _cachedAutoCrossAxisCount, crossAxisSpacing);
+    _cachedEffectiveCrossAxisCount = waterfallLimitWidth.value
+        ? waterfallCrossAxisCount.value.clamp(2, _cachedAutoCrossAxisCount)
+        : _cachedAutoCrossAxisCount;
+  }
+
+  int get cachedAutoCrossAxisCount => _cachedAutoCrossAxisCount;
+  double get cachedItemWidth => _cachedItemWidth;
+  int get cachedEffectiveCrossAxisCount => _cachedEffectiveCrossAxisCount;
+
+  int calculateAutoCrossAxisCount(double screenWidth, double minItemWidth) {
+    final count = (screenWidth / minItemWidth).floor();
+    return count.clamp(2, 6);
+  }
+
+  double calculateItemWidth(
+      double screenWidth, int autoCrossAxisCount, double crossAxisSpacing) {
+    return (screenWidth - (autoCrossAxisCount - 1) * crossAxisSpacing) /
+        autoCrossAxisCount;
+  }
+
+  int getEffectiveCrossAxisCount(double screenWidth, double minItemWidth) {
+    final autoCount = calculateAutoCrossAxisCount(screenWidth, minItemWidth);
+    if (!waterfallLimitWidth.value) {
+      return autoCount;
+    }
+    return waterfallCrossAxisCount.value.clamp(2, autoCount);
   }
 
   void updateCrossAxisCount() {

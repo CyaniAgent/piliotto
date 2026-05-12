@@ -49,7 +49,8 @@ void main() async {
   if (UniversalPlatform.isDesktop) {
     await windowManager.ensureInitialized();
     const windowOptions = WindowOptions(
-      // size: Size(1280, 720),
+      // size: Size(400, 740),
+      // Size: Size(1280, 720),
       // minimumSize: Size(640, 480),
       center: true,
       // backgroundColor: Colors.transparent,

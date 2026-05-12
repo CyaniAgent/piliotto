@@ -143,6 +143,14 @@ class SettingBoxKey {
       actionTypeSort = 'actionTypeSort',
       // 动态页面宽屏布局模式: 'center' 居中, 'waterfall' 瀑布流
       dynamicWideScreenLayout = 'dynamicWideScreenLayout',
+      // 瀑布流列数配置
+      waterfallCrossAxisCount = 'waterfallCrossAxisCount',
+      // 瀑布流限制宽度开关
+      waterfallLimitWidth = 'waterfallLimitWidth',
+      // 瀑布流自定义卡片宽度
+      waterfallCustomItemWidth = 'waterfallCustomItemWidth',
+      // 瀑布流使用自定义卡片宽度开关
+      waterfallUseCustomItemWidth = 'waterfallUseCustomItemWidth',
       // 窄屏模式下使用侧边栏代替"我的"页面
       useDrawerForUser = 'useDrawerForUser';
 }
