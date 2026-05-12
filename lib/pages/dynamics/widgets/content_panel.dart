@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:piliotto/common/widgets/markdown_text.dart';
 import 'package:piliotto/common/widgets/network_img_layer.dart';
+import 'package:piliotto/ottohub/models/dynamics/result.dart';
 import 'package:piliotto/plugin/pl_gallery/index.dart';
 
 class Content extends StatefulWidget {
-  final dynamic item;
+  final DynamicItemModel item;
   final String? source;
 
-  const Content({super.key, this.item, this.source});
+  const Content({super.key, required this.item, this.source});
 
   @override
   State<Content> createState() => _ContentState();

@@ -1,6 +1,8 @@
 library;
 
+import 'dart:async';
 import 'dart:io';
+import 'dart:math' as math;
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:dio/dio.dart';
@@ -88,6 +90,23 @@ class _InteractiveviewerGalleryState extends State<InteractiveviewerGallery>
 
   int? currentIndex;
 
+  // PC interaction
+  final FocusNode _focusNode = FocusNode();
+
+  // Rotation state per image
+  final Map<int, double> _rotationAngles = {};
+
+  // Toolbar visibility
+  bool _toolbarVisible = true;
+  Timer? _toolbarTimer;
+
+  // Batch selection mode
+  bool _batchMode = false;
+  final Set<int> _selectedIndices = {};
+
+  // Image info cache
+  final Map<int, ImageInfoData> _imageInfoCache = {};
+
   @override
   void initState() {
     super.initState();
@@ -114,6 +133,7 @@ class _InteractiveviewerGalleryState extends State<InteractiveviewerGallery>
 
     currentIndex = widget.initIndex;
     setStatusBar();
+    _startToolbarTimer();
   }
 
   Future<void> setStatusBar() async {
@@ -127,6 +147,8 @@ class _InteractiveviewerGalleryState extends State<InteractiveviewerGallery>
   void dispose() {
     _pageController!.dispose();
     _animationController.dispose();
+    _focusNode.dispose();
+    _toolbarTimer?.cancel();
     if (Platform.isIOS || Platform.isAndroid) {
       try {
         StatusBarControlPlus.setHidden(false,
@@ -134,6 +156,26 @@ class _InteractiveviewerGalleryState extends State<InteractiveviewerGallery>
       } catch (_) {}
     }
     super.dispose();
+  }
+
+  void _startToolbarTimer() {
+    _toolbarTimer?.cancel();
+    _toolbarTimer = Timer(const Duration(seconds: 3), () {
+      if (mounted && _toolbarVisible) {
+        setState(() {
+          _toolbarVisible = false;
+        });
+      }
+    });
+  }
+
+  void _showToolbar() {
+    if (!_toolbarVisible) {
+      setState(() {
+        _toolbarVisible = true;
+      });
+    }
+    _startToolbarTimer();
   }
 
   /// When the source gets scaled up, the swipe up / down to dismiss gets
@@ -224,116 +266,509 @@ class _InteractiveviewerGalleryState extends State<InteractiveviewerGallery>
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return InteractiveViewerBoundary(
-      controller: _transformationController,
-      boundaryWidth: MediaQuery.of(context).size.width,
-      onScaleChanged: _onScaleChanged,
-      onLeftBoundaryHit: _onLeftBoundaryHit,
-      onRightBoundaryHit: _onRightBoundaryHit,
-      onNoBoundaryHit: _onNoBoundaryHit,
-      maxScale: widget.maxScale,
-      minScale: widget.minScale,
-      child: Stack(children: [
-        CustomDismissible(
-          onDismissed: () {
-            Navigator.of(context).pop();
-            widget.onDismissed?.call(_pageController!.page!.floor());
+  void _goToPrevious() {
+    if (currentIndex! > 0) {
+      _pageController!.previousPage(
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      );
+    }
+  }
+
+  void _goToNext() {
+    if (currentIndex! < widget.sources.length - 1) {
+      _pageController!.nextPage(
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      );
+    }
+  }
+
+  void _close() {
+    Navigator.of(context).pop();
+    widget.onDismissed?.call(_pageController!.page!.floor());
+  }
+
+  void _rotateImage() {
+    setState(() {
+      _rotationAngles[currentIndex!] =
+          (_rotationAngles[currentIndex!] ?? 0) + math.pi / 2;
+    });
+  }
+
+  Future<void> _showImageInfo() async {
+    final url = widget.sources[currentIndex!].toString();
+    ImageInfoData? info = _imageInfoCache[currentIndex!];
+
+    if (info == null) {
+      try {
+        final response = await Dio().head(url);
+        final contentLength = response.headers.value('content-length');
+        final contentType = response.headers.value('content-type');
+
+        // Try to get image dimensions
+        final imageProvider = CachedNetworkImageProvider(url);
+        final imageStream = imageProvider.resolve(ImageConfiguration.empty);
+        final completer = Completer<Size>();
+        late ImageStreamListener listener;
+        listener = ImageStreamListener((ImageInfo imageInfo, bool _) {
+          if (!completer.isCompleted) {
+            completer.complete(Size(
+              imageInfo.image.width.toDouble(),
+              imageInfo.image.height.toDouble(),
+            ));
+          }
+          imageStream.removeListener(listener);
+        });
+        imageStream.addListener(listener);
+
+        final size = await completer.future.timeout(
+          const Duration(seconds: 5),
+          onTimeout: () {
+            imageStream.removeListener(listener);
+            return Size.zero;
           },
-          enabled: _enableDismiss,
-          child: PageView.builder(
-            onPageChanged: _onPageChanged,
-            controller: _pageController,
-            physics:
-                _enablePageView ? null : const NeverScrollableScrollPhysics(),
-            itemCount: widget.sources.length,
-            itemBuilder: (BuildContext context, int index) {
-              return GestureDetector(
-                onDoubleTapDown: (TapDownDetails details) {
-                  _doubleTapLocalPosition = details.localPosition;
-                },
-                onDoubleTap: onDoubleTap,
-                onLongPress: onLongPress,
-                child: widget.itemBuilder != null
-                    ? widget.itemBuilder!(
-                        context,
-                        index,
-                        index == currentIndex,
-                        _enablePageView,
-                      )
-                    : _itemBuilder(widget.sources, index),
-              );
-            },
+        );
+
+        info = ImageInfoData(
+          width: size.width > 0 ? size.width.toInt() : null,
+          height: size.height > 0 ? size.height.toInt() : null,
+          fileSize: contentLength != null ? int.tryParse(contentLength) : null,
+          format: contentType?.split('/').last ?? 'unknown',
+        );
+        _imageInfoCache[currentIndex!] = info;
+      } catch (e) {
+        info = ImageInfoData(
+          width: null,
+          height: null,
+          fileSize: null,
+          format: 'unknown',
+        );
+      }
+    }
+
+    if (!mounted) return;
+
+    showModalBottomSheet(
+      context: context,
+      useRootNavigator: true,
+      builder: (context) {
+        return Container(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).padding.bottom + 16,
+            top: 16,
+            left: 16,
+            right: 16,
           ),
-        ),
-        Positioned(
-          bottom: 0,
-          left: 0,
-          right: 0,
-          child: Container(
-            padding: EdgeInsets.fromLTRB(
-                12, 8, 20, MediaQuery.of(context).padding.bottom + 8),
-            decoration: _enablePageView
-                ? BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [
-                        Colors.transparent,
-                        Colors.black.withValues(alpha: 0.3)
-                      ],
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 32,
+                  height: 3,
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.outline,
+                    borderRadius: BorderRadius.circular(3),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                '图片信息',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
                     ),
-                  )
-                : null,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.close, color: Colors.white),
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                    widget.onDismissed?.call(_pageController!.page!.floor());
-                  },
-                ),
-                widget.sources.length > 1
-                    ? Text(
-                        "${currentIndex! + 1}/${widget.sources.length}",
-                        style: const TextStyle(color: Colors.white),
-                      )
-                    : const SizedBox(),
-                PopupMenuButton(
-                  itemBuilder: (context) {
-                    return [
-                      PopupMenuItem(
-                        value: 0,
-                        onTap: () => onShareImg(widget.sources[currentIndex!]),
-                        child: const Text("分享图片"),
-                      ),
-                      PopupMenuItem(
-                        value: 1,
-                        onTap: () {
-                          onCopyImg(widget.sources[currentIndex!].toString());
-                        },
-                        child: const Text("复制图片"),
-                      ),
-                      PopupMenuItem(
-                        value: 2,
-                        onTap: () {
-                          DownloadUtils.downloadImg(
-                              widget.sources[currentIndex!]);
-                        },
-                        child: const Text("保存图片"),
-                      ),
-                    ];
-                  },
-                  child: const Icon(Icons.more_horiz, color: Colors.white),
-                ),
-              ],
+              ),
+              const SizedBox(height: 16),
+              _buildInfoRow('URL', url, context),
+              if (info != null && info.width != null && info.height != null)
+                _buildInfoRow('尺寸', '${info.width} x ${info.height}', context),
+              if (info != null && info.fileSize != null)
+                _buildInfoRow('大小', _formatFileSize(info.fileSize!), context),
+              if (info != null)
+                _buildInfoRow('格式', info.format.toUpperCase(), context),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildInfoRow(String label, String value, BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 60,
+            child: Text(
+              label,
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.outline,
+                fontSize: 14,
+              ),
             ),
           ),
+          Expanded(
+            child: Text(
+              value,
+              style: const TextStyle(fontSize: 14),
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _formatFileSize(int bytes) {
+    if (bytes < 1024) {
+      return '$bytes B';
+    }
+    if (bytes < 1024 * 1024) {
+      return '${(bytes / 1024).toStringAsFixed(1)} KB';
+    }
+    if (bytes < 1024 * 1024 * 1024) {
+      return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
+    }
+    return '${(bytes / (1024 * 1024 * 1024)).toStringAsFixed(1)} GB';
+  }
+
+  void _toggleBatchMode() {
+    setState(() {
+      _batchMode = !_batchMode;
+      if (!_batchMode) {
+        _selectedIndices.clear();
+      }
+    });
+  }
+
+  void _toggleSelection(int index) {
+    setState(() {
+      if (_selectedIndices.contains(index)) {
+        _selectedIndices.remove(index);
+      } else {
+        _selectedIndices.add(index);
+      }
+    });
+  }
+
+  Future<void> _batchDownload() async {
+    if (_selectedIndices.isEmpty) {
+      SmartDialog.showToast('请先选择图片');
+      return;
+    }
+
+    SmartDialog.showLoading(msg: '下载中...');
+    try {
+      for (final index in _selectedIndices) {
+        await DownloadUtils.downloadImg(widget.sources[index]);
+      }
+      SmartDialog.dismiss();
+      SmartDialog.showToast('已保存 ${_selectedIndices.length} 张图片');
+    } catch (e) {
+      SmartDialog.dismiss();
+      SmartDialog.showToast('下载失败: $e');
+    }
+
+    setState(() {
+      _batchMode = false;
+      _selectedIndices.clear();
+    });
+  }
+
+  Future<void> _batchShare() async {
+    if (_selectedIndices.isEmpty) {
+      SmartDialog.showToast('请先选择图片');
+      return;
+    }
+
+    SmartDialog.showLoading(msg: '准备中...');
+    try {
+      final files = <XFile>[];
+      for (final index in _selectedIndices) {
+        final url = widget.sources[index].toString();
+        final response = await Dio()
+            .get(url, options: Options(responseType: ResponseType.bytes));
+        final temp = await getTemporaryDirectory();
+        final imgName =
+            "plpl_pic_${DateTime.now().millisecondsSinceEpoch}_$index.jpg";
+        final path = '${temp.path}/$imgName';
+        await File(path).writeAsBytes(response.data);
+        files.add(XFile(path));
+      }
+      SmartDialog.dismiss();
+      SharePlus.instance.share(ShareParams(files: files));
+    } catch (e) {
+      SmartDialog.dismiss();
+      SmartDialog.showToast('分享失败: $e');
+    }
+
+    setState(() {
+      _batchMode = false;
+      _selectedIndices.clear();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return KeyboardListener(
+      focusNode: _focusNode,
+      autofocus: true,
+      onKeyEvent: (KeyEvent event) {
+        if (event is KeyDownEvent) {
+          switch (event.logicalKey) {
+            case LogicalKeyboardKey.arrowLeft:
+              _goToPrevious();
+              break;
+            case LogicalKeyboardKey.arrowRight:
+              _goToNext();
+              break;
+            case LogicalKeyboardKey.escape:
+              _close();
+              break;
+          }
+        }
+      },
+      child: MouseRegion(
+        onHover: (_) => _showToolbar(),
+        child: InteractiveViewerBoundary(
+          controller: _transformationController,
+          boundaryWidth: MediaQuery.of(context).size.width,
+          onScaleChanged: _onScaleChanged,
+          onLeftBoundaryHit: _onLeftBoundaryHit,
+          onRightBoundaryHit: _onRightBoundaryHit,
+          onNoBoundaryHit: _onNoBoundaryHit,
+          maxScale: widget.maxScale,
+          minScale: widget.minScale,
+          child: Stack(children: [
+            CustomDismissible(
+              onDismissed: _close,
+              enabled: _enableDismiss,
+              onDragUpdate: (progress) {
+                // Background opacity follows dismiss progress
+              },
+              child: PageView.builder(
+                onPageChanged: _onPageChanged,
+                controller: _pageController,
+                physics: _enablePageView
+                    ? null
+                    : const NeverScrollableScrollPhysics(),
+                itemCount: widget.sources.length,
+                itemBuilder: (BuildContext context, int index) {
+                  return GestureDetector(
+                    onDoubleTapDown: (TapDownDetails details) {
+                      _doubleTapLocalPosition = details.localPosition;
+                    },
+                    onDoubleTap: onDoubleTap,
+                    onLongPress: onLongPress,
+                    child: widget.itemBuilder != null
+                        ? widget.itemBuilder!(
+                            context,
+                            index,
+                            index == currentIndex,
+                            _enablePageView,
+                          )
+                        : _itemBuilder(widget.sources, index),
+                  );
+                },
+              ),
+            ),
+            // Page indicators
+            if (widget.sources.length > 1)
+              Positioned(
+                top: MediaQuery.of(context).padding.top + 16,
+                left: 0,
+                right: 0,
+                child: Center(
+                  child: AnimatedOpacity(
+                    opacity: _toolbarVisible ? 1.0 : 0.0,
+                    duration: const Duration(milliseconds: 300),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.5),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Text(
+                        '${currentIndex! + 1} / ${widget.sources.length}',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            // Batch mode selection indicator
+            if (_batchMode)
+              Positioned(
+                top: MediaQuery.of(context).padding.top + 16,
+                right: 16,
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.primary,
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Text(
+                    '已选择 ${_selectedIndices.length} 张',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ),
+            // Bottom toolbar
+            AnimatedPositioned(
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeInOut,
+              bottom: _toolbarVisible ? 0 : -100,
+              left: 0,
+              right: 0,
+              child: Container(
+                padding: EdgeInsets.fromLTRB(
+                    12, 8, 12, MediaQuery.of(context).padding.bottom + 8),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Colors.transparent,
+                      Colors.black.withValues(alpha: 0.7)
+                    ],
+                  ),
+                ),
+                child: SafeArea(
+                  top: false,
+                  child: _batchMode
+                      ? _buildBatchToolbar()
+                      : _buildNormalToolbar(),
+                ),
+              ),
+            ),
+          ]),
         ),
-      ]),
+      ),
+    );
+  }
+
+  Widget _buildNormalToolbar() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      children: [
+        _ToolbarButton(
+          icon: Icons.close,
+          onPressed: _close,
+        ),
+        _ToolbarButton(
+          icon: Icons.rotate_right,
+          onPressed: _rotateImage,
+        ),
+        _ToolbarButton(
+          icon: Icons.info_outline,
+          onPressed: _showImageInfo,
+        ),
+        if (widget.sources.length > 1)
+          _ToolbarButton(
+            icon: Icons.checklist,
+            onPressed: _toggleBatchMode,
+          ),
+        _ToolbarButton(
+          icon: Icons.more_horiz,
+          onPressed: () => _showMoreMenu(),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildBatchToolbar() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      children: [
+        _ToolbarButton(
+          icon: Icons.close,
+          onPressed: _toggleBatchMode,
+        ),
+        _ToolbarButton(
+          icon: Icons.download,
+          onPressed: _batchDownload,
+        ),
+        _ToolbarButton(
+          icon: Icons.share,
+          onPressed: _batchShare,
+        ),
+      ],
+    );
+  }
+
+  void _showMoreMenu() {
+    showModalBottomSheet(
+      context: context,
+      useRootNavigator: true,
+      builder: (context) {
+        return Container(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).padding.bottom,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              InkWell(
+                onTap: () => Get.back(),
+                child: Container(
+                  height: 35,
+                  padding: const EdgeInsets.only(bottom: 2),
+                  child: Center(
+                    child: Container(
+                      width: 32,
+                      height: 3,
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.outline,
+                        borderRadius: BorderRadius.circular(3),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              ListTile(
+                leading: const Icon(Icons.share),
+                onTap: () {
+                  onShareImg(widget.sources[currentIndex!]);
+                  Navigator.of(context).pop();
+                },
+                title: const Text('分享图片'),
+              ),
+              ListTile(
+                leading: const Icon(Icons.copy),
+                onTap: () {
+                  onCopyImg(widget.sources[currentIndex!].toString());
+                  Navigator.of(context).pop();
+                },
+                title: const Text('复制图片'),
+              ),
+              ListTile(
+                leading: const Icon(Icons.download),
+                onTap: () {
+                  DownloadUtils.downloadImg(widget.sources[currentIndex!]);
+                  Navigator.of(context).pop();
+                },
+                title: const Text('保存图片'),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -373,21 +808,26 @@ class _InteractiveviewerGalleryState extends State<InteractiveviewerGallery>
   Widget _itemBuilder(List<dynamic> sources, int index) {
     final heroTag = widget.heroTagBuilder?.call(index);
     final useHero = heroTag != null && heroTag.isNotEmpty;
+    final rotationAngle = _rotationAngles[index] ?? 0;
 
-    final imageWidget = CachedNetworkImage(
-      fadeInDuration: const Duration(milliseconds: 0),
-      imageUrl: sources[index],
-      fit: BoxFit.contain,
-      placeholder: (context, url) => Container(
-        color: Colors.black,
-        child: const Center(
-          child: CircularProgressIndicator(color: Colors.white),
+    final imageWidget = AnimatedRotation(
+      turns: rotationAngle / (2 * math.pi),
+      duration: const Duration(milliseconds: 300),
+      child: CachedNetworkImage(
+        fadeInDuration: const Duration(milliseconds: 0),
+        imageUrl: sources[index],
+        fit: BoxFit.contain,
+        placeholder: (context, url) => Container(
+          color: Colors.black,
+          child: const Center(
+            child: CircularProgressIndicator(color: Colors.white),
+          ),
         ),
-      ),
-      errorWidget: (context, url, error) => Container(
-        color: Colors.black,
-        child: const Center(
-          child: Icon(Icons.broken_image, color: Colors.white54, size: 48),
+        errorWidget: (context, url, error) => Container(
+          color: Colors.black,
+          child: const Center(
+            child: Icon(Icons.broken_image, color: Colors.white54, size: 48),
+          ),
         ),
       ),
     );
@@ -395,29 +835,63 @@ class _InteractiveviewerGalleryState extends State<InteractiveviewerGallery>
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: () {
-        if (_enablePageView) {
-          Navigator.of(context).pop();
+        if (_batchMode) {
+          _toggleSelection(index);
+        } else if (_enablePageView) {
+          _close();
         }
       },
       child: Center(
-        child: useHero
-            ? Hero(
-                tag: heroTag,
-                flightShuttleBuilder: (flightContext, animation, flightDirection, fromHeroContext, toHeroContext) {
-                  return AnimatedBuilder(
-                    animation: animation,
-                    builder: (context, child) {
-                      return Opacity(
-                        opacity: animation.value,
-                        child: child,
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            useHero
+                ? Hero(
+                    tag: heroTag,
+                    flightShuttleBuilder: (flightContext, animation,
+                        flightDirection, fromHeroContext, toHeroContext) {
+                      return AnimatedBuilder(
+                        animation: animation,
+                        builder: (context, child) {
+                          return Opacity(
+                            opacity: animation.value,
+                            child: child,
+                          );
+                        },
+                        child: imageWidget,
                       );
                     },
                     child: imageWidget,
-                  );
-                },
-                child: imageWidget,
-              )
-            : imageWidget,
+                  )
+                : imageWidget,
+            if (_batchMode)
+              Positioned(
+                top: 16,
+                right: 16,
+                child: GestureDetector(
+                  onTap: () => _toggleSelection(index),
+                  child: Container(
+                    width: 28,
+                    height: 28,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: _selectedIndices.contains(index)
+                          ? Theme.of(context).colorScheme.primary
+                          : Colors.black.withValues(alpha: 0.5),
+                      border: Border.all(
+                        color: Colors.white,
+                        width: 2,
+                      ),
+                    ),
+                    child: _selectedIndices.contains(index)
+                        ? const Icon(Icons.check,
+                            color: Colors.white, size: 18)
+                        : null,
+                  ),
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }
@@ -470,6 +944,8 @@ class _InteractiveviewerGalleryState extends State<InteractiveviewerGallery>
   }
 
   void onLongPress() {
+    if (_batchMode) return;
+
     showModalBottomSheet(
       context: context,
       useRootNavigator: true,
@@ -499,6 +975,7 @@ class _InteractiveviewerGalleryState extends State<InteractiveviewerGallery>
                 ),
               ),
               ListTile(
+                leading: const Icon(Icons.share),
                 onTap: () {
                   onShareImg(widget.sources[currentIndex!]);
                   Navigator.of(context).pop();
@@ -506,6 +983,7 @@ class _InteractiveviewerGalleryState extends State<InteractiveviewerGallery>
                 title: const Text('分享图片'),
               ),
               ListTile(
+                leading: const Icon(Icons.copy),
                 onTap: () {
                   onCopyImg(widget.sources[currentIndex!].toString());
                   Navigator.of(context).pop();
@@ -513,6 +991,7 @@ class _InteractiveviewerGalleryState extends State<InteractiveviewerGallery>
                 title: const Text('复制图片'),
               ),
               ListTile(
+                leading: const Icon(Icons.download),
                 onTap: () {
                   DownloadUtils.downloadImg(widget.sources[currentIndex!]);
                   Navigator.of(context).pop();
@@ -525,4 +1004,37 @@ class _InteractiveviewerGalleryState extends State<InteractiveviewerGallery>
       },
     );
   }
+}
+
+class _ToolbarButton extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback onPressed;
+
+  const _ToolbarButton({
+    required this.icon,
+    required this.onPressed,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return IconButton(
+      icon: Icon(icon, color: Colors.white),
+      onPressed: onPressed,
+      splashRadius: 24,
+    );
+  }
+}
+
+class ImageInfoData {
+  final int? width;
+  final int? height;
+  final int? fileSize;
+  final String format;
+
+  ImageInfoData({
+    this.width,
+    this.height,
+    this.fileSize,
+    required this.format,
+  });
 }

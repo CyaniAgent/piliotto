@@ -1,3 +1,4 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
 /// A callback for the [InteractiveViewerBoundary] that is called when the scale
@@ -104,14 +105,46 @@ class InteractiveViewerBoundaryState extends State<InteractiveViewerBoundary> {
     }
   }
 
+  void _handlePointerSignal(PointerSignalEvent event) {
+    if (event is PointerScrollEvent) {
+      final double scaleChange = event.scrollDelta.dy > 0 ? 0.9 : 1.1;
+      final double currentScale = _controller!.value.row0[0];
+      final double newScale = (currentScale * scaleChange).clamp(
+        widget.minScale ?? 1.0,
+        widget.maxScale ?? 4.5,
+      );
+
+      if (newScale != currentScale) {
+        // Calculate zoom center
+        final RenderBox? renderBox = context.findRenderObject() as RenderBox?;
+        if (renderBox != null) {
+          final Size size = renderBox.size;
+          final Offset center = Offset(size.width / 2, size.height / 2);
+
+          // Create new transformation matrix centered on the viewport
+          final Matrix4 newMatrix = Matrix4.identity()
+            ..translateByDouble(center.dx, center.dy, 0, 1)
+            ..scaleByDouble(newScale, newScale, newScale, 1)
+            ..translateByDouble(-center.dx, -center.dy, 0, 1);
+
+          _controller!.value = newMatrix;
+          _updateBoundaryDetection();
+        }
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return InteractiveViewer(
-      maxScale: widget.maxScale!,
-      minScale: widget.minScale!,
-      transformationController: _controller,
-      onInteractionEnd: (_) => _updateBoundaryDetection(),
-      child: widget.child,
+    return Listener(
+      onPointerSignal: _handlePointerSignal,
+      child: InteractiveViewer(
+        maxScale: widget.maxScale!,
+        minScale: widget.minScale!,
+        transformationController: _controller,
+        onInteractionEnd: (_) => _updateBoundaryDetection(),
+        child: widget.child,
+      ),
     );
   }
 }

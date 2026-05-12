@@ -36,9 +36,6 @@ class _DynamicsPageState extends State<DynamicsPage>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _dynamicsController.updateCrossAxisCount();
-    EasyThrottle.throttle(
-        'dynamicsPageDidChange', const Duration(milliseconds: 100), () {});
   }
 
   @override
@@ -157,17 +154,6 @@ class _DynamicsPageState extends State<DynamicsPage>
     final screenWidth = MediaQuery.of(context).size.width;
     _dynamicsController.updateWaterfallCache(screenWidth);
 
-    final autoCrossAxisCount = _dynamicsController.cachedAutoCrossAxisCount;
-    final autoItemWidth = _dynamicsController.cachedItemWidth;
-
-    final columnItems = List.generate(
-      autoCrossAxisCount - 1,
-      (index) => DropdownMenuItem(
-        value: index + 2,
-        child: Text('${index + 2} 列'),
-      ),
-    );
-
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -177,6 +163,11 @@ class _DynamicsPageState extends State<DynamicsPage>
           curve: Curves.easeInOut,
           alignment: Alignment.topCenter,
           child: Obx(() {
+            _dynamicsController.updateWaterfallCache(screenWidth);
+            final autoCrossAxisCount =
+                _dynamicsController.cachedAutoCrossAxisCount;
+            final autoItemWidth =
+                _dynamicsController.getAutoItemWidth(screenWidth, 12.0);
             final limitWidth = _dynamicsController.waterfallLimitWidth.value;
             final useCustomWidth =
                 _dynamicsController.waterfallUseCustomItemWidth.value;
@@ -184,6 +175,17 @@ class _DynamicsPageState extends State<DynamicsPage>
                 _dynamicsController.waterfallCustomItemWidth.value;
             final crossAxisCount =
                 _dynamicsController.waterfallCrossAxisCount.value;
+
+            final columnItems = List.generate(
+              autoCrossAxisCount - 1,
+              (index) => DropdownMenuItem(
+                value: index + 2,
+                child: Text('${index + 2} 列'),
+              ),
+            );
+
+            final effectiveCrossAxisCount =
+                crossAxisCount.clamp(2, autoCrossAxisCount);
 
             return Column(
               mainAxisSize: MainAxisSize.min,
@@ -238,7 +240,7 @@ class _DynamicsPageState extends State<DynamicsPage>
                       const Text('瀑布流列数: '),
                       const SizedBox(width: 8),
                       DropdownButton<int>(
-                        value: crossAxisCount.clamp(2, autoCrossAxisCount),
+                        value: effectiveCrossAxisCount,
                         items: columnItems,
                         onChanged: (value) {
                           if (value != null) {
@@ -299,11 +301,14 @@ class _TabPageState extends State<_TabPage> with AutomaticKeepAliveClientMixin {
       final wideScreenLayout = widget.dynamicsController.wideScreenLayout.value;
 
       if (cachedList.isEmpty && !hasLoaded) {
-        if (widget.dynamicsController.isLoadingDynamic.value && isCurrentTab) {
+        if (widget.dynamicsController.tabLoadingStates[widget.tab]!.value &&
+            isCurrentTab) {
           return _buildSkeletonList(
               isWideScreen, screenWidth, wideScreenLayout);
         } else {
-          return const NoData();
+          return NoData(
+            onRefresh: () => widget.dynamicsController.onRefresh(),
+          );
         }
       }
 
@@ -468,10 +473,17 @@ class _TabPageState extends State<_TabPage> with AutomaticKeepAliveClientMixin {
       },
     );
 
+    const maxContentWidth = 1600.0;
+    final effectiveScreenWidth =
+        screenWidth > maxContentWidth ? maxContentWidth : screenWidth;
+    final sidePadding = screenWidth > maxContentWidth
+        ? (screenWidth - maxContentWidth) / 2
+        : 0.0;
+
     if (limitWidth) {
       final gridWidth = effectiveCrossAxisCount * itemWidth +
           (effectiveCrossAxisCount - 1) * crossAxisSpacing;
-      final horizontalPadding = (screenWidth - gridWidth) / 2;
+      final horizontalPadding = (effectiveScreenWidth - gridWidth) / 2;
 
       return CustomScrollView(
         controller: scrollController,
@@ -481,7 +493,8 @@ class _TabPageState extends State<_TabPage> with AutomaticKeepAliveClientMixin {
           ),
           SliverPadding(
             padding: EdgeInsets.symmetric(
-                horizontal: horizontalPadding.clamp(12, double.infinity)),
+                horizontal:
+                    horizontalPadding.clamp(12, double.infinity) + sidePadding),
             sliver: gridContent,
           ),
         ],
@@ -495,7 +508,7 @@ class _TabPageState extends State<_TabPage> with AutomaticKeepAliveClientMixin {
           child: _buildWaterfallNewDynamicsBanner(colorScheme),
         ),
         SliverPadding(
-          padding: const EdgeInsets.symmetric(horizontal: 12),
+          padding: EdgeInsets.symmetric(horizontal: 12 + sidePadding),
           sliver: gridContent,
         ),
       ],
@@ -622,7 +635,7 @@ class _TabPageState extends State<_TabPage> with AutomaticKeepAliveClientMixin {
     return Obx(() => Container(
           padding: const EdgeInsets.symmetric(vertical: 20),
           child: Center(
-            child: widget.dynamicsController.isLoadingDynamic.value
+            child: widget.dynamicsController.tabLoadingStates[widget.tab]!.value
                 ? Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [

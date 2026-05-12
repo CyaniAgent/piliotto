@@ -1,6 +1,8 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 
-/// A [PageRoute] with a semi transparent background.
+/// A [PageRoute] with a blurred semi transparent background.
 ///
 /// Similar to calling [showDialog] except it can be used with a [Navigator] to
 /// show a [Hero] animation.
@@ -8,12 +10,16 @@ class HeroDialogRoute<T> extends PageRoute<T> {
   HeroDialogRoute({
     required this.builder,
     this.onBackgroundTap,
+    this.overlayColor,
   }) : super();
 
   final WidgetBuilder builder;
 
   /// Called when the background is tapped.
   final VoidCallback? onBackgroundTap;
+
+  /// Optional overlay color for the blurred background.
+  final Color? overlayColor;
 
   @override
   bool get opaque => false;
@@ -53,10 +59,24 @@ class HeroDialogRoute<T> extends PageRoute<T> {
     Animation<double> secondaryAnimation,
   ) {
     final Widget child = builder(context);
-    final Widget result = Semantics(
-      scopesRoute: true,
-      explicitChildNodes: true,
-      child: child,
+    final Widget result = Stack(
+      children: [
+        // Blurred background
+        Positioned.fill(
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 12.0, sigmaY: 12.0),
+            child: Container(
+              color: overlayColor ?? Colors.black.withValues(alpha: 0.5),
+            ),
+          ),
+        ),
+        // Content
+        Semantics(
+          scopesRoute: true,
+          explicitChildNodes: true,
+          child: child,
+        ),
+      ],
     );
     return result;
   }

@@ -9,6 +9,7 @@ class CustomDismissible extends StatefulWidget {
     this.onDismissed,
     this.dismissThreshold = 0.2,
     this.enabled = true,
+    this.onDragUpdate,
     super.key,
   });
 
@@ -16,6 +17,7 @@ class CustomDismissible extends StatefulWidget {
   final double dismissThreshold;
   final VoidCallback? onDismissed;
   final bool enabled;
+  final ValueChanged<double>? onDragUpdate;
 
   @override
   State<CustomDismissible> createState() => _CustomDismissibleState();
@@ -26,7 +28,7 @@ class _CustomDismissibleState extends State<CustomDismissible>
   late AnimationController _animateController;
   late Animation<Offset> _moveAnimation;
   late Animation<double> _scaleAnimation;
-  late Animation<Decoration> _opacityAnimation;
+  late Animation<double> _opacityAnimation;
 
   double _dragExtent = 0;
   bool _dragUnderway = false;
@@ -67,9 +69,9 @@ class _CustomDismissibleState extends State<CustomDismissible>
       end: 0.5,
     ));
 
-    _opacityAnimation = DecorationTween(
-      begin: const BoxDecoration(color: Color(0xFF000000)),
-      end: const BoxDecoration(color: Color(0x00000000)),
+    _opacityAnimation = Tween<double>(
+      begin: 1.0,
+      end: 0.0,
     ).animate(_animateController);
   }
 
@@ -108,6 +110,9 @@ class _CustomDismissibleState extends State<CustomDismissible>
     if (!_animateController.isAnimating) {
       _animateController.value = _dragExtent.abs() / context.size!.height;
     }
+
+    // Notify parent about drag progress
+    widget.onDragUpdate?.call(_animateController.value);
   }
 
   void _handleDragEnd(DragEndDetails details) {
@@ -125,17 +130,29 @@ class _CustomDismissibleState extends State<CustomDismissible>
       // if the dragged value exceeded the dismissThreshold, call onDismissed
       // else animate back to initial position.
       if (_animateController.value > widget.dismissThreshold) {
+        widget.onDragUpdate?.call(1.0);
         widget.onDismissed?.call();
       } else {
-        _animateController.reverse();
+        _animateBack();
       }
     }
   }
 
+  void _animateBack() {
+    _animateController.reverse();
+    widget.onDragUpdate?.call(0.0);
+  }
+
   @override
   Widget build(BuildContext context) {
-    final Widget content = DecoratedBoxTransition(
-      decoration: _opacityAnimation,
+    final Widget content = AnimatedBuilder(
+      animation: _opacityAnimation,
+      builder: (context, child) {
+        return Opacity(
+          opacity: _opacityAnimation.value,
+          child: child,
+        );
+      },
       child: SlideTransition(
         position: _moveAnimation,
         child: ScaleTransition(

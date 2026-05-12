@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
@@ -8,7 +9,6 @@ import 'package:piliotto/repositories/i_dynamics_repository.dart';
 import 'package:piliotto/models/common/dynamics_type.dart';
 import 'package:piliotto/ottohub/models/dynamics/result.dart';
 import 'package:piliotto/utils/feed_back.dart';
-import 'package:piliotto/utils/responsive_util.dart';
 
 import 'package:piliotto/utils/storage.dart';
 
@@ -19,7 +19,6 @@ class DynamicsController extends GetxController {
   RxList<DynamicItemModel> dynamicsList = <DynamicItemModel>[].obs;
   Rx<DynamicsType> dynamicsType = DynamicsType.values[0].obs;
   RxString dynamicsTypeLabel = '全部'.obs;
-  final ScrollController scrollController = ScrollController();
   List filterTypeList = [
     {
       'label': DynamicsType.all.labels,
@@ -47,9 +46,11 @@ class DynamicsController extends GetxController {
   Box userInfoCache = GStrorage.userInfo;
   RxBool userLogin = false.obs;
   dynamic userInfo;
-  RxBool isLoadingDynamic = false.obs;
+  final Map<String, RxBool> tabLoadingStates = {
+    'latest': false.obs,
+    'popular': false.obs,
+  };
   Box setting = GStrorage.setting;
-  RxInt crossAxisCount = 1.obs;
 
   RxString currentTab = 'latest'.obs;
   final Map<String, List<DynamicItemModel>> _tabDataCache = {
@@ -114,14 +115,12 @@ class DynamicsController extends GetxController {
       SettingBoxKey.waterfallUseCustomItemWidth,
       defaultValue: false,
     );
-    updateCrossAxisCount();
     _startPolling();
   }
 
   @override
   void onClose() {
     _stopPolling();
-    scrollController.dispose();
     for (final controller in tabScrollControllers.values) {
       controller.dispose();
     }
@@ -142,7 +141,7 @@ class DynamicsController extends GetxController {
 
   Future<void> _checkForNewDynamics() async {
     if (currentTab.value != 'latest') return;
-    if (isLoadingDynamic.value) return;
+    if (tabLoadingStates['latest']!.value) return;
 
     try {
       final items = await _dynamicsRepo.getNewBlogs(offset: 0, num: 10);
@@ -212,15 +211,18 @@ class DynamicsController extends GetxController {
         SettingBoxKey.waterfallCrossAxisCount, waterfallCrossAxisCount.value);
   }
 
-  void toggleWaterfallLimitWidth() {
-    waterfallLimitWidth.value = !waterfallLimitWidth.value;
+  void toggleWaterfallLimitWidth([bool? value]) {
+    waterfallLimitWidth.value = value ?? !waterfallLimitWidth.value;
     setting.put(SettingBoxKey.waterfallLimitWidth, waterfallLimitWidth.value);
+    _invalidateCache();
   }
 
-  void toggleWaterfallUseCustomItemWidth() {
-    waterfallUseCustomItemWidth.value = !waterfallUseCustomItemWidth.value;
+  void toggleWaterfallUseCustomItemWidth([bool? value]) {
+    waterfallUseCustomItemWidth.value =
+        value ?? !waterfallUseCustomItemWidth.value;
     setting.put(SettingBoxKey.waterfallUseCustomItemWidth,
         waterfallUseCustomItemWidth.value);
+    _invalidateCache();
   }
 
   void setWaterfallCustomItemWidth(double width) {
@@ -229,22 +231,31 @@ class DynamicsController extends GetxController {
         SettingBoxKey.waterfallCustomItemWidth, waterfallCustomItemWidth.value);
   }
 
-  double getEffectiveItemWidth(double screenWidth, int autoCrossAxisCount, double crossAxisSpacing) {
+  void _invalidateCache() {
+    _lastScreenWidth = 0;
+  }
+
+  double getEffectiveItemWidth(
+      double screenWidth, int autoCrossAxisCount, double crossAxisSpacing) {
     if (waterfallUseCustomItemWidth.value) {
       return waterfallCustomItemWidth.value;
     }
-    return calculateItemWidth(screenWidth, autoCrossAxisCount, crossAxisSpacing);
+    return calculateItemWidth(
+        screenWidth, autoCrossAxisCount, crossAxisSpacing);
   }
 
-  void updateWaterfallCache(double screenWidth, {double minItemWidth = 300.0, double crossAxisSpacing = 12.0}) {
+  void updateWaterfallCache(double screenWidth,
+      {double minItemWidth = 300.0, double crossAxisSpacing = 12.0}) {
     if ((_lastScreenWidth - screenWidth).abs() < 1.0) {
       return;
     }
     _lastScreenWidth = screenWidth;
-    _cachedAutoCrossAxisCount = calculateAutoCrossAxisCount(screenWidth, minItemWidth);
+    _cachedAutoCrossAxisCount =
+        calculateAutoCrossAxisCount(screenWidth, minItemWidth);
     _cachedItemWidth = waterfallUseCustomItemWidth.value
         ? waterfallCustomItemWidth.value
-        : calculateItemWidth(screenWidth, _cachedAutoCrossAxisCount, crossAxisSpacing);
+        : calculateItemWidth(
+            screenWidth, _cachedAutoCrossAxisCount, crossAxisSpacing);
     _cachedEffectiveCrossAxisCount = waterfallLimitWidth.value
         ? waterfallCrossAxisCount.value.clamp(2, _cachedAutoCrossAxisCount)
         : _cachedAutoCrossAxisCount;
@@ -253,6 +264,11 @@ class DynamicsController extends GetxController {
   int get cachedAutoCrossAxisCount => _cachedAutoCrossAxisCount;
   double get cachedItemWidth => _cachedItemWidth;
   int get cachedEffectiveCrossAxisCount => _cachedEffectiveCrossAxisCount;
+
+  double getAutoItemWidth(double screenWidth, double crossAxisSpacing) {
+    return calculateItemWidth(
+        screenWidth, _cachedAutoCrossAxisCount, crossAxisSpacing);
+  }
 
   int calculateAutoCrossAxisCount(double screenWidth, double minItemWidth) {
     final count = (screenWidth / minItemWidth).floor();
@@ -273,19 +289,6 @@ class DynamicsController extends GetxController {
     return waterfallCrossAxisCount.value.clamp(2, autoCount);
   }
 
-  void updateCrossAxisCount() {
-    try {
-      int baseCount = ResponsiveUtil.calculateCrossAxisCount(
-        baseCount: 1,
-        minCount: 1,
-        maxCount: 2,
-      );
-      crossAxisCount.value = baseCount;
-    } catch (e) {
-      crossAxisCount.value = 1;
-    }
-  }
-
   Future<void> queryFollowDynamic({String type = 'init'}) async {
     final tab = currentTab.value;
 
@@ -293,7 +296,7 @@ class DynamicsController extends GetxController {
       _tabOffsetCache[tab] = 0;
     }
 
-    isLoadingDynamic.value = true;
+    tabLoadingStates[tab]!.value = true;
 
     try {
       List<DynamicItemModel> items;
@@ -304,7 +307,7 @@ class DynamicsController extends GetxController {
         items = await _queryPopularBlogs(type: type);
       }
 
-      isLoadingDynamic.value = false;
+      tabLoadingStates[tab]!.value = false;
 
       if (type == 'init') {
         _tabDataCache[tab] = items;
@@ -328,8 +331,12 @@ class DynamicsController extends GetxController {
         }
       }
     } catch (e) {
-      isLoadingDynamic.value = false;
-      SmartDialog.showToast('请求失败: $e');
+      tabLoadingStates[tab]!.value = false;
+      if (e is SocketException) {
+        SmartDialog.showToast('网络连接失败，请检查网络设置');
+      } else {
+        SmartDialog.showToast('请求失败: $e');
+      }
     }
   }
 
@@ -370,18 +377,7 @@ class DynamicsController extends GetxController {
     return _tabHasLoadedCache[tab] ?? false;
   }
 
-  Future<void> onSelectType(dynamic value) async {
-    dynamicsType.value = filterTypeList[value]['value'];
-    dynamicsList.value = <DynamicItemModel>[];
-    page = 1;
-    initialValue.value = value;
-    await queryFollowDynamic();
-    if (scrollController.hasClients) {
-      scrollController.jumpTo(0);
-    }
-  }
-
-  Future<bool> pushDetail(DynamicItemModel? item, int floor,
+  Future<bool> pushDetail(DynamicItemModel item, int floor,
       {String action = 'all'}) async {
     feedBack();
     if (action == 'comment') {
@@ -389,7 +385,7 @@ class DynamicsController extends GetxController {
           arguments: {'item': item, 'floor': floor, 'action': action});
       return false;
     }
-    switch (item!.type) {
+    switch (item.type) {
       case 'DYNAMIC_TYPE_DRAW':
         Get.toNamed('/dynamicDetail',
             arguments: {'item': item, 'floor': floor});
@@ -408,17 +404,6 @@ class DynamicsController extends GetxController {
     page = 1;
     newDynamicsCount.value = 0;
     await queryFollowDynamic();
-  }
-
-  void animateToTop() async {
-    if (!scrollController.hasClients) return;
-    if (scrollController.offset >=
-        MediaQuery.of(Get.context!).size.height * 5) {
-      scrollController.jumpTo(0);
-    } else {
-      await scrollController.animateTo(0,
-          duration: const Duration(milliseconds: 500), curve: Curves.easeInOut);
-    }
   }
 
   void resetSearch() {

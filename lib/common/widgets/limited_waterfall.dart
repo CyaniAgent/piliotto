@@ -40,7 +40,8 @@ class LimitedWaterfall<T> extends StatelessWidget {
     final availableWidth = effectiveMaxWidth - effectivePadding.horizontal;
     final crossAxisCount = _calculateCrossAxisCount(availableWidth);
 
-    final gridWidth = crossAxisCount * maxItemWidth + (crossAxisCount - 1) * crossAxisSpacing;
+    final gridWidth =
+        crossAxisCount * maxItemWidth + (crossAxisCount - 1) * crossAxisSpacing;
     final shouldCenter = centerContent && gridWidth < effectiveMaxWidth;
 
     final slivers = <Widget>[
@@ -52,7 +53,7 @@ class LimitedWaterfall<T> extends StatelessWidget {
         childCount: items.length + (footer != null ? 1 : 0),
         itemBuilder: (context, index) {
           if (footer != null && index == items.length) {
-            return footer;
+            return footer!;
           }
           return itemBuilder(context, items[index], index);
         },
@@ -159,9 +160,11 @@ class LimitedWaterfallGrid<T> extends StatelessWidget {
     final effectivePadding = padding ?? EdgeInsets.zero;
 
     final availableWidth = screenWidth - effectivePadding.horizontal;
-    final effectiveCrossAxisCount = _calculateEffectiveCrossAxisCount(availableWidth);
+    final effectiveCrossAxisCount =
+        _calculateEffectiveCrossAxisCount(availableWidth);
 
-    final gridWidth = effectiveCrossAxisCount * maxItemWidth + (effectiveCrossAxisCount - 1) * crossAxisSpacing;
+    final gridWidth = effectiveCrossAxisCount * maxItemWidth +
+        (effectiveCrossAxisCount - 1) * crossAxisSpacing;
     final shouldCenter = centerContent && gridWidth < availableWidth;
 
     final slivers = <Widget>[
@@ -173,7 +176,7 @@ class LimitedWaterfallGrid<T> extends StatelessWidget {
         childCount: items.length + (footer != null ? 1 : 0),
         itemBuilder: (context, index) {
           if (footer != null && index == items.length) {
-            return footer;
+            return footer!;
           }
           return itemBuilder(context, items[index], index);
         },

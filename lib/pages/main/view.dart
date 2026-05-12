@@ -64,7 +64,7 @@ class _MainAppState extends State<MainApp> with SingleTickerProviderStateMixin {
         if (DateTime.now().millisecondsSinceEpoch - _lastSelectTime! < 500) {
           _dynamicController!.onRefresh();
         } else {
-          _dynamicController!.animateToTop();
+          _dynamicController!.scrollToTop();
         }
         _lastSelectTime = DateTime.now().millisecondsSinceEpoch;
       }

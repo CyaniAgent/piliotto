@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:piliotto/common/widgets/network_img_layer.dart';
+import 'package:piliotto/ottohub/models/dynamics/result.dart';
 import 'package:piliotto/utils/feed_back.dart';
 
 class AuthorPanel extends StatelessWidget {
-  final dynamic item;
+  final DynamicItemModel item;
 
   const AuthorPanel({super.key, required this.item});
 

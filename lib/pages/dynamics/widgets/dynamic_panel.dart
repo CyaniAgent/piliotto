@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:piliotto/ottohub/models/dynamics/result.dart';
+
 import 'action_panel.dart';
 import 'author_panel.dart';
 import 'content_panel.dart';
 
 class DynamicPanel extends StatelessWidget {
-  final dynamic item;
+  final DynamicItemModel item;
   final String? source;
   final VoidCallback? onTap;
   final VoidCallback? onCommentTap;
