@@ -200,5 +200,9 @@ class VideoBoxKey {
       // 自定义倍速集合
       customSpeedsList = 'customSpeedsList',
       // 画面填充比例
-      cacheVideoFit = 'cacheVideoFit';
+      cacheVideoFit = 'cacheVideoFit',
+      // 半屏底部按钮列表
+      halfScreenBottomList = 'halfScreenBottomList',
+      // 全屏底部按钮列表
+      fullScreenBottomList = 'fullScreenBottomList';
 }

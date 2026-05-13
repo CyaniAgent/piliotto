@@ -34,6 +34,7 @@ import '../pages/setting/pages/home_tabbar_set.dart';
 import '../pages/setting/pages/navigation_bar_set.dart';
 import '../pages/setting/pages/play_gesture_set.dart';
 import '../pages/setting/pages/play_speed_set.dart';
+import '../pages/setting/pages/bottom_control_set.dart';
 import '../pages/setting/play_setting.dart';
 import '../pages/setting/style_setting.dart';
 
@@ -79,6 +80,7 @@ class Routes {
         name: '/displayModeSetting', page: () => const SetDiaplayMode()),
     CustomGetPage(name: '/about', page: () => const AboutPage()),
     CustomGetPage(name: '/playSpeedSet', page: () => const PlaySpeedPage()),
+    CustomGetPage(name: '/bottomControlSet', page: () => const BottomControlSetPage()),
     CustomGetPage(name: '/loginPage', page: () => const LoginPage()),
     CustomGetPage(
         name: '/memberDynamics', page: () => const MemberDynamicsPage()),

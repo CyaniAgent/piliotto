@@ -21,7 +21,6 @@ import 'package:piliotto/utils/storage.dart';
 import 'package:status_bar_control_plus/status_bar_control_plus.dart';
 import 'package:universal_platform/universal_platform.dart';
 
-import '../../../plugin/pl_player/models/bottom_control_type.dart';
 import '../../../services/shutdown_timer_service.dart';
 
 import 'widgets/app_bar.dart';
@@ -81,7 +80,6 @@ class _VideoDetailPageState extends State<VideoDetailPage>
     videoHeight = Get.size.width * 9 / 16;
     videoSourceInit();
     appbarStreamListen();
-    fullScreenStatusListener();
     if (Platform.isAndroid) {
       floating = vdCtr.floating!;
     }
@@ -95,6 +93,7 @@ class _VideoDetailPageState extends State<VideoDetailPage>
     if (vdCtr.autoPlay.value) {
       plPlayerController = vdCtr.plPlayerController;
       plPlayerController!.addStatusLister(playerListener);
+      fullScreenStatusListener();
     }
   }
 
@@ -164,6 +163,7 @@ class _VideoDetailPageState extends State<VideoDetailPage>
     await vdCtr.playerInit(autoplay: true);
     plPlayerController = vdCtr.plPlayerController;
     plPlayerController!.addStatusLister(playerListener);
+    fullScreenStatusListener();
     vdCtr.autoPlay.value = true;
     vdCtr.isShowCover.value = false;
     isShowing.value = true;
@@ -174,10 +174,9 @@ class _VideoDetailPageState extends State<VideoDetailPage>
     plPlayerController?.isFullScreen.listen((bool isFullScreen) {
       if (isFullScreen) {
         vdCtr.hiddenReplyReplyPanel();
-      }
-      if (!isFullScreen &&
-          vdCtr.bottomList.contains(BottomControlType.episode)) {
-        vdCtr.bottomList.removeAt(3);
+        vdCtr.switchToFullScreen();
+      } else {
+        vdCtr.switchToHalfScreen();
       }
     });
   }
@@ -496,18 +495,22 @@ class _VideoDetailPageState extends State<VideoDetailPage>
     }
 
     Widget buildVideoPlayerWidget() {
-      return Obx(() => !vdCtr.autoPlay.value
-          ? const SizedBox()
-          : PLVideoPlayer(
-              controller: plPlayerController!,
-              headerControl: vdCtr.headerControl,
-              danmuWidget: PlDanmaku(
-                key: Key(vdCtr.vid.toString()),
-                vid: vdCtr.vid,
-                playerController: plPlayerController!,
-              ),
-              bottomList: vdCtr.bottomList,
-            ));
+      return Obx(() {
+        // 强制建立对 bottomList 的响应式依赖
+        final _ = vdCtr.bottomList.length;
+        return !vdCtr.autoPlay.value
+            ? const SizedBox()
+            : PLVideoPlayer(
+                controller: plPlayerController!,
+                headerControl: vdCtr.headerControl,
+                danmuWidget: PlDanmaku(
+                  key: Key(vdCtr.vid.toString()),
+                  vid: vdCtr.vid,
+                  playerController: plPlayerController!,
+                ),
+                bottomList: vdCtr.bottomList.toList(),
+              );
+      });
     }
 
     Widget buildErrorWidget() {

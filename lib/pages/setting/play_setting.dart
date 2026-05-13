@@ -67,6 +67,12 @@ class _PlaySettingState extends State<PlaySetting> {
             title: Text('手势设置', style: titleStyle),
             subtitle: Text('设置播放器手势', style: subTitleStyle),
           ),
+          ListTile(
+            dense: false,
+            onTap: () => Get.toNamed('/bottomControlSet'),
+            title: Text('底部按钮设置', style: titleStyle),
+            subtitle: Text('自定义半屏/全屏底部控制按钮', style: subTitleStyle),
+          ),
           const SetSwitchItem(
             title: '自动播放',
             subTitle: '进入详情页自动播放',

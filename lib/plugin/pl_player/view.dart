@@ -217,6 +217,7 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
       fontSize: 12,
     );
     final PlPlayerController playerController = widget.controller;
+
     Map<BottomControlType, Widget> videoProgressWidgets = {
       /// 上一集
       BottomControlType.pre: ComBtn(
@@ -296,35 +297,74 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
 
       /// 画面比例
       BottomControlType.fit: SizedBox(
-        height: 30,
-        child: TextButton(
-          onPressed: () => playerController.toggleVideoFit(),
-          style: ButtonStyle(
-            padding: WidgetStateProperty.all(EdgeInsets.zero),
-          ),
-          child: Obx(
-            () => Text(
-              playerController.videoFitDEsc.value,
-              style: const TextStyle(color: Colors.white, fontSize: 13),
-            ),
+        width: 34,
+        height: 34,
+        child: PopupMenuButton<BoxFit>(
+          tooltip: '',
+          onSelected: (BoxFit fit) {
+            playerController.videoFit.value = fit;
+            final item = playerController.videoFitType.firstWhere(
+              (e) => e['attr'] == fit,
+              orElse: () => playerController.videoFitType[0],
+            );
+            playerController.videoFitDEsc.value = item['desc'];
+            playerController.setVideoFit();
+          },
+          itemBuilder: (context) => playerController.videoFitType.map((item) {
+            return PopupMenuItem<BoxFit>(
+              value: item['attr'],
+              child: Obx(() => Row(
+                    children: [
+                      Text(item['desc']),
+                      const Spacer(),
+                      if (playerController.videoFit.value == item['attr'])
+                        Icon(
+                          Icons.check,
+                          size: 18,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                    ],
+                  )),
+            );
+          }).toList(),
+          child: const Icon(
+            Icons.aspect_ratio_outlined,
+            size: 21,
+            color: Colors.white,
           ),
         ),
       ),
 
       /// 播放速度
       BottomControlType.speed: SizedBox(
-        width: 45,
+        width: 34,
         height: 34,
-        child: TextButton(
-          style: ButtonStyle(
-            padding: WidgetStateProperty.all(EdgeInsets.zero),
-          ),
-          onPressed: () {},
-          child: Obx(
-            () => Text(
-              '${playerController.playbackSpeed.toString()}X',
-              style: textStyle,
-            ),
+        child: PopupMenuButton<double>(
+          tooltip: '',
+          onSelected: (double speed) {
+            playerController.setPlaybackSpeed(speed);
+          },
+          itemBuilder: (context) => playerController.speedsList.map((speed) {
+            return PopupMenuItem<double>(
+              value: speed,
+              child: Obx(() => Row(
+                    children: [
+                      Text('${speed}X'),
+                      const Spacer(),
+                      if ((playerController.playbackSpeed - speed).abs() < 0.01)
+                        Icon(
+                          Icons.check,
+                          size: 18,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                    ],
+                  )),
+            );
+          }).toList(),
+          child: const Icon(
+            Icons.speed_outlined,
+            size: 21,
+            color: Colors.white,
           ),
         ),
       ),
@@ -349,28 +389,49 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
       ),
     };
     final List<Widget> list = [];
-    List<BottomControlType> userSpecifyItem = widget.bottomList ??
-        [
-          BottomControlType.playOrPause,
-          BottomControlType.time,
-          BottomControlType.space,
-          BottomControlType.fit,
-          BottomControlType.fullscreen,
-        ];
-    for (var i = 0; i < userSpecifyItem.length; i++) {
-      if (userSpecifyItem[i] == BottomControlType.custom) {
-        if (widget.customWidget != null && widget.customWidget is Widget) {
+    final List<BottomControlType> userSpecifyItem =
+        widget.bottomList ?? _defaultBottomList;
+
+    for (final type in userSpecifyItem) {
+      // 跳过未实现的按钮
+      if (!type.isImplemented) continue;
+
+      // 跳过需要回调但未提供的按钮
+      if (type == BottomControlType.episode && widget.showEposideCb == null) {
+        continue;
+      }
+
+      // 处理自定义按钮
+      if (type == BottomControlType.custom) {
+        if (widget.customWidget != null) {
           list.add(widget.customWidget!);
         }
-        if (widget.customWidgets != null && widget.customWidgets!.isNotEmpty) {
+        if (widget.customWidgets?.isNotEmpty == true) {
           list.addAll(widget.customWidgets!);
         }
-      } else {
-        list.add(videoProgressWidgets[userSpecifyItem[i]]!);
+        continue;
+      }
+
+      // 添加标准按钮
+      final buttonWidget = videoProgressWidgets[type];
+      if (buttonWidget != null) {
+        // space 类型不需要添加间距
+        if (type != BottomControlType.space && type != BottomControlType.time) {
+          list.add(const SizedBox(width: 8));
+        }
+        list.add(buttonWidget);
       }
     }
     return list;
   }
+
+  static const List<BottomControlType> _defaultBottomList = [
+    BottomControlType.playOrPause,
+    BottomControlType.time,
+    BottomControlType.space,
+    BottomControlType.fit,
+    BottomControlType.fullscreen,
+  ];
 
   @override
   Widget build(BuildContext context) {

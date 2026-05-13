@@ -13,6 +13,7 @@ import 'package:piliotto/pages/video/detail/index.dart';
 import 'package:piliotto/pages/video/detail/introduction/controller.dart';
 import 'package:piliotto/pages/video/detail/introduction/widgets/menu_row.dart';
 import 'package:piliotto/plugin/pl_player/index.dart';
+import 'package:piliotto/plugin/pl_player/models/bottom_control_type.dart';
 import 'package:piliotto/plugin/pl_player/models/play_repeat.dart';
 import 'package:piliotto/utils/storage.dart';
 import 'package:piliotto/services/shutdown_timer_service.dart';
@@ -160,6 +161,12 @@ class _HeaderControlState extends State<HeaderControl> {
                       dense: true,
                       leading: const Icon(Icons.subtitles_outlined, size: 20),
                       title: const Text('弹幕设置', style: titleStyle),
+                    ),
+                    ListTile(
+                      onTap: () => {Get.back(), showSetBottomControl()},
+                      dense: true,
+                      leading: const Icon(Icons.settings_outlined, size: 20),
+                      title: const Text('底部按钮设置', style: titleStyle),
                     ),
                   ],
                 ),
@@ -803,6 +810,41 @@ class _HeaderControlState extends State<HeaderControl> {
     );
   }
 
+  /// 底部按钮设置
+  void showSetBottomControl() {
+    if (widget.videoDetailCtr == null) {
+      SmartDialog.showToast('无法设置底部按钮');
+      return;
+    }
+    showModalBottomSheet(
+      context: context,
+      elevation: 0,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (BuildContext context) {
+        return DraggableScrollableSheet(
+          initialChildSize: 0.6,
+          minChildSize: 0.4,
+          maxChildSize: 0.9,
+          expand: false,
+          builder: (context, scrollController) {
+            return Container(
+              clipBehavior: Clip.hardEdge,
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surface,
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+              ),
+              child: _BottomControlSettingSheet(
+                videoDetailCtr: widget.videoDetailCtr!,
+                scrollController: scrollController,
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     if (widget.controller == null) {
@@ -1030,5 +1072,243 @@ class MSliderTrackShape extends RoundedRectSliderTrackShape {
         offset.dy + (parentBox.size.height - trackHeight) / 2 + 4;
     final double trackWidth = parentBox.size.width;
     return Rect.fromLTWH(trackLeft, trackTop, trackWidth, trackHeight);
+  }
+}
+
+class _BottomControlSettingSheet extends StatefulWidget {
+  final VideoDetailController videoDetailCtr;
+  final ScrollController scrollController;
+
+  const _BottomControlSettingSheet({
+    required this.videoDetailCtr,
+    required this.scrollController,
+  });
+
+  @override
+  State<_BottomControlSettingSheet> createState() => _BottomControlSettingSheetState();
+}
+
+class _BottomControlSettingSheetState extends State<_BottomControlSettingSheet>
+    with SingleTickerProviderStateMixin {
+  late TabController _tabController;
+  
+  late List<BottomControlType> _halfScreenList;
+  late List<BottomControlType> _fullScreenList;
+  
+  static const List<BottomControlType> _availableButtons = [
+    BottomControlType.playOrPause,
+    BottomControlType.time,
+    BottomControlType.space,
+    BottomControlType.episode,
+    BottomControlType.fit,
+    BottomControlType.speed,
+    BottomControlType.fullscreen,
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 2, vsync: this);
+    _loadLists();
+  }
+
+  void _loadLists() {
+    _halfScreenList = List<BottomControlType>.from(widget.videoDetailCtr.halfScreenBottomList);
+    _fullScreenList = List<BottomControlType>.from(widget.videoDetailCtr.fullScreenBottomList);
+  }
+
+  void _saveLists() {
+    widget.videoDetailCtr.halfScreenBottomList.value = List<BottomControlType>.from(_halfScreenList);
+    widget.videoDetailCtr.fullScreenBottomList.value = List<BottomControlType>.from(_fullScreenList);
+    widget.videoDetailCtr.saveBottomLists();
+    
+    if (widget.videoDetailCtr.plPlayerController.isFullScreen.value) {
+      widget.videoDetailCtr.switchToFullScreen();
+    } else {
+      widget.videoDetailCtr.switchToHalfScreen();
+    }
+  }
+
+  List<BottomControlType> _getList(int tabIndex) =>
+      tabIndex == 0 ? _halfScreenList : _fullScreenList;
+
+  void _addButton(int tabIndex, BottomControlType button) {
+    setState(() {
+      _getList(tabIndex).add(button);
+    });
+    _saveLists();
+  }
+
+  void _removeButton(int tabIndex, int index) {
+    final list = _getList(tabIndex);
+    if (index >= 0 && index < list.length) {
+      setState(() {
+        list.removeAt(index);
+      });
+      _saveLists();
+    }
+  }
+
+  void _reorderButton(int tabIndex, int oldIndex, int newIndex) {
+    setState(() {
+      if (newIndex > oldIndex) newIndex -= 1;
+      final list = _getList(tabIndex);
+      if (oldIndex >= 0 && oldIndex < list.length) {
+        final item = list.removeAt(oldIndex);
+        list.insert(newIndex, item);
+      }
+    });
+    _saveLists();
+  }
+
+  void _showAddButtonDialog(int tabIndex) {
+    final currentList = _getList(tabIndex);
+    final availableToAdd = _availableButtons
+        .where((btn) => !currentList.contains(btn))
+        .toList();
+    
+    if (availableToAdd.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('已添加所有可用按钮')),
+      );
+      return;
+    }
+
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                '添加按钮',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              const SizedBox(height: 16),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: availableToAdd.map((btn) {
+                  return ActionChip(
+                    label: Text(btn.description),
+                    onPressed: () {
+                      _addButton(tabIndex, btn);
+                      Navigator.pop(context);
+                    },
+                  );
+                }).toList(),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Container(
+          height: 35,
+          alignment: Alignment.center,
+          child: Container(
+            width: 32,
+            height: 3,
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.5),
+              borderRadius: const BorderRadius.all(Radius.circular(3)),
+            ),
+          ),
+        ),
+        TabBar(
+          controller: _tabController,
+          tabs: const [
+            Tab(text: '半屏'),
+            Tab(text: '全屏'),
+          ],
+        ),
+        Expanded(
+          child: TabBarView(
+            controller: _tabController,
+            children: [
+              _buildButtonList(0),
+              _buildButtonList(1),
+            ],
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: () => _showAddButtonDialog(_tabController.index),
+                  icon: const Icon(Icons.add),
+                  label: const Text('添加按钮'),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildButtonList(int tabIndex) {
+    final list = _getList(tabIndex);
+    
+    if (list.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              '暂无按钮',
+              style: TextStyle(color: Theme.of(context).colorScheme.outline),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              '点击下方按钮添加',
+              style: TextStyle(color: Theme.of(context).colorScheme.outline),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return ReorderableListView.builder(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      scrollController: widget.scrollController,
+      itemCount: list.length,
+      onReorder: (oldIndex, newIndex) =>
+          _reorderButton(tabIndex, oldIndex, newIndex),
+      itemBuilder: (context, index) {
+        final button = list[index];
+        return ListTile(
+          key: ValueKey('${tabIndex}_$index'),
+          title: Text(button.description),
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              IconButton(
+                icon: const Icon(Icons.delete_outline),
+                onPressed: () => _removeButton(tabIndex, index),
+              ),
+              const Icon(Icons.drag_handle),
+            ],
+          ),
+        );
+      },
+    );
   }
 }

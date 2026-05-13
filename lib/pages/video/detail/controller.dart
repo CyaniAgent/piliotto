@@ -53,6 +53,7 @@ class VideoDetailController extends GetxController
   Box userInfoCache = GStrorage.userInfo;
   Box localCache = GStrorage.localCache;
   Box setting = GStrorage.setting;
+  Box videoStorage = GStrorage.video;
 
   // 评论id 请求楼中楼评论使用
   int fRpid = 0;
@@ -83,13 +84,36 @@ class VideoDetailController extends GetxController
   PersistentBottomSheetController? replyReplyBottomSheetCtr;
 
   late bool enableRelatedVideo;
-  RxList<BottomControlType> bottomList = [
+  
+  // 半屏默认底部按钮列表
+  static const List<BottomControlType> _defaultHalfScreenBottomList = [
     BottomControlType.playOrPause,
     BottomControlType.time,
     BottomControlType.space,
     BottomControlType.fit,
     BottomControlType.fullscreen,
-  ].obs;
+  ];
+  
+  // 全屏默认底部按钮列表
+  static const List<BottomControlType> _defaultFullScreenBottomList = [
+    BottomControlType.playOrPause,
+    BottomControlType.time,
+    BottomControlType.space,
+    BottomControlType.episode,
+    BottomControlType.fit,
+    BottomControlType.speed,
+    BottomControlType.fullscreen,
+  ];
+  
+  // 当前使用的底部按钮列表
+  RxList<BottomControlType> bottomList = <BottomControlType>[].obs;
+  
+  // 半屏底部按钮列表
+  late RxList<BottomControlType> halfScreenBottomList;
+  
+  // 全屏底部按钮列表
+  late RxList<BottomControlType> fullScreenBottomList;
+  
   RxDouble sheetHeight = 0.0.obs;
   ScrollController? replyScrollController;
 
@@ -127,6 +151,9 @@ class VideoDetailController extends GetxController
       floating = Floating();
     }
 
+    // 初始化底部按钮列表
+    _initBottomLists();
+
     getVideoDetail();
     headerControl = HeaderControl(
       controller: plPlayerController,
@@ -137,6 +164,49 @@ class VideoDetailController extends GetxController
     );
 
     tabCtr.addListener(() {});
+  }
+
+  /// 初始化底部按钮列表（从本地存储读取或使用默认值）
+  void _initBottomLists() {
+    final List<String>? halfScreenCodes = 
+        videoStorage.get(VideoBoxKey.halfScreenBottomList)?.cast<String>();
+    final List<String>? fullScreenCodes = 
+        videoStorage.get(VideoBoxKey.fullScreenBottomList)?.cast<String>();
+    
+    final halfScreen = BottomControlTypeExtension.fromCodeList(halfScreenCodes);
+    final fullScreen = BottomControlTypeExtension.fromCodeList(fullScreenCodes);
+    
+    halfScreenBottomList = (halfScreen.isEmpty 
+        ? List<BottomControlType>.from(_defaultHalfScreenBottomList) 
+        : halfScreen).obs;
+    
+    fullScreenBottomList = (fullScreen.isEmpty 
+        ? List<BottomControlType>.from(_defaultFullScreenBottomList) 
+        : fullScreen).obs;
+    
+    bottomList.value = List<BottomControlType>.from(halfScreenBottomList);
+  }
+
+  /// 保存按钮列表到本地存储
+  void saveBottomLists() {
+    videoStorage.put(
+      VideoBoxKey.halfScreenBottomList,
+      BottomControlTypeExtension.toCodeList(halfScreenBottomList),
+    );
+    videoStorage.put(
+      VideoBoxKey.fullScreenBottomList,
+      BottomControlTypeExtension.toCodeList(fullScreenBottomList),
+    );
+  }
+
+  /// 切换到半屏按钮列表
+  void switchToHalfScreen() {
+    bottomList.value = List<BottomControlType>.from(halfScreenBottomList);
+  }
+
+  /// 切换到全屏按钮列表
+  void switchToFullScreen() {
+    bottomList.value = List<BottomControlType>.from(fullScreenBottomList);
   }
 
   void showReplyReplyPanel(int oid, int fRpid, dynamic firstFloor, dynamic currentReply, bool loadMore) {
