@@ -80,7 +80,8 @@ class Routes {
         name: '/displayModeSetting', page: () => const SetDiaplayMode()),
     CustomGetPage(name: '/about', page: () => const AboutPage()),
     CustomGetPage(name: '/playSpeedSet', page: () => const PlaySpeedPage()),
-    CustomGetPage(name: '/bottomControlSet', page: () => const BottomControlSetPage()),
+    CustomGetPage(
+        name: '/bottomControlSet', page: () => const BottomControlSetPage()),
     CustomGetPage(name: '/loginPage', page: () => const LoginPage()),
     CustomGetPage(
         name: '/memberDynamics', page: () => const MemberDynamicsPage()),

@@ -78,105 +78,175 @@ class _HeaderControlState extends State<HeaderControl> {
     }
   }
 
-  /// 设置面板
   void showSettingSheet() {
-    showModalBottomSheet(
-      elevation: 0,
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (_) {
-        return Container(
-          width: double.infinity,
-          height: 460,
-          clipBehavior: Clip.hardEdge,
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surface,
-            borderRadius: const BorderRadius.all(Radius.circular(12)),
-          ),
-          margin: const EdgeInsets.all(12),
-          child: Column(
-            children: <Widget>[
-              SizedBox(
-                height: 35,
-                child: Center(
-                  child: Container(
-                    width: 32,
-                    height: 3,
-                    decoration: BoxDecoration(
-                        color: Theme.of(context)
-                            .colorScheme
-                            .onSecondaryContainer
-                            .withValues(alpha: 0.5 * 255),
-                        borderRadius:
-                            const BorderRadius.all(Radius.circular(3))),
-                  ),
-                ),
-              ),
-              Expanded(
-                  child: Material(
-                child: ListView(
-                  children: [
-                    // ListTile(
-                    //   onTap: () {},
-                    //   dense: true,
-                    //   enabled: false,
-                    //   leading:
-                    //       const Icon(Icons.network_cell_outlined, size: 20),
-                    //   title: Text('省流模式', style: titleStyle),
-                    //   subtitle: Text('低画质 ｜ 减少视频缓存', style: subTitleStyle),
-                    //   trailing: Transform.scale(
-                    //     scale: 0.75,
-                    //     child: Switch(
-                    //       thumbIcon: WidgetStateProperty.resolveWith<Icon?>(
-                    //           (Set<MaterialState> states) {
-                    //         if (states.isNotEmpty &&
-                    //             states.first == MaterialState.selected) {
-                    //           return const Icon(Icons.done);
-                    //         }
-                    //         return null; // All other states will use the default thumbIcon.
-                    //       }),
-                    //       value: false,
-                    //       onChanged: (value) => {},
-                    //     ),
-                    //   ),
-                    // ),
-                    ListTile(
-                      onTap: () => {Get.back(), scheduleExit()},
-                      dense: true,
-                      leading:
-                          const Icon(Icons.hourglass_top_outlined, size: 20),
-                      title: const Text('定时关闭', style: titleStyle),
-                    ),
+    if (widget.videoDetailCtr == null) {
+      SmartDialog.showToast('无法打开设置');
+      return;
+    }
 
-                    ListTile(
-                      onTap: () => {Get.back(), showSetRepeat()},
-                      dense: true,
-                      leading: const Icon(Icons.repeat, size: 20),
-                      title: const Text('播放顺序', style: titleStyle),
-                      subtitle: Text(widget.controller!.playRepeat.description,
-                          style: subTitleStyle),
-                    ),
-                    ListTile(
-                      onTap: () => {Get.back(), showSetDanmaku()},
-                      dense: true,
-                      leading: const Icon(Icons.subtitles_outlined, size: 20),
-                      title: const Text('弹幕设置', style: titleStyle),
-                    ),
-                    ListTile(
-                      onTap: () => {Get.back(), showSetBottomControl()},
-                      dense: true,
-                      leading: const Icon(Icons.settings_outlined, size: 20),
-                      title: const Text('底部按钮设置', style: titleStyle),
-                    ),
-                  ],
+    final videoDetailCtr = widget.videoDetailCtr!;
+    final bool isWideScreen = Get.size.width > 768;
+
+    Widget buildNavigatorContent(BuildContext outerContext) {
+      return Container(
+        height: isWideScreen ? null : videoDetailCtr.sheetHeight.value,
+        color: Theme.of(outerContext).colorScheme.surface,
+        child: Navigator(
+          initialRoute: '/',
+          onGenerateRoute: (RouteSettings routeSettings) {
+            return MaterialPageRoute(
+              builder: (BuildContext pageContext) {
+                return _buildPageWithAppBar(
+                  routeSettings.name ?? '/',
+                  pageContext,
+                  onClose: () => Navigator.pop(outerContext),
+                );
+              },
+            );
+          },
+        ),
+      );
+    }
+
+    if (isFullScreen.value) {
+      widget.controller?.pause();
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext dialogContext) {
+          return Dialog(
+            insetPadding:
+                const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: buildNavigatorContent(dialogContext),
+            ),
+          );
+        },
+      ).then((_) {
+        widget.controller?.play();
+      });
+    } else {
+      final scaffold = isWideScreen
+          ? videoDetailCtr.rightContentScaffoldKey
+          : videoDetailCtr.scaffoldKey;
+
+      scaffold.currentState?.showBottomSheet((BuildContext sheetContext) {
+        return buildNavigatorContent(sheetContext);
+      });
+    }
+  }
+
+  String _getRouteTitle(String? name) {
+    switch (name) {
+      case '/':
+        return '播放设置';
+      case '/scheduleExit':
+        return '定时关闭';
+      case '/repeat':
+        return '播放顺序';
+      case '/danmaku':
+        return '弹幕设置';
+      case '/bottomControl':
+        return '底部按钮设置';
+      default:
+        return '';
+    }
+  }
+
+  Widget _buildPageWithAppBar(String routeName, BuildContext pageContext,
+      {VoidCallback? onClose}) {
+    final title = _getRouteTitle(routeName);
+    final isMainPage = routeName == '/';
+
+    return Column(
+      children: [
+        AppBar(
+          toolbarHeight: 45,
+          automaticallyImplyLeading: false,
+          centerTitle: false,
+          leading: isMainPage
+              ? null
+              : IconButton(
+                  icon: const Icon(Icons.arrow_back, size: 20),
+                  onPressed: () => Navigator.of(pageContext).pop(),
                 ),
-              ))
+          title: Text(
+            title,
+            style: Theme.of(pageContext).textTheme.titleSmall,
+          ),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.close, size: 20),
+              onPressed: onClose,
+            ),
+            const SizedBox(width: 14),
+          ],
+        ),
+        Expanded(child: _buildRouteContent(routeName)),
+      ],
+    );
+  }
+
+  Widget _buildRouteContent(String name) {
+    switch (name) {
+      case '/':
+        return _buildSettingsMainPage();
+      case '/scheduleExit':
+        return _buildScheduleExitPage();
+      case '/repeat':
+        return _buildRepeatPage();
+      case '/danmaku':
+        return _buildDanmakuPage();
+      case '/bottomControl':
+        return _buildBottomControlPage();
+      default:
+        return const SizedBox();
+    }
+  }
+
+  Widget _buildSettingsMainPage() {
+    return Builder(
+      builder: (BuildContext navContext) {
+        return Material(
+          child: ListView(
+            children: [
+              ListTile(
+                onTap: () =>
+                    Navigator.of(navContext).pushNamed('/scheduleExit'),
+                dense: true,
+                leading: const Icon(Icons.hourglass_top_outlined, size: 20),
+                title: const Text('定时关闭', style: titleStyle),
+              ),
+              ListTile(
+                onTap: () => Navigator.of(navContext).pushNamed('/repeat'),
+                dense: true,
+                leading: const Icon(Icons.repeat, size: 20),
+                title: const Text('播放顺序', style: titleStyle),
+                subtitle: Text(widget.controller!.playRepeat.description,
+                    style: subTitleStyle),
+              ),
+              ListTile(
+                onTap: () {
+                  Navigator.of(navContext).pushNamed('/danmaku').then((_) {
+                    widget.controller?.cacheDanmakuOption();
+                  });
+                },
+                dense: true,
+                leading: const Icon(Icons.subtitles_outlined, size: 20),
+                title: const Text('弹幕设置', style: titleStyle),
+              ),
+              ListTile(
+                onTap: () =>
+                    Navigator.of(navContext).pushNamed('/bottomControl'),
+                dense: true,
+                leading: const Icon(Icons.settings_outlined, size: 20),
+                title: const Text('底部按钮设置', style: titleStyle),
+              ),
             ],
           ),
         );
       },
-      clipBehavior: Clip.hardEdge,
-      isScrollControlled: true,
     );
   }
 
@@ -253,131 +323,100 @@ class _HeaderControlState extends State<HeaderControl> {
     );
   }
 
-  /// 定时关闭
-  void scheduleExit() async {
+  Widget _buildScheduleExitPage() {
     const List<int> scheduleTimeChoices = [
       -1,
       15,
       30,
       60,
     ];
-    showModalBottomSheet(
-      context: context,
-      elevation: 0,
-      backgroundColor: Colors.transparent,
-      builder: (BuildContext context) {
-        return StatefulBuilder(
-            builder: (BuildContext context, StateSetter setState) {
-          return Container(
-            width: double.infinity,
-            height: 500,
-            clipBehavior: Clip.hardEdge,
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surface,
-              borderRadius: const BorderRadius.all(Radius.circular(12)),
-            ),
-            margin: const EdgeInsets.all(12),
-            padding: const EdgeInsets.only(left: 14, right: 14),
-            child: SingleChildScrollView(
-              child: Padding(
-                padding:
-                    const EdgeInsets.symmetric(vertical: 0, horizontal: 20),
-                child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      const SizedBox(height: 30),
-                      const Center(child: Text('定时关闭', style: titleStyle)),
-                      const SizedBox(height: 10),
-                      for (final int choice in scheduleTimeChoices) ...<Widget>[
-                        ListTile(
-                          onTap: () {
-                            shutdownTimerService.scheduledExitInMinutes =
-                                choice;
-                            shutdownTimerService.startShutdownTimer();
-                            Get.back();
-                          },
-                          contentPadding: const EdgeInsets.only(),
-                          dense: true,
-                          title: Text(choice == -1 ? "禁用" : "$choice分钟后"),
-                          trailing: shutdownTimerService
-                                      .scheduledExitInMinutes ==
-                                  choice
-                              ? Icon(
-                                  Icons.done,
-                                  color: Theme.of(context).colorScheme.primary,
-                                )
-                              : const SizedBox(),
-                        )
-                      ],
-                      const SizedBox(height: 6),
-                      const Center(
-                          child: SizedBox(
-                        width: 100,
-                        child: Divider(height: 1),
-                      )),
-                      const SizedBox(height: 10),
-                      ListTile(
-                        onTap: () {
-                          shutdownTimerService.waitForPlayingCompleted =
-                              !shutdownTimerService.waitForPlayingCompleted;
-                          setState(() {});
-                        },
-                        dense: true,
-                        contentPadding: const EdgeInsets.only(),
-                        title: const Text("额外等待视频播放完毕", style: titleStyle),
-                        trailing: Switch(
-                          // thumb color (round icon)
-                          activeThumbColor:
-                              Theme.of(context).colorScheme.primary,
-                          activeTrackColor:
-                              Theme.of(context).colorScheme.primaryContainer,
-                          inactiveThumbColor:
-                              Theme.of(context).colorScheme.primaryContainer,
-                          inactiveTrackColor:
-                              Theme.of(context).colorScheme.surface,
-                          splashRadius: 10.0,
-                          // boolean variable value
-                          value: shutdownTimerService.waitForPlayingCompleted,
-                          // changes the state of the switch
-                          onChanged: (value) => setState(() =>
-                              shutdownTimerService.waitForPlayingCompleted =
-                                  value),
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      Row(
-                        children: <Widget>[
-                          const Text('倒计时结束:', style: titleStyle),
-                          const Spacer(),
-                          ActionRowLineItem(
-                            onTap: () {
-                              shutdownTimerService.exitApp = false;
-                              setState(() {});
-                              // Get.back();
-                            },
-                            text: " 暂停视频 ",
-                            selectStatus: !shutdownTimerService.exitApp,
-                          ),
-                          const Spacer(),
-                          // const SizedBox(width: 10),
-                          ActionRowLineItem(
-                            onTap: () {
-                              shutdownTimerService.exitApp = true;
-                              setState(() {});
-                              // Get.back();
-                            },
-                            text: " 退出APP ",
-                            selectStatus: shutdownTimerService.exitApp,
-                          )
-                        ],
-                      ),
-                    ]),
-              ),
-            ),
-          );
-        });
-      },
-    );
+    return StatefulBuilder(
+        builder: (BuildContext context, StateSetter setState) {
+      return SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 0, horizontal: 20),
+          child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                const SizedBox(height: 30),
+                const Center(child: Text('定时关闭', style: titleStyle)),
+                const SizedBox(height: 10),
+                for (final int choice in scheduleTimeChoices) ...<Widget>[
+                  ListTile(
+                    onTap: () {
+                      shutdownTimerService.scheduledExitInMinutes = choice;
+                      shutdownTimerService.startShutdownTimer();
+                    },
+                    contentPadding: const EdgeInsets.only(),
+                    dense: true,
+                    title: Text(choice == -1 ? "禁用" : "$choice分钟后"),
+                    trailing:
+                        shutdownTimerService.scheduledExitInMinutes == choice
+                            ? Icon(
+                                Icons.done,
+                                color: Theme.of(context).colorScheme.primary,
+                              )
+                            : const SizedBox(),
+                  )
+                ],
+                const SizedBox(height: 6),
+                const Center(
+                    child: SizedBox(
+                  width: 100,
+                  child: Divider(height: 1),
+                )),
+                const SizedBox(height: 10),
+                ListTile(
+                  onTap: () {
+                    shutdownTimerService.waitForPlayingCompleted =
+                        !shutdownTimerService.waitForPlayingCompleted;
+                    setState(() {});
+                  },
+                  dense: true,
+                  contentPadding: const EdgeInsets.only(),
+                  title: const Text("额外等待视频播放完毕", style: titleStyle),
+                  trailing: Switch(
+                    activeThumbColor: Theme.of(context).colorScheme.primary,
+                    activeTrackColor:
+                        Theme.of(context).colorScheme.primaryContainer,
+                    inactiveThumbColor:
+                        Theme.of(context).colorScheme.primaryContainer,
+                    inactiveTrackColor: Theme.of(context).colorScheme.surface,
+                    splashRadius: 10.0,
+                    value: shutdownTimerService.waitForPlayingCompleted,
+                    onChanged: (value) => setState(() =>
+                        shutdownTimerService.waitForPlayingCompleted = value),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Row(
+                  children: <Widget>[
+                    const Text('倒计时结束:', style: titleStyle),
+                    const Spacer(),
+                    ActionRowLineItem(
+                      onTap: () {
+                        shutdownTimerService.exitApp = false;
+                        setState(() {});
+                      },
+                      text: " 暂停视频 ",
+                      selectStatus: !shutdownTimerService.exitApp,
+                    ),
+                    const Spacer(),
+                    ActionRowLineItem(
+                      onTap: () {
+                        shutdownTimerService.exitApp = true;
+                        setState(() {});
+                      },
+                      text: " 退出APP ",
+                      selectStatus: shutdownTimerService.exitApp,
+                    )
+                  ],
+                ),
+                const SizedBox(height: 20),
+              ]),
+        ),
+      );
+    });
   }
 
   /// 选择倍速
@@ -467,13 +506,7 @@ class _HeaderControlState extends State<HeaderControl> {
         SettingBoxKey.enableShowDanmaku, widget.controller!.isOpenDanmu.value);
   }
 
-  /// 弹幕功能
-  void showSetDanmaku() async {
-    if (widget.controller == null) {
-      SmartDialog.showToast('无法设置弹幕');
-      return;
-    }
-    // 屏蔽类型
+  Widget _buildDanmakuPage() {
     final List<Map<String, dynamic>> blockTypesList = [
       {'value': 5, 'label': '顶部'},
       {'value': 2, 'label': '滚动'},
@@ -481,7 +514,6 @@ class _HeaderControlState extends State<HeaderControl> {
       {'value': 6, 'label': '彩色'},
     ];
     final List blockTypes = widget.controller!.blockTypes;
-    // 显示区域
     final List<Map<String, dynamic>> showAreas = [
       {'value': 0.25, 'label': '1/4屏'},
       {'value': 0.5, 'label': '半屏'},
@@ -489,359 +521,246 @@ class _HeaderControlState extends State<HeaderControl> {
       {'value': 1.0, 'label': '满屏'},
     ];
     double showArea = widget.controller!.showArea;
-    // 不透明度
     double opacityVal = widget.controller!.opacityVal;
-    // 字体大小
     double fontSizeVal = widget.controller!.fontSizeVal;
-    // 弹幕速度
     double danmakuDurationVal = widget.controller!.danmakuDurationVal;
-    // 弹幕描边
     double strokeWidth = widget.controller!.strokeWidth;
 
-    await showModalBottomSheet(
-      context: context,
-      elevation: 0,
-      backgroundColor: Colors.transparent,
-      builder: (BuildContext context) {
-        return StatefulBuilder(
-            builder: (BuildContext context, StateSetter setState) {
-          return Container(
-            width: double.infinity,
-            height: 580,
-            clipBehavior: Clip.hardEdge,
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surface,
-              borderRadius: const BorderRadius.all(Radius.circular(12)),
-            ),
-            margin: const EdgeInsets.all(12),
-            padding: const EdgeInsets.only(left: 14, right: 14),
-            child: SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const SizedBox(
-                    height: 45,
-                    child: Center(child: Text('弹幕设置', style: titleStyle)),
-                  ),
-                  const SizedBox(height: 10),
-                  const Text('按类型屏蔽'),
-                  Padding(
-                    padding: const EdgeInsets.only(top: 12, bottom: 18),
-                    child: Row(
-                      children: <Widget>[
-                        for (final Map<String, dynamic> i
-                            in blockTypesList) ...<Widget>[
-                          ActionRowLineItem(
-                            onTap: () async {
-                              final bool isChoose =
-                                  blockTypes.contains(i['value']);
-                              if (isChoose) {
-                                blockTypes.remove(i['value']);
-                              } else {
-                                blockTypes.add(i['value']);
-                              }
-                              widget.controller!.blockTypes = blockTypes;
-                              _updateDanmakuOption();
-                              setState(() {});
-                            },
-                            text: i['label'],
-                            selectStatus: blockTypes.contains(i['value']),
-                          ),
-                          const SizedBox(width: 10),
-                        ]
-                      ],
+    return StatefulBuilder(
+        builder: (BuildContext context, StateSetter setState) {
+      return SingleChildScrollView(
+        padding: const EdgeInsets.only(left: 14, right: 14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('按类型屏蔽'),
+            Padding(
+              padding: const EdgeInsets.only(top: 12, bottom: 18),
+              child: Row(
+                children: <Widget>[
+                  for (final Map<String, dynamic> i
+                      in blockTypesList) ...<Widget>[
+                    ActionRowLineItem(
+                      onTap: () async {
+                        final bool isChoose = blockTypes.contains(i['value']);
+                        if (isChoose) {
+                          blockTypes.remove(i['value']);
+                        } else {
+                          blockTypes.add(i['value']);
+                        }
+                        widget.controller!.blockTypes = blockTypes;
+                        _updateDanmakuOption();
+                        setState(() {});
+                      },
+                      text: i['label'],
+                      selectStatus: blockTypes.contains(i['value']),
                     ),
-                  ),
-                  const Text('显示区域'),
-                  Padding(
-                    padding: const EdgeInsets.only(top: 12, bottom: 18),
-                    child: Row(
-                      children: [
-                        for (final Map<String, dynamic> i in showAreas) ...[
-                          ActionRowLineItem(
-                            onTap: () {
-                              showArea = i['value'];
-                              widget.controller!.showArea = showArea;
-                              _updateDanmakuOption();
-                              setState(() {});
-                            },
-                            text: i['label'],
-                            selectStatus: showArea == i['value'],
-                          ),
-                          const SizedBox(width: 10),
-                        ]
-                      ],
-                    ),
-                  ),
-                  Text('不透明度 ${opacityVal * 100}%'),
-                  Padding(
-                    padding: const EdgeInsets.only(
-                      top: 0,
-                      bottom: 6,
-                      left: 10,
-                      right: 10,
-                    ),
-                    child: SliderTheme(
-                      data: SliderThemeData(
-                        trackShape: MSliderTrackShape(),
-                        thumbColor: Theme.of(context).colorScheme.primary,
-                        activeTrackColor: Theme.of(context).colorScheme.primary,
-                        trackHeight: 10,
-                        thumbShape: const RoundSliderThumbShape(
-                            enabledThumbRadius: 6.0),
-                      ),
-                      child: Slider(
-                        min: 0,
-                        max: 1,
-                        value: opacityVal,
-                        divisions: 10,
-                        label: '${opacityVal * 100}%',
-                        onChanged: (double val) {
-                          opacityVal = val;
-                          widget.controller!.opacityVal = opacityVal;
-                          _updateDanmakuOption();
-                          setState(() {});
-                        },
-                      ),
-                    ),
-                  ),
-                  Text('描边粗细 $strokeWidth'),
-                  Padding(
-                    padding: const EdgeInsets.only(
-                      top: 0,
-                      bottom: 6,
-                      left: 10,
-                      right: 10,
-                    ),
-                    child: SliderTheme(
-                      data: SliderThemeData(
-                        trackShape: MSliderTrackShape(),
-                        thumbColor: Theme.of(context).colorScheme.primary,
-                        activeTrackColor: Theme.of(context).colorScheme.primary,
-                        trackHeight: 10,
-                        thumbShape: const RoundSliderThumbShape(
-                            enabledThumbRadius: 6.0),
-                      ),
-                      child: Slider(
-                        min: 0,
-                        max: 3,
-                        value: strokeWidth,
-                        divisions: 6,
-                        label: '$strokeWidth',
-                        onChanged: (double val) {
-                          strokeWidth = val;
-                          widget.controller!.strokeWidth = val;
-                          _updateDanmakuOption();
-                          setState(() {});
-                        },
-                      ),
-                    ),
-                  ),
-                  Text('字体大小 ${(fontSizeVal * 100).toStringAsFixed(1)}%'),
-                  Padding(
-                    padding: const EdgeInsets.only(
-                      top: 0,
-                      bottom: 6,
-                      left: 10,
-                      right: 10,
-                    ),
-                    child: SliderTheme(
-                      data: SliderThemeData(
-                        trackShape: MSliderTrackShape(),
-                        thumbColor: Theme.of(context).colorScheme.primary,
-                        activeTrackColor: Theme.of(context).colorScheme.primary,
-                        trackHeight: 10,
-                        thumbShape: const RoundSliderThumbShape(
-                            enabledThumbRadius: 6.0),
-                      ),
-                      child: Slider(
-                        min: 0.5,
-                        max: 2.5,
-                        value: fontSizeVal,
-                        divisions: 20,
-                        label: '${(fontSizeVal * 100).toStringAsFixed(1)}%',
-                        onChanged: (double val) {
-                          fontSizeVal = val;
-                          widget.controller!.fontSizeVal = fontSizeVal;
-                          _updateDanmakuOption();
-                          setState(() {});
-                        },
-                      ),
-                    ),
-                  ),
-                  Text('弹幕时长 ${danmakuDurationVal.toStringAsFixed(1)} 秒'),
-                  Padding(
-                    padding: const EdgeInsets.only(
-                      top: 0,
-                      bottom: 6,
-                      left: 10,
-                      right: 10,
-                    ),
-                    child: SliderTheme(
-                      data: SliderThemeData(
-                        trackShape: MSliderTrackShape(),
-                        thumbColor: Theme.of(context).colorScheme.primary,
-                        activeTrackColor: Theme.of(context).colorScheme.primary,
-                        trackHeight: 10,
-                        thumbShape: const RoundSliderThumbShape(
-                            enabledThumbRadius: 6.0),
-                      ),
-                      child: Slider(
-                        min: 2,
-                        max: 16,
-                        value: danmakuDurationVal,
-                        divisions: 28,
-                        label: '${danmakuDurationVal.toStringAsFixed(1)}秒',
-                        onChanged: (double val) {
-                          danmakuDurationVal = val;
-                          widget.controller!.danmakuDurationVal =
-                              danmakuDurationVal;
-                          _updateDanmakuOption();
-                          setState(() {});
-                        },
-                      ),
-                    ),
-                  ),
+                    const SizedBox(width: 10),
+                  ]
                 ],
               ),
             ),
-          );
-        });
-      },
-    ).then((value) {
-      widget.controller!.cacheDanmakuOption();
+            const Text('显示区域'),
+            Padding(
+              padding: const EdgeInsets.only(top: 12, bottom: 18),
+              child: Row(
+                children: [
+                  for (final Map<String, dynamic> i in showAreas) ...[
+                    ActionRowLineItem(
+                      onTap: () {
+                        showArea = i['value'];
+                        widget.controller!.showArea = showArea;
+                        _updateDanmakuOption();
+                        setState(() {});
+                      },
+                      text: i['label'],
+                      selectStatus: showArea == i['value'],
+                    ),
+                    const SizedBox(width: 10),
+                  ]
+                ],
+              ),
+            ),
+            Text('不透明度 ${opacityVal * 100}%'),
+            Padding(
+              padding: const EdgeInsets.only(
+                top: 0,
+                bottom: 6,
+                left: 10,
+                right: 10,
+              ),
+              child: SliderTheme(
+                data: SliderThemeData(
+                  trackShape: MSliderTrackShape(),
+                  thumbColor: Theme.of(context).colorScheme.primary,
+                  activeTrackColor: Theme.of(context).colorScheme.primary,
+                  trackHeight: 10,
+                  thumbShape:
+                      const RoundSliderThumbShape(enabledThumbRadius: 6.0),
+                ),
+                child: Slider(
+                  min: 0,
+                  max: 1,
+                  value: opacityVal,
+                  divisions: 10,
+                  label: '${opacityVal * 100}%',
+                  onChanged: (double val) {
+                    opacityVal = val;
+                    widget.controller!.opacityVal = opacityVal;
+                    _updateDanmakuOption();
+                    setState(() {});
+                  },
+                ),
+              ),
+            ),
+            Text('描边粗细 $strokeWidth'),
+            Padding(
+              padding: const EdgeInsets.only(
+                top: 0,
+                bottom: 6,
+                left: 10,
+                right: 10,
+              ),
+              child: SliderTheme(
+                data: SliderThemeData(
+                  trackShape: MSliderTrackShape(),
+                  thumbColor: Theme.of(context).colorScheme.primary,
+                  activeTrackColor: Theme.of(context).colorScheme.primary,
+                  trackHeight: 10,
+                  thumbShape:
+                      const RoundSliderThumbShape(enabledThumbRadius: 6.0),
+                ),
+                child: Slider(
+                  min: 0,
+                  max: 3,
+                  value: strokeWidth,
+                  divisions: 6,
+                  label: '$strokeWidth',
+                  onChanged: (double val) {
+                    strokeWidth = val;
+                    widget.controller!.strokeWidth = val;
+                    _updateDanmakuOption();
+                    setState(() {});
+                  },
+                ),
+              ),
+            ),
+            Text('字体大小 ${(fontSizeVal * 100).toStringAsFixed(1)}%'),
+            Padding(
+              padding: const EdgeInsets.only(
+                top: 0,
+                bottom: 6,
+                left: 10,
+                right: 10,
+              ),
+              child: SliderTheme(
+                data: SliderThemeData(
+                  trackShape: MSliderTrackShape(),
+                  thumbColor: Theme.of(context).colorScheme.primary,
+                  activeTrackColor: Theme.of(context).colorScheme.primary,
+                  trackHeight: 10,
+                  thumbShape:
+                      const RoundSliderThumbShape(enabledThumbRadius: 6.0),
+                ),
+                child: Slider(
+                  min: 0.5,
+                  max: 2.5,
+                  value: fontSizeVal,
+                  divisions: 20,
+                  label: '${(fontSizeVal * 100).toStringAsFixed(1)}%',
+                  onChanged: (double val) {
+                    fontSizeVal = val;
+                    widget.controller!.fontSizeVal = fontSizeVal;
+                    _updateDanmakuOption();
+                    setState(() {});
+                  },
+                ),
+              ),
+            ),
+            Text('弹幕时长 ${danmakuDurationVal.toStringAsFixed(1)} 秒'),
+            Padding(
+              padding: const EdgeInsets.only(
+                top: 0,
+                bottom: 6,
+                left: 10,
+                right: 10,
+              ),
+              child: SliderTheme(
+                data: SliderThemeData(
+                  trackShape: MSliderTrackShape(),
+                  thumbColor: Theme.of(context).colorScheme.primary,
+                  activeTrackColor: Theme.of(context).colorScheme.primary,
+                  trackHeight: 10,
+                  thumbShape:
+                      const RoundSliderThumbShape(enabledThumbRadius: 6.0),
+                ),
+                child: Slider(
+                  min: 2,
+                  max: 16,
+                  value: danmakuDurationVal,
+                  divisions: 28,
+                  label: '${danmakuDurationVal.toStringAsFixed(1)}秒',
+                  onChanged: (double val) {
+                    danmakuDurationVal = val;
+                    widget.controller!.danmakuDurationVal = danmakuDurationVal;
+                    _updateDanmakuOption();
+                    setState(() {});
+                  },
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+          ],
+        ),
+      );
     });
   }
 
-  /// 播放顺序
-  void showSetRepeat() async {
-    if (widget.controller == null) {
-      SmartDialog.showToast('无法设置播放顺序');
-      return;
-    }
-    showModalBottomSheet(
-      context: context,
-      elevation: 0,
-      backgroundColor: Colors.transparent,
-      builder: (BuildContext context) {
-        return Container(
-          width: double.infinity,
-          height: 250,
-          clipBehavior: Clip.hardEdge,
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surface,
-            borderRadius: const BorderRadius.all(Radius.circular(12)),
-          ),
-          margin: const EdgeInsets.all(12),
-          child: Column(
-            children: [
-              const SizedBox(
-                height: 45,
-                child: Center(
-                  child: Text('选择播放顺序', style: titleStyle),
-                ),
-              ),
-              Expanded(
-                child: Material(
-                  child: ListView(
-                    children: <Widget>[
-                      ListTile(
-                        onTap: () {
-                          widget.controller!
-                              .setPlayRepeat(PlayRepeat.singleCycle);
-                          Get.back();
-                        },
-                        dense: true,
-                        contentPadding:
-                            const EdgeInsets.only(left: 20, right: 20),
-                        title: const Text('单曲循环'),
-                        trailing: widget.controller!.playRepeat ==
-                                PlayRepeat.singleCycle
-                            ? Icon(
-                                Icons.done,
-                                color: Theme.of(context).colorScheme.primary,
-                              )
-                            : const SizedBox(),
-                      ),
-                      ListTile(
-                        onTap: () {
-                          widget.controller!
-                              .setPlayRepeat(PlayRepeat.listCycle);
-                          Get.back();
-                        },
-                        dense: true,
-                        contentPadding:
-                            const EdgeInsets.only(left: 20, right: 20),
-                        title: const Text('列表循环'),
-                        trailing: widget.controller!.playRepeat ==
-                                PlayRepeat.listCycle
-                            ? Icon(
-                                Icons.done,
-                                color: Theme.of(context).colorScheme.primary,
-                              )
-                            : const SizedBox(),
-                      ),
-                      ListTile(
-                        onTap: () {
-                          widget.controller!
-                              .setPlayRepeat(PlayRepeat.listOrder);
-                          Get.back();
-                        },
-                        dense: true,
-                        contentPadding:
-                            const EdgeInsets.only(left: 20, right: 20),
-                        title: const Text('顺序播放'),
-                        trailing: widget.controller!.playRepeat ==
-                                PlayRepeat.listOrder
-                            ? Icon(
-                                Icons.done,
-                                color: Theme.of(context).colorScheme.primary,
-                              )
-                            : const SizedBox(),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-        );
-      },
+  Widget _buildRepeatPage() {
+    return ListView(
+      children: <Widget>[
+        ListTile(
+          onTap: () {
+            widget.controller!.setPlayRepeat(PlayRepeat.singleCycle);
+          },
+          dense: true,
+          contentPadding: const EdgeInsets.only(left: 20, right: 20),
+          title: const Text('单曲循环'),
+          trailing: widget.controller!.playRepeat == PlayRepeat.singleCycle
+              ? Icon(Icons.done, color: Theme.of(context).colorScheme.primary)
+              : const SizedBox(),
+        ),
+        ListTile(
+          onTap: () {
+            widget.controller!.setPlayRepeat(PlayRepeat.listCycle);
+          },
+          dense: true,
+          contentPadding: const EdgeInsets.only(left: 20, right: 20),
+          title: const Text('列表循环'),
+          trailing: widget.controller!.playRepeat == PlayRepeat.listCycle
+              ? Icon(Icons.done, color: Theme.of(context).colorScheme.primary)
+              : const SizedBox(),
+        ),
+        ListTile(
+          onTap: () {
+            widget.controller!.setPlayRepeat(PlayRepeat.listOrder);
+          },
+          dense: true,
+          contentPadding: const EdgeInsets.only(left: 20, right: 20),
+          title: const Text('顺序播放'),
+          trailing: widget.controller!.playRepeat == PlayRepeat.listOrder
+              ? Icon(Icons.done, color: Theme.of(context).colorScheme.primary)
+              : const SizedBox(),
+        ),
+      ],
     );
   }
 
-  /// 底部按钮设置
-  void showSetBottomControl() {
-    if (widget.videoDetailCtr == null) {
-      SmartDialog.showToast('无法设置底部按钮');
-      return;
-    }
-    showModalBottomSheet(
-      context: context,
-      elevation: 0,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (BuildContext context) {
-        return DraggableScrollableSheet(
-          initialChildSize: 0.6,
-          minChildSize: 0.4,
-          maxChildSize: 0.9,
-          expand: false,
-          builder: (context, scrollController) {
-            return Container(
-              clipBehavior: Clip.hardEdge,
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surface,
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
-              ),
-              child: _BottomControlSettingSheet(
-                videoDetailCtr: widget.videoDetailCtr!,
-                scrollController: scrollController,
-              ),
-            );
-          },
-        );
-      },
+  Widget _buildBottomControlPage() {
+    final videoDetailCtr = widget.videoDetailCtr!;
+    return _BottomControlSettingSheet(
+      videoDetailCtr: videoDetailCtr,
+      scrollController: ScrollController(),
     );
   }
 
@@ -1085,16 +1004,17 @@ class _BottomControlSettingSheet extends StatefulWidget {
   });
 
   @override
-  State<_BottomControlSettingSheet> createState() => _BottomControlSettingSheetState();
+  State<_BottomControlSettingSheet> createState() =>
+      _BottomControlSettingSheetState();
 }
 
 class _BottomControlSettingSheetState extends State<_BottomControlSettingSheet>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  
+
   late List<BottomControlType> _halfScreenList;
   late List<BottomControlType> _fullScreenList;
-  
+
   static const List<BottomControlType> _availableButtons = [
     BottomControlType.playOrPause,
     BottomControlType.time,
@@ -1113,15 +1033,19 @@ class _BottomControlSettingSheetState extends State<_BottomControlSettingSheet>
   }
 
   void _loadLists() {
-    _halfScreenList = List<BottomControlType>.from(widget.videoDetailCtr.halfScreenBottomList);
-    _fullScreenList = List<BottomControlType>.from(widget.videoDetailCtr.fullScreenBottomList);
+    _halfScreenList = List<BottomControlType>.from(
+        widget.videoDetailCtr.halfScreenBottomList);
+    _fullScreenList = List<BottomControlType>.from(
+        widget.videoDetailCtr.fullScreenBottomList);
   }
 
   void _saveLists() {
-    widget.videoDetailCtr.halfScreenBottomList.value = List<BottomControlType>.from(_halfScreenList);
-    widget.videoDetailCtr.fullScreenBottomList.value = List<BottomControlType>.from(_fullScreenList);
+    widget.videoDetailCtr.halfScreenBottomList.value =
+        List<BottomControlType>.from(_halfScreenList);
+    widget.videoDetailCtr.fullScreenBottomList.value =
+        List<BottomControlType>.from(_fullScreenList);
     widget.videoDetailCtr.saveBottomLists();
-    
+
     if (widget.videoDetailCtr.plPlayerController.isFullScreen.value) {
       widget.videoDetailCtr.switchToFullScreen();
     } else {
@@ -1163,10 +1087,9 @@ class _BottomControlSettingSheetState extends State<_BottomControlSettingSheet>
 
   void _showAddButtonDialog(int tabIndex) {
     final currentList = _getList(tabIndex);
-    final availableToAdd = _availableButtons
-        .where((btn) => !currentList.contains(btn))
-        .toList();
-    
+    final availableToAdd =
+        _availableButtons.where((btn) => !currentList.contains(btn)).toList();
+
     if (availableToAdd.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('已添加所有可用按钮')),
@@ -1218,18 +1141,6 @@ class _BottomControlSettingSheetState extends State<_BottomControlSettingSheet>
   Widget build(BuildContext context) {
     return Column(
       children: [
-        Container(
-          height: 35,
-          alignment: Alignment.center,
-          child: Container(
-            width: 32,
-            height: 3,
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.5),
-              borderRadius: const BorderRadius.all(Radius.circular(3)),
-            ),
-          ),
-        ),
         TabBar(
           controller: _tabController,
           tabs: const [
@@ -1266,7 +1177,7 @@ class _BottomControlSettingSheetState extends State<_BottomControlSettingSheet>
 
   Widget _buildButtonList(int tabIndex) {
     final list = _getList(tabIndex);
-    
+
     if (list.isEmpty) {
       return Center(
         child: Column(
