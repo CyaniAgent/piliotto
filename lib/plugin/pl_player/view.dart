@@ -743,7 +743,7 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
           ),
 
           /// 进度条 live模式下禁用
-          const _BottomProgressBar(),
+          _BottomProgressBar(controller: widget.controller),
 
           // 锁
           Obx(
@@ -896,22 +896,21 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
 
 /// 独立的底部进度条组件，缩小重绘范围
 class _BottomProgressBar extends StatefulWidget {
-  const _BottomProgressBar();
+  const _BottomProgressBar({required this.controller});
+
+  final PlPlayerController controller;
 
   @override
   State<_BottomProgressBar> createState() => _BottomProgressBarState();
 }
 
 class _BottomProgressBarState extends State<_BottomProgressBar> {
-  late final PlPlayerController _controller;
   late final Box _setting;
   late int _defaultBtmProgressBehavior;
 
   @override
   void initState() {
     super.initState();
-    _controller =
-        context.findAncestorWidgetOfExactType<PLVideoPlayer>()!.controller;
     _setting = GStrorage.setting;
     _defaultBtmProgressBehavior = _setting.get(
         SettingBoxKey.btmProgressBehavior,
@@ -923,11 +922,11 @@ class _BottomProgressBarState extends State<_BottomProgressBar> {
     final colorTheme = Theme.of(context).colorScheme.primary;
 
     return Obx(() {
-      final value = _controller.smoothPosition.value;
-      final max = _controller.duration.value;
-      final buffer = _controller.buffered.value;
+      final value = widget.controller.smoothPosition.value;
+      final max = widget.controller.duration.value;
+      final buffer = widget.controller.buffered.value;
 
-      if (_controller.showControls.value) {
+      if (widget.controller.showControls.value) {
         return const SizedBox();
       }
       if (_defaultBtmProgressBehavior == BtmProgresBehavior.alwaysHide.code) {
@@ -935,14 +934,14 @@ class _BottomProgressBarState extends State<_BottomProgressBar> {
       }
       if (_defaultBtmProgressBehavior ==
               BtmProgresBehavior.onlyShowFullScreen.code &&
-          !_controller.isFullScreen.value) {
+          !widget.controller.isFullScreen.value) {
         return const SizedBox();
       } else if (_defaultBtmProgressBehavior ==
               BtmProgresBehavior.onlyHideFullScreen.code &&
-          _controller.isFullScreen.value) {
+          widget.controller.isFullScreen.value) {
         return const SizedBox();
       }
-      if (_controller.videoType == 'live') {
+      if (widget.controller.videoType == 'live') {
         return const SizedBox();
       }
       if (value > max || max <= Duration.zero) {
