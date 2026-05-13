@@ -89,6 +89,7 @@ class _DynamicsPageState extends State<DynamicsPage>
               ),
             ),
           ),
+          const SizedBox(height: 8),
           Expanded(
             child: TabBarView(
               controller: _tabController,

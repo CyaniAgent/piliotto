@@ -252,7 +252,8 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
               playerController.durationSeconds.value >= 3600
                   ? printDurationWithHours(
                       Duration(seconds: playerController.positionSeconds.value))
-                  : printDuration(Duration(seconds: playerController.positionSeconds.value)),
+                  : printDuration(Duration(
+                      seconds: playerController.positionSeconds.value)),
               style: textStyle,
             );
           }),
@@ -264,7 +265,8 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
               playerController.durationSeconds.value >= 3600
                   ? printDurationWithHours(
                       Duration(seconds: playerController.durationSeconds.value))
-                  : printDuration(Duration(seconds: playerController.durationSeconds.value)),
+                  : printDuration(Duration(
+                      seconds: playerController.durationSeconds.value)),
               style: textStyle,
             ),
           ),
@@ -475,10 +477,13 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
                         children: [
                           Obx(() {
                             return Text(
-                              playerController.sliderTempPosition.value.inMinutes >= 60
+                              playerController
+                                          .sliderTempPosition.value.inMinutes >=
+                                      60
                                   ? printDurationWithHours(
                                       playerController.sliderTempPosition.value)
-                                  : printDuration(playerController.sliderTempPosition.value),
+                                  : printDuration(playerController
+                                      .sliderTempPosition.value),
                               style: textStyle,
                             );
                           }),
@@ -488,8 +493,10 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
                           Obx(
                             () => Text(
                               playerController.duration.value.inMinutes >= 60
-                                  ? printDurationWithHours(playerController.duration.value)
-                                  : printDuration(playerController.duration.value),
+                                  ? printDurationWithHours(
+                                      playerController.duration.value)
+                                  : printDuration(
+                                      playerController.duration.value),
                               style: textStyle,
                             ),
                           ),
@@ -565,11 +572,13 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
               },
               child: GestureDetector(
                 onTap: () {
-                  playerController.controls = !playerController.showControls.value;
+                  playerController.controls =
+                      !playerController.showControls.value;
                 },
                 onDoubleTapDown: (TapDownDetails details) {
                   // live模式下禁用 锁定时🔒禁用
-                  if (playerController.videoType == 'live' || playerController.controlsLock.value) {
+                  if (playerController.videoType == 'live' ||
+                      playerController.controlsLock.value) {
                     return;
                   }
                   final double totalWidth = MediaQuery.sizeOf(context).width;
@@ -595,14 +604,16 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
 
                 /// 水平位置 快进 live模式下禁用
                 onHorizontalDragStart: (DragStartDetails details) {
-                  if (playerController.videoType == 'live' || playerController.controlsLock.value) {
+                  if (playerController.videoType == 'live' ||
+                      playerController.controlsLock.value) {
                     return;
                   }
                   playerController.onChangedSliderStart();
                 },
                 onHorizontalDragUpdate: (DragUpdateDetails details) {
                   // live模式下禁用 锁定时🔒禁用
-                  if (playerController.videoType == 'live' || playerController.controlsLock.value) {
+                  if (playerController.videoType == 'live' ||
+                      playerController.controlsLock.value) {
                     return;
                   }
                   final int curSliderPosition =
@@ -616,11 +627,13 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
                   playerController.onUpdatedSliderProgress(result);
                 },
                 onHorizontalDragEnd: (DragEndDetails details) {
-                  if (playerController.videoType == 'live' || playerController.controlsLock.value) {
+                  if (playerController.videoType == 'live' ||
+                      playerController.controlsLock.value) {
                     return;
                   }
                   playerController.onChangedSliderEnd();
-                  playerController.seekTo(playerController.sliderPosition.value, type: 'slider');
+                  playerController.seekTo(playerController.sliderPosition.value,
+                      type: 'slider');
                 },
                 // 垂直方向 音量/亮度调节
                 onVerticalDragUpdate: (DragUpdateDetails details) async {
@@ -698,20 +711,24 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
           Obx(
             () => Column(
               children: [
-                if (widget.headerControl != null || playerController.headerControl != null)
+                if (widget.headerControl != null ||
+                    playerController.headerControl != null)
                   ClipRect(
                     child: AppBarAni(
                       controller: animationController,
-                      visible: !playerController.controlsLock.value && playerController.showControls.value,
+                      visible: !playerController.controlsLock.value &&
+                          playerController.showControls.value,
                       position: 'top',
-                      child: widget.headerControl ?? playerController.headerControl!,
+                      child: widget.headerControl ??
+                          playerController.headerControl!,
                     ),
                   ),
                 const Spacer(),
                 ClipRect(
                   child: AppBarAni(
                     controller: animationController,
-                    visible: !playerController.controlsLock.value && playerController.showControls.value,
+                    visible: !playerController.controlsLock.value &&
+                        playerController.showControls.value,
                     position: 'bottom',
                     child: widget.bottomControl ??
                         BottomControl(
@@ -726,85 +743,13 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
           ),
 
           /// 进度条 live模式下禁用
-
-          Obx(
-            () {
-              final int value = playerController.sliderPositionSeconds.value;
-              final int max = playerController.durationSeconds.value;
-              final int buffer = playerController.bufferedSeconds.value;
-              if (playerController.showControls.value) {
-                return Container();
-              }
-              if (defaultBtmProgressBehavior ==
-                  BtmProgresBehavior.alwaysHide.code) {
-                return const SizedBox();
-              }
-              if (defaultBtmProgressBehavior ==
-                      BtmProgresBehavior.onlyShowFullScreen.code &&
-                  !playerController.isFullScreen.value) {
-                return const SizedBox();
-              } else if (defaultBtmProgressBehavior ==
-                      BtmProgresBehavior.onlyHideFullScreen.code &&
-                  playerController.isFullScreen.value) {
-                return const SizedBox();
-              }
-
-              if (playerController.videoType == 'live') {
-                return const SizedBox();
-              }
-              if (value > max || max <= 0) {
-                return const SizedBox();
-              }
-              return Positioned(
-                bottom: -1.5,
-                left: 0,
-                right: 0,
-                child: ProgressBar(
-                  progress: Duration(seconds: value),
-                  buffered: Duration(seconds: buffer),
-                  total: Duration(seconds: max),
-                  progressBarColor: colorTheme,
-                  baseBarColor: Colors.white.withValues(alpha: 0.2),
-                  bufferedBarColor: Theme.of(context)
-                      .colorScheme
-                      .primary
-                      .withValues(alpha: 0.4),
-                  timeLabelLocation: TimeLabelLocation.none,
-                  thumbColor: colorTheme,
-                  barHeight: 3,
-                  thumbRadius: 0.0,
-                  // onDragStart: (duration) {
-                  //   playerController.onChangedSliderStart();
-                  // },
-                  // onDragEnd: () {
-                  //   playerController.onChangedSliderEnd();
-                  // },
-                  // onDragUpdate: (details) {
-                  //   print(details);
-                  // },
-                  // onSeek: (duration) {
-                  //   feedBack();
-                  //   playerController.onChangedSlider(duration.inSeconds.toDouble());
-                  //   playerController.seekTo(duration);
-                  // },
-                ),
-                // SlideTransition(
-                //     position: Tween<Offset>(
-                //       begin: Offset.zero,
-                //       end: const Offset(0, -1),
-                //     ).animate(CurvedAnimation(
-                //       parent: animationController,
-                //       curve: Curves.easeInOut,
-                //     )),
-                //     child: ),
-              );
-            },
-          ),
+          const _BottomProgressBar(),
 
           // 锁
           Obx(
             () => Visibility(
-              visible: playerController.videoType != 'live' && playerController.isFullScreen.value,
+              visible: playerController.videoType != 'live' &&
+                  playerController.isFullScreen.value,
               child: Align(
                 alignment: Alignment.centerLeft,
                 child: FractionalTranslation(
@@ -819,7 +764,8 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
                         size: 15,
                         color: Colors.white,
                       ),
-                      fuc: () => playerController.onLockControl(!playerController.controlsLock.value),
+                      fuc: () => playerController
+                          .onLockControl(!playerController.controlsLock.value),
                     ),
                   ),
                 ),
@@ -828,7 +774,8 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
           ),
           //
           Obx(() {
-            if (playerController.dataStatus.loading || playerController.isBuffering.value) {
+            if (playerController.dataStatus.loading ||
+                playerController.isBuffering.value) {
               return Center(
                 child: SizedBox(
                   width: 120,
@@ -944,5 +891,81 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
         ],
       ),
     );
+  }
+}
+
+/// 独立的底部进度条组件，缩小重绘范围
+class _BottomProgressBar extends StatefulWidget {
+  const _BottomProgressBar();
+
+  @override
+  State<_BottomProgressBar> createState() => _BottomProgressBarState();
+}
+
+class _BottomProgressBarState extends State<_BottomProgressBar> {
+  late final PlPlayerController _controller;
+  late final Box _setting;
+  late int _defaultBtmProgressBehavior;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller =
+        context.findAncestorWidgetOfExactType<PLVideoPlayer>()!.controller;
+    _setting = GStrorage.setting;
+    _defaultBtmProgressBehavior = _setting.get(
+        SettingBoxKey.btmProgressBehavior,
+        defaultValue: BtmProgresBehavior.values.first.code);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colorTheme = Theme.of(context).colorScheme.primary;
+
+    return Obx(() {
+      final value = _controller.smoothPosition.value;
+      final max = _controller.duration.value;
+      final buffer = _controller.buffered.value;
+
+      if (_controller.showControls.value) {
+        return const SizedBox();
+      }
+      if (_defaultBtmProgressBehavior == BtmProgresBehavior.alwaysHide.code) {
+        return const SizedBox();
+      }
+      if (_defaultBtmProgressBehavior ==
+              BtmProgresBehavior.onlyShowFullScreen.code &&
+          !_controller.isFullScreen.value) {
+        return const SizedBox();
+      } else if (_defaultBtmProgressBehavior ==
+              BtmProgresBehavior.onlyHideFullScreen.code &&
+          _controller.isFullScreen.value) {
+        return const SizedBox();
+      }
+      if (_controller.videoType == 'live') {
+        return const SizedBox();
+      }
+      if (value > max || max <= Duration.zero) {
+        return const SizedBox();
+      }
+
+      return Positioned(
+        bottom: -1.5,
+        left: 0,
+        right: 0,
+        child: ProgressBar(
+          progress: value,
+          buffered: buffer,
+          total: max,
+          progressBarColor: colorTheme,
+          baseBarColor: Colors.white.withValues(alpha: 0.2),
+          bufferedBarColor: colorTheme.withValues(alpha: 0.4),
+          timeLabelLocation: TimeLabelLocation.none,
+          thumbColor: colorTheme,
+          barHeight: 3,
+          thumbRadius: 0.0,
+        ),
+      );
+    });
   }
 }

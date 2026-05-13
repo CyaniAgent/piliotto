@@ -42,6 +42,7 @@ class InteractiveviewerGallery<T> extends StatefulWidget {
     this.onPageChanged,
     this.onDismissed,
     this.heroTagBuilder,
+    this.showPageNavigationButtons = false,
     super.key,
   });
 
@@ -63,6 +64,8 @@ class InteractiveviewerGallery<T> extends StatefulWidget {
   final ValueChanged<int>? onDismissed;
 
   final IndexedTagStringBuilder? heroTagBuilder;
+
+  final bool showPageNavigationButtons;
 
   @override
   State<InteractiveviewerGallery> createState() =>
@@ -107,6 +110,12 @@ class _InteractiveviewerGalleryState extends State<InteractiveviewerGallery>
   // Image info cache
   final Map<int, ImageInfoData> _imageInfoCache = {};
 
+  // Swipe to dismiss enabled
+  late bool _swipeToDismissEnabled;
+
+  // Show page navigation buttons
+  late bool _showPageNavigationButtons;
+
   @override
   void initState() {
     super.initState();
@@ -114,6 +123,11 @@ class _InteractiveviewerGalleryState extends State<InteractiveviewerGallery>
     _pageController = PageController(initialPage: widget.initIndex);
 
     _transformationController = TransformationController();
+
+    // PC端默认禁用滑动退出
+    _swipeToDismissEnabled = !Platform.isWindows && !Platform.isMacOS && !Platform.isLinux;
+
+    _showPageNavigationButtons = widget.showPageNavigationButtons;
 
     _animationController = AnimationController(
       vsync: this,
@@ -536,19 +550,19 @@ class _InteractiveviewerGalleryState extends State<InteractiveviewerGallery>
       },
       child: MouseRegion(
         onHover: (_) => _showToolbar(),
-        child: InteractiveViewerBoundary(
-          controller: _transformationController,
-          boundaryWidth: MediaQuery.of(context).size.width,
-          onScaleChanged: _onScaleChanged,
-          onLeftBoundaryHit: _onLeftBoundaryHit,
-          onRightBoundaryHit: _onRightBoundaryHit,
-          onNoBoundaryHit: _onNoBoundaryHit,
-          maxScale: widget.maxScale,
-          minScale: widget.minScale,
-          child: Stack(children: [
-            CustomDismissible(
+        child: Stack(children: [
+          InteractiveViewerBoundary(
+            controller: _transformationController,
+            boundaryWidth: MediaQuery.of(context).size.width,
+            onScaleChanged: _onScaleChanged,
+            onLeftBoundaryHit: _onLeftBoundaryHit,
+            onRightBoundaryHit: _onRightBoundaryHit,
+            onNoBoundaryHit: _onNoBoundaryHit,
+            maxScale: widget.maxScale,
+            minScale: widget.minScale,
+            child: CustomDismissible(
               onDismissed: _close,
-              enabled: _enableDismiss,
+              enabled: _enableDismiss && _swipeToDismissEnabled,
               onDragUpdate: (progress) {
                 // Background opacity follows dismiss progress
               },
@@ -578,87 +592,116 @@ class _InteractiveviewerGalleryState extends State<InteractiveviewerGallery>
                 },
               ),
             ),
-            // Page indicators
-            if (widget.sources.length > 1)
-              Positioned(
-                top: MediaQuery.of(context).padding.top + 16,
-                left: 0,
-                right: 0,
-                child: Center(
-                  child: AnimatedOpacity(
-                    opacity: _toolbarVisible ? 1.0 : 0.0,
-                    duration: const Duration(milliseconds: 300),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: Colors.black.withValues(alpha: 0.5),
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Text(
-                        '${currentIndex! + 1} / ${widget.sources.length}',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            // Batch mode selection indicator
-            if (_batchMode)
-              Positioned(
-                top: MediaQuery.of(context).padding.top + 16,
-                right: 16,
-                child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.primary,
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Text(
-                    '已选择 ${_selectedIndices.length} 张',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ),
-              ),
-            // Bottom toolbar
-            AnimatedPositioned(
-              duration: const Duration(milliseconds: 300),
-              curve: Curves.easeInOut,
-              bottom: _toolbarVisible ? 0 : -100,
+          ),
+          // Page indicators
+          if (widget.sources.length > 1)
+            Positioned(
+              top: MediaQuery.of(context).padding.top + 16,
               left: 0,
               right: 0,
-              child: Container(
-                padding: EdgeInsets.fromLTRB(
-                    12, 8, 12, MediaQuery.of(context).padding.bottom + 8),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      Colors.transparent,
-                      Colors.black.withValues(alpha: 0.7)
-                    ],
+              child: Center(
+                child: AnimatedOpacity(
+                  opacity: _toolbarVisible ? 1.0 : 0.0,
+                  duration: const Duration(milliseconds: 300),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.5),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Text(
+                      '${currentIndex! + 1} / ${widget.sources.length}',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
                   ),
-                ),
-                child: SafeArea(
-                  top: false,
-                  child: _batchMode
-                      ? _buildBatchToolbar()
-                      : _buildNormalToolbar(),
                 ),
               ),
             ),
-          ]),
-        ),
+          // Batch mode selection indicator
+          if (_batchMode)
+            Positioned(
+              top: MediaQuery.of(context).padding.top + 16,
+              right: 16,
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.primary,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Text(
+                  '已选择 ${_selectedIndices.length} 张',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ),
+          // Page navigation buttons
+          if (_showPageNavigationButtons && widget.sources.length > 1)
+            Positioned.fill(
+              child: AnimatedOpacity(
+                opacity: _toolbarVisible ? 1.0 : 0.0,
+                duration: const Duration(milliseconds: 300),
+                child: Row(
+                  children: [
+                    if (currentIndex! > 0)
+                      Padding(
+                        padding: const EdgeInsets.only(left: 8),
+                        child: _ToolbarButton(
+                          icon: Icons.chevron_left,
+                          onPressed: _goToPrevious,
+                        ),
+                      ),
+                    const Spacer(),
+                    if (currentIndex! < widget.sources.length - 1)
+                      Padding(
+                        padding: const EdgeInsets.only(right: 8),
+                        child: _ToolbarButton(
+                          icon: Icons.chevron_right,
+                          onPressed: _goToNext,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+          // Bottom toolbar
+          AnimatedPositioned(
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeInOut,
+            bottom: _toolbarVisible ? 0 : -100,
+            left: 0,
+            right: 0,
+            child: Container(
+              padding: EdgeInsets.fromLTRB(
+                  12, 8, 12, MediaQuery.of(context).padding.bottom + 8),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Colors.transparent,
+                    Colors.black.withValues(alpha: 0.7)
+                  ],
+                ),
+              ),
+              child: SafeArea(
+                top: false,
+                child: _batchMode
+                    ? _buildBatchToolbar()
+                    : _buildNormalToolbar(),
+              ),
+            ),
+          ),
+        ]),
       ),
     );
   }
@@ -674,10 +717,6 @@ class _InteractiveviewerGalleryState extends State<InteractiveviewerGallery>
         _ToolbarButton(
           icon: Icons.rotate_right,
           onPressed: _rotateImage,
-        ),
-        _ToolbarButton(
-          icon: Icons.info_outline,
-          onPressed: _showImageInfo,
         ),
         if (widget.sources.length > 1)
           _ToolbarButton(
@@ -717,56 +756,101 @@ class _InteractiveviewerGalleryState extends State<InteractiveviewerGallery>
       context: context,
       useRootNavigator: true,
       builder: (context) {
-        return Container(
-          padding: EdgeInsets.only(
-            bottom: MediaQuery.of(context).padding.bottom,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              InkWell(
-                onTap: () => Get.back(),
-                child: Container(
-                  height: 35,
-                  padding: const EdgeInsets.only(bottom: 2),
-                  child: Center(
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return Container(
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(context).padding.bottom,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  InkWell(
+                    onTap: () => Get.back(),
                     child: Container(
-                      width: 32,
-                      height: 3,
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.outline,
-                        borderRadius: BorderRadius.circular(3),
+                      height: 35,
+                      padding: const EdgeInsets.only(bottom: 2),
+                      child: Center(
+                        child: Container(
+                          width: 32,
+                          height: 3,
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).colorScheme.outline,
+                            borderRadius: BorderRadius.circular(3),
+                          ),
+                        ),
                       ),
                     ),
                   ),
-                ),
+                  ListTile(
+                    leading: const Icon(Icons.info_outline),
+                    onTap: () {
+                      Navigator.of(context).pop();
+                      _showImageInfo();
+                    },
+                    title: const Text('图片信息'),
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.share),
+                    onTap: () {
+                      onShareImg(widget.sources[currentIndex!]);
+                      Navigator.of(context).pop();
+                    },
+                    title: const Text('分享图片'),
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.copy),
+                    onTap: () {
+                      onCopyImg(widget.sources[currentIndex!].toString());
+                      Navigator.of(context).pop();
+                    },
+                    title: const Text('复制图片'),
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.download),
+                    onTap: () {
+                      DownloadUtils.downloadImg(widget.sources[currentIndex!]);
+                      Navigator.of(context).pop();
+                    },
+                    title: const Text('保存图片'),
+                  ),
+                  SwitchListTile(
+                    secondary: Icon(
+                      _swipeToDismissEnabled
+                          ? Icons.swipe
+                          : Icons.swipe_outlined,
+                    ),
+                    title: const Text('滑动退出'),
+                    subtitle: const Text('上下滑动关闭图片查看器'),
+                    value: _swipeToDismissEnabled,
+                    onChanged: (value) {
+                      setState(() {
+                        _swipeToDismissEnabled = value;
+                      });
+                      setModalState(() {});
+                    },
+                  ),
+                  if (widget.sources.length > 1)
+                    SwitchListTile(
+                      secondary: Icon(
+                        _showPageNavigationButtons
+                            ? Icons.navigate_before
+                            : Icons.navigate_before_outlined,
+                      ),
+                      title: const Text('切换按钮'),
+                      subtitle: const Text('显示左右切换图片按钮'),
+                      value: _showPageNavigationButtons,
+                      onChanged: (value) {
+                        setState(() {
+                          _showPageNavigationButtons = value;
+                        });
+                        setModalState(() {});
+                      },
+                    ),
+                ],
               ),
-              ListTile(
-                leading: const Icon(Icons.share),
-                onTap: () {
-                  onShareImg(widget.sources[currentIndex!]);
-                  Navigator.of(context).pop();
-                },
-                title: const Text('分享图片'),
-              ),
-              ListTile(
-                leading: const Icon(Icons.copy),
-                onTap: () {
-                  onCopyImg(widget.sources[currentIndex!].toString());
-                  Navigator.of(context).pop();
-                },
-                title: const Text('复制图片'),
-              ),
-              ListTile(
-                leading: const Icon(Icons.download),
-                onTap: () {
-                  DownloadUtils.downloadImg(widget.sources[currentIndex!]);
-                  Navigator.of(context).pop();
-                },
-                title: const Text('保存图片'),
-              ),
-            ],
-          ),
+            );
+          },
         );
       },
     );

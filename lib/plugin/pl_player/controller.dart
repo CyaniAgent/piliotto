@@ -54,6 +54,12 @@ class PlPlayerController {
   final Rx<Duration> _buffered = Rx(Duration.zero);
   final RxInt bufferedSeconds = 0.obs;
 
+  // 高精度进度条位置（用于底部迷你进度条平滑显示）
+  final Rx<Duration> _smoothPosition = Rx(Duration.zero);
+  // 用于插值计算
+  Duration _lastStreamPosition = Duration.zero;
+  DateTime _lastStreamPositionTime = DateTime.now();
+
   final Rx<int> _playerCount = Rx(0);
 
   final Rx<double> _playbackSpeed = 1.0.obs;
@@ -97,6 +103,7 @@ class PlPlayerController {
   Timer? _timerForGettingVolume;
   Timer? timerForTrackingMouse;
   Timer? videoFitChangedTimer;
+  Timer? _smoothPositionTimer;
 
   // final Durations durations;
 
@@ -156,6 +163,9 @@ class PlPlayerController {
 
   Rx<Duration> get sliderTempPosition => _sliderTempPosition;
   // Stream<Duration> get onSliderPositionChanged => _sliderPosition.stream;
+
+  /// 高精度进度条位置（用于底部迷你进度条平滑显示）
+  Rx<Duration> get smoothPosition => _smoothPosition;
 
   /// 是否展示控制条及监听
   Rx<bool> get showControls => _showControls;
@@ -499,6 +509,9 @@ class PlPlayerController {
             _sliderPosition.value = event;
             updateSliderPositionSecond();
           }
+          // 更新插值基准（但不覆盖 smoothPosition，让定时器负责平滑更新）
+          _lastStreamPosition = event;
+          _lastStreamPositionTime = DateTime.now();
 
           /// 触发回调事件
           for (var element in _positionListeners) {
@@ -548,6 +561,11 @@ class PlPlayerController {
       updatePositionSecond();
       updateSliderPositionSecond();
       _heartDuration = position.inSeconds;
+
+      // 重置插值基准
+      _lastStreamPosition = position;
+      _lastStreamPositionTime = DateTime.now();
+      _smoothPosition.value = position;
 
       if (duration.value.inSeconds != 0) {
         isBuffering.value = true;
@@ -633,6 +651,7 @@ class PlPlayerController {
         playerStatus.status.value = PlayerStatus.playing;
         await getCurrentVolume();
         await getCurrentBrightness();
+        _startSmoothPositionTimer();
       } catch (e) {
         print('Error playing player: $e');
         // 播放器可能已经被销毁，忽略错误
@@ -654,6 +673,7 @@ class PlPlayerController {
       try {
         await _videoPlayerController!.pause();
         playerStatus.status.value = PlayerStatus.paused;
+        _stopSmoothPositionTimer();
       } catch (e) {
         print('Error pausing player: $e');
         // 播放器可能已经被销毁，忽略错误
@@ -676,7 +696,7 @@ class PlPlayerController {
     if (_timer != null) {
       _timer!.cancel();
     }
-    _timer = Timer(const Duration(milliseconds: 3000), () {
+    _timer = Timer(const Duration(seconds: 3), () {
       if (!isSliderMoving.value && !isMouseHovering) {
         controls = false;
       } else if (isMouseHovering) {
@@ -684,6 +704,60 @@ class PlPlayerController {
       }
       _timer = null;
     });
+  }
+
+  /// 鼠标悬停时显示控制栏并启动自动隐藏定时器
+  void showControlsOnHover() {
+    isMouseHovering = true;
+    if (!_showControls.value) {
+      controls = true;
+    } else {
+      _hideTaskControls();
+    }
+  }
+
+  /// 鼠标移出时标记并尝试隐藏控制栏
+  void hideControlsOnExit() {
+    isMouseHovering = false;
+    if (!isSliderMoving.value) {
+      _hideTaskControls();
+    }
+  }
+
+  /// 启动高精度进度条定时器（使用插值实现平滑效果）
+  void _startSmoothPositionTimer() {
+    _smoothPositionTimer?.cancel();
+    _smoothPositionTimer = Timer.periodic(
+      const Duration(milliseconds: 16), // ~60fps
+      (_) {
+        if (_videoPlayerController != null &&
+            _videoPlayerController!.state.playing) {
+          // 基于上次 stream 位置和经过时间进行插值
+          final elapsed = DateTime.now().difference(_lastStreamPositionTime);
+          final interpolated = _lastStreamPosition +
+              Duration(
+                milliseconds:
+                    (elapsed.inMilliseconds * _playbackSpeed.value).round(),
+              );
+          // 确保不超过实际位置太多（防止 seek 后偏差过大）
+          final actualPosition = _videoPlayerController!.state.position;
+          if (interpolated >
+              actualPosition + const Duration(milliseconds: 500)) {
+            _smoothPosition.value = actualPosition;
+            _lastStreamPosition = actualPosition;
+            _lastStreamPositionTime = DateTime.now();
+          } else {
+            _smoothPosition.value = interpolated;
+          }
+        }
+      },
+    );
+  }
+
+  /// 停止高精度进度条定时器
+  void _stopSmoothPositionTimer() {
+    _smoothPositionTimer?.cancel();
+    _smoothPositionTimer = null;
   }
 
   /// 调整播放时间
@@ -1003,6 +1077,7 @@ class PlPlayerController {
       timerForTrackingMouse?.cancel();
       _timerForSeek?.cancel();
       videoFitChangedTimer?.cancel();
+      _smoothPositionTimer?.cancel();
       _playerEventSubs?.cancel();
 
       /// 缓存本次弹幕选项
