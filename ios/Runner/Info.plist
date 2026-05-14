@@ -77,31 +77,7 @@
 						<key>CFBundleURLName</key>
 						<string></string>
 						<key>CFBundleURLSchemes</key>
-						<array>
-							<string>m.bilibili.com</string>
-							<string>bilibili.com</string>
-							<string>www.bilibili.com</string>
-							<string>bangumi.bilibili.com</string>
-							<string>bilibili.cn</string>
-							<string>www.bilibili.cn</string>
-							<string>bangumi.bilibili.cn</string>
-							<string>bilibili.tv</string>
-							<string>www.bilibili.tv</string>
-							<string>bangumi.bilibili.tv</string>
-							<string>miniapp.bilibili.com</string>
-							<string>live.bilibili.com</string>
-						</array>
 					</dict>
-				</array>
-			</dict>
-
-			<!-- 当其他应用程序或系统通过 bilibili -->
-			<dict>
-				<key>CFBundleURLName</key>
-				<string>bilibili</string>
-				<key>CFBundleURLSchemes</key>
-				<array>
-					<string>bilibili</string>
 				</array>
 			</dict>
 		</array>

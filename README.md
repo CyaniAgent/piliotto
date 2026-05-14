@@ -48,7 +48,6 @@ Xcode 13.4 不支持 ```auto_orientation```，请注释相关代码
 ## 致谢
 
 - [pilipala](https://github.com/guozhigq/pilipala)
-- [bilibili-API-collect](https://github.com/SocialSisterYi/bilibili-API-collect)
 - [flutter_meedu_videoplayer](https://github.com/zezo357/flutter_meedu_videoplayer)
 - [media-kit](https://github.com/media-kit/media-kit)
 - [dio](https://pub.dev/packages/dio)
