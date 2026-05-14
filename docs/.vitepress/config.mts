@@ -6,6 +6,16 @@ export default defineConfig({
   extends: teekConfig,
   title: "PiliOtto",
   description: "By SakuraCake",
+  head: [
+    [
+      'script',
+      {
+        async: '',
+        src: 'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3483226632276812',
+        crossorigin: 'anonymous'
+      }
+    ]
+  ],
   themeConfig: {
     logo: '/logo.png',
     siteTitle: 'PiliOtto',
