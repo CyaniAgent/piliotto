@@ -1,6 +1,10 @@
 name: Flutter Release Build CI/CD
 
 # 触发条件配置
+# 正式发版方式：本地打标签后推送，例如
+#   git tag v1.2.0 && git push --tags
+# 推送 v* 标签即触发本工作流并创建 GitHub Release。
+# 注意：仓库未配置远程时不会触发，可用 workflow_dispatch 手动测试。
 on:
   push:
     tags:

@@ -132,6 +132,7 @@ jobs:
   build_app:
     needs: build_env
     runs-on: ${{ matrix.os }} # 使用矩阵策略中指定的操作系统进行构建
+    # 定时构建时，仅当最近 24 小时内有提交才真正编译，否则只跑 build_env（避免无变更时空转）
     if: ${{ github.event_name != 'schedule' || needs.build_env.outputs.changes_detected == 'true' }}
     strategy:
       matrix:

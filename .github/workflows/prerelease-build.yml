@@ -1,6 +1,8 @@
 name: Flutter PreRelease Build CI/CD
 
 # 触发条件配置
+# 仅支持手动触发，用于发布 pre-release 测试构建（prerelease=true）。
+# 需要仓库已配置远程并启用 Actions 才能运行。
 on:
   workflow_dispatch: # 允许手动触发工作流，便于管理和测试
 
