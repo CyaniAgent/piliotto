@@ -1,6 +1,10 @@
 name: Flutter Release Build CI/CD
 
 # 触发条件配置
+# 正式发版方式：本地打标签后推送，例如
+#   git tag v1.2.0 && git push --tags
+# 推送 v* 标签即触发本工作流并创建 GitHub Release。
+# 注意：仓库未配置远程时不会触发，可用 workflow_dispatch 手动测试。
 on:
   push:
     tags:
@@ -146,6 +150,7 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           channel: stable  # 使用Flutter的稳定版
+          flutter-version: 3.44.6 # 锁定版本，避免依赖漂移
 
       # 显示Flutter版本信息
       - name: Check Flutter version
@@ -191,7 +196,7 @@ jobs:
         if: matrix.name == 'linux'
         run: |
           sudo apt-get update -y
-          sudo apt-get install -y ninja-build libgtk-3-dev libasound2-dev libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev libgstreamer-plugins-good1.0-dev libsecret-1-dev
+          sudo apt-get install -y ninja-build libgtk-3-dev libasound2-dev libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev libgstreamer-plugins-good1.0-dev libsecret-1-dev libmpv-dev
           flutter build linux
 
       - name: Build Windows
@@ -273,31 +278,17 @@ jobs:
           echo "Reading version from _build_env.config..."
           FULL_VERSION=$(grep 'FULL_VERSION=' artifacts/build_env_files/_build_env.config | cut -d '=' -f2)
           echo "FULL_VERSION=${FULL_VERSION}" >> $GITHUB_OUTPUT
-      - name: Create Release
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Create Release and Upload Assets
+        uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.read_build_env.outputs.FULL_VERSION }}
-          release_name: Release ${{ steps.read_build_env.outputs.FULL_VERSION }}
+          name: Release ${{ steps.read_build_env.outputs.FULL_VERSION }}
           draft: false
           prerelease: false
-
-      - name: Upload Release Assets
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          for artifact in artifacts/*/*.{apk,aab,ipa,zip}
-          do
-            if [ -f "$artifact" ]; then
-              asset_name=$(basename "$artifact")
-              echo "Uploading $asset_name"
-              curl --fail -X POST \
-                -H "Authorization: token $GITHUB_TOKEN" \
-                -H "Content-Type: $(file -b --mime-type $artifact)" \
-                --data-binary @"$artifact" \
-                "https://uploads.github.com/repos/${{ github.repository }}/releases/${{ steps.create_release.outputs.id }}/assets?name=$asset_name"
-            fi
-          done
+          generate_release_notes: true
+          files: |
+            artifacts/*/*.apk
+            artifacts/*/*.aab
+            artifacts/*/*.ipa
+            artifacts/*/*.zip
 

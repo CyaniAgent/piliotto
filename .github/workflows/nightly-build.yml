@@ -132,8 +132,10 @@ jobs:
   build_app:
     needs: build_env
     runs-on: ${{ matrix.os }} # 使用矩阵策略中指定的操作系统进行构建
+    # 定时构建时，仅当最近 24 小时内有提交才真正编译，否则只跑 build_env（避免无变更时空转）
     if: ${{ github.event_name != 'schedule' || needs.build_env.outputs.changes_detected == 'true' }}
     strategy:
+      fail-fast: false # 单个平台失败不取消其他平台，便于定位环境问题并保留已有产物
       matrix:
         include:
           # 定义不同的构建任务，每个任务对应一个平台
@@ -182,6 +184,7 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           channel: stable # 使用Flutter的稳定版
+          flutter-version: 3.44.6 # 锁定版本，避免依赖漂移
 
       # 显示Flutter版本信息
       - name: Check Flutter version
@@ -228,7 +231,7 @@ jobs:
         if: matrix.name == 'linux'
         run: |
           sudo apt-get update -y
-          sudo apt-get install -y ninja-build libgtk-3-dev libasound2-dev libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev libgstreamer-plugins-good1.0-dev libsecret-1-dev
+          sudo apt-get install -y ninja-build libgtk-3-dev libasound2-dev libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev libgstreamer-plugins-good1.0-dev libsecret-1-dev libmpv-dev
           flutter build linux
 
       - name: Build Windows
@@ -296,4 +299,51 @@ jobs:
             *.ipa
             *.zip
           if-no-files-found: error
+
+  release:
+    needs: build_app
+    # 只要 build_app 不是被 24 小时 gate 跳过、也不是整体取消，就发布已成功产出的产物
+    # （单个平台失败时仍会发布其余平台的产物，避免一个环境问题导致完全没有 nightly）
+    if: ${{ always() && needs.build_app.result != 'skipped' && needs.build_app.result != 'cancelled' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Read FULL_VERSION from _build_env.config
+        id: read_build_env
+        run: |
+          FULL_VERSION=$(grep 'FULL_VERSION=' artifacts/build_env_files/_build_env.config | cut -d '=' -f2)
+          echo "FULL_VERSION=${FULL_VERSION}" >> $GITHUB_OUTPUT
+
+      - name: Publish Nightly Pre-release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: nightly
+          name: Nightly Build
+          body: 自动构建的 nightly 产物，具体版本见附件文件名。
+          prerelease: true
+          make_latest: false
+          fail_on_unmatched_files: false
+          files: |
+            artifacts/*/*.apk
+            artifacts/*/*.aab
+            artifacts/*/*.ipa
+            artifacts/*/*.zip
+
+      - name: Prune stale nightly assets
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # 滚动 release 会累积历史版本的 asset，这里只保留本次构建版本，删除其余
+          gh release view nightly --repo "$GITHUB_REPOSITORY" --json assets \
+            --jq '.assets[].name' 2>/dev/null \
+            | grep -vF "${{ steps.read_build_env.outputs.FULL_VERSION }}" \
+            | while read -r name; do
+                [ -n "$name" ] || continue
+                echo "Deleting stale asset: $name"
+                gh release delete-asset nightly "$name" --repo "$GITHUB_REPOSITORY" --yes || true
+              done
 
