@@ -135,6 +135,7 @@ jobs:
     # 定时构建时，仅当最近 24 小时内有提交才真正编译，否则只跑 build_env（避免无变更时空转）
     if: ${{ github.event_name != 'schedule' || needs.build_env.outputs.changes_detected == 'true' }}
     strategy:
+      fail-fast: false # 单个平台失败不取消其他平台，便于定位环境问题并保留已有产物
       matrix:
         include:
           # 定义不同的构建任务，每个任务对应一个平台
@@ -183,6 +184,7 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           channel: stable # 使用Flutter的稳定版
+          flutter-version: 3.44.6 # 锁定版本，避免依赖漂移
 
       # 显示Flutter版本信息
       - name: Check Flutter version
@@ -297,4 +299,30 @@ jobs:
             *.ipa
             *.zip
           if-no-files-found: error
+
+  release:
+    needs: build_app
+    # 只要 build_app 不是被 24 小时 gate 跳过、也不是整体取消，就发布已成功产出的产物
+    # （单个平台失败时仍会发布其余平台的产物，避免一个环境问题导致完全没有 nightly）
+    if: ${{ always() && needs.build_app.result != 'skipped' && needs.build_app.result != 'cancelled' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Publish Nightly Pre-release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: nightly
+          name: Nightly Build
+          body: 自动构建的 nightly 产物，具体版本见附件文件名。
+          prerelease: true
+          make_latest: false
+          files: |
+            artifacts/*/*.apk
+            artifacts/*/*.aab
+            artifacts/*/*.ipa
+            artifacts/*/*.zip
 

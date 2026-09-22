@@ -145,6 +145,7 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           channel: stable # 使用Flutter的稳定版
+          flutter-version: 3.44.6 # 锁定版本，避免依赖漂移
 
       # 显示Flutter版本信息
       - name: Check Flutter version
