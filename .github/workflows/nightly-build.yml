@@ -148,7 +148,7 @@ jobs:
           - name: linux
             os: ubuntu-latest
           - name: windows
-            os: windows-2022
+            os: windows-latest
           # - name: ios
           #   os: macos-latest
           - name: macos
@@ -312,6 +312,12 @@ jobs:
         with:
           path: artifacts
 
+      - name: Read FULL_VERSION from _build_env.config
+        id: read_build_env
+        run: |
+          FULL_VERSION=$(grep 'FULL_VERSION=' artifacts/build_env_files/_build_env.config | cut -d '=' -f2)
+          echo "FULL_VERSION=${FULL_VERSION}" >> $GITHUB_OUTPUT
+
       - name: Publish Nightly Pre-release
         uses: softprops/action-gh-release@v2
         with:
@@ -320,9 +326,24 @@ jobs:
           body: 自动构建的 nightly 产物，具体版本见附件文件名。
           prerelease: true
           make_latest: false
+          fail_on_unmatched_files: false
           files: |
             artifacts/*/*.apk
             artifacts/*/*.aab
             artifacts/*/*.ipa
             artifacts/*/*.zip
+
+      - name: Prune stale nightly assets
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # 滚动 release 会累积历史版本的 asset，这里只保留本次构建版本，删除其余
+          gh release view nightly --repo "$GITHUB_REPOSITORY" --json assets \
+            --jq '.assets[].name' 2>/dev/null \
+            | grep -vF "${{ steps.read_build_env.outputs.FULL_VERSION }}" \
+            | while read -r name; do
+                [ -n "$name" ] || continue
+                echo "Deleting stale asset: $name"
+                gh release delete-asset nightly "$name" --repo "$GITHUB_REPOSITORY" --yes || true
+              done
 

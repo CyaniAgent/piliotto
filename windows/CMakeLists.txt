@@ -32,6 +32,12 @@ set(CMAKE_CXX_FLAGS_PROFILE "${CMAKE_CXX_FLAGS_RELEASE}")
 # Use Unicode for all projects.
 add_definitions(-DUNICODE -D_UNICODE)
 
+# flutter_inappwebview_windows / permission_handler_windows 仍使用已弃用的
+# <experimental/coroutine>，VS18（MSVC 14.51）下为硬错误 STL1011。
+# 这里全局 silence 该弃用错误，使构建可在最新 windows runner 上通过。
+# 上游 issue: https://github.com/pichillilorenzo/flutter_inappwebview/issues/2839
+add_definitions(-D_SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS)
+
 # Compilation settings that should be applied to most targets.
 #
 # Be cautious about adding new options here, as plugins use this function by

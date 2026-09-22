@@ -109,7 +109,7 @@ jobs:
           - name: linux
             os: ubuntu-latest
           - name: windows
-            os: windows-2022
+            os: windows-latest
           # - name: ios
           #   os: macos-latest
           - name: macos
