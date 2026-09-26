@@ -3,12 +3,17 @@ name: Flutter Nightly Build CI/CD
 # 触发条件配置
 on:
   workflow_dispatch: # 允许手动触发工作流，便于管理和测试
+    inputs:
+      force_nightly:
+        description: 强制走 nightly 文件名标签路径（仅用于验证 schedule 分支，不影响 versionCode）
+        type: boolean
+        default: false
   schedule:
     - cron: "0 0 * * *" # 每天UTC时间0点触发（即北京时间8点），实现夜间构建
 
-# 授予 contents 写权限
+# nightly 只上传 Actions artifact，不发布 Release，因此只需要读权限
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   # 在 Ubuntu 环境中运行，避免了 macOS 的 sed 问题
@@ -46,11 +51,11 @@ jobs:
       - name: Generate Version Number
         id: generate_version
         run: |
-          # 检查是否是定时触发（夜间构建）
+          # 检查是否是定时触发（夜间构建）；force_nightly 仅用于手动验证 nightly 文件名标签
           IS_NIGHTLY=false
-          if [[ "${{ github.event_name }}" == "schedule" ]]; then
+          if [[ "${{ github.event_name }}" == "schedule" || "${{ inputs.force_nightly }}" == "true" ]]; then
             IS_NIGHTLY=true
-            echo "This is a nightly build triggered by schedule"
+            echo "This is a nightly build"
           fi
 
           # 标签触发 (e.g. v1.0或1.0) 移除 refs/tags/ 前缀和可选的 'v' 前缀
@@ -79,16 +84,20 @@ jobs:
           COMMIT_COUNT=$(git rev-list --count HEAD) # 计算提交数量
           SHORT_HASH=$(git rev-parse --short HEAD) # 获取最近一次提交的短哈希
 
-          # 生成夜间构建版本号：nightly-YYYYMMDD-commitcount
+          # BUILD_VERSION 写入 pubspec（即 Android versionCode），必须是纯数字
+          # BUILD_LABEL 仅用于产物文件名，保留 nightly-YYYYMMDD-commitcount 的可读性
           if $IS_NIGHTLY; then
             NIGHTLY_DATE=$(date +%Y%m%d)
-            BUILD_VERSION="nightly-${NIGHTLY_DATE}-${COMMIT_COUNT}"
+            BUILD_VERSION="${COMMIT_COUNT}"
+            BUILD_LABEL="nightly-${NIGHTLY_DATE}-${COMMIT_COUNT}"
           else
             BUILD_VERSION="${COMMIT_COUNT}"
+            BUILD_LABEL="${COMMIT_COUNT}"
           fi
 
           echo "BUILD_VERSION=${BUILD_VERSION}" >> $GITHUB_OUTPUT # 设置输出变量
-          echo "Generated BUILD_VERSION: ${BUILD_VERSION}" # 打印完整的构建版本号
+          echo "BUILD_LABEL=${BUILD_LABEL}" >> $GITHUB_OUTPUT
+          echo "Generated BUILD_VERSION: ${BUILD_VERSION}, BUILD_LABEL: ${BUILD_LABEL}"
         shell: bash
 
       # 更新pubspec.yaml中的版本号
@@ -101,7 +110,9 @@ jobs:
 
           # 组合新的完整版本号 (e.g. 1.0.0+34)
           FULL_VERSION="${MAIN_VERSION}+${{ steps.generate_version.outputs.BUILD_VERSION }}"
+          DISPLAY_VERSION="${MAIN_VERSION}+${{ steps.generate_version.outputs.BUILD_LABEL }}"
           echo "FULL_VERSION=${FULL_VERSION}"
+          echo "DISPLAY_VERSION=${DISPLAY_VERSION}"
 
           # 更新新版本号到pubspec.yaml文件
           sed -i "s/^version: .*/version: ${FULL_VERSION}/" pubspec.yaml
@@ -118,7 +129,10 @@ jobs:
             exit 1
           fi
 
-          echo "FULL_VERSION=${FULL_VERSION}" > _build_env.config
+          {
+            echo "FULL_VERSION=${FULL_VERSION}"
+            echo "DISPLAY_VERSION=${DISPLAY_VERSION}"
+          } > _build_env.config
         shell: bash
 
       - name: Upload updated pubspec.yaml
@@ -171,12 +185,14 @@ jobs:
           cat _build_env.config
         shell: bash
 
-      - name: Read FULL_VERSION from _build_env.config
+      - name: Read version from _build_env.config
         id: read_build_env
         run: |
           echo "Reading version from _build_env.config..."
-          FULL_VERSION=$(grep 'FULL_VERSION=' _build_env.config | cut -d '=' -f2)
+          FULL_VERSION=$(grep '^FULL_VERSION=' _build_env.config | cut -d '=' -f2)
+          DISPLAY_VERSION=$(grep '^DISPLAY_VERSION=' _build_env.config | cut -d '=' -f2)
           echo "FULL_VERSION=${FULL_VERSION}" >> $GITHUB_OUTPUT # 设置输出变量
+          echo "DISPLAY_VERSION=${DISPLAY_VERSION}" >> $GITHUB_OUTPUT
         shell: bash
 
       # 设置Flutter环境
@@ -256,7 +272,7 @@ jobs:
           publish_branch: gh-pages
           user_name: "github-actions[bot]"
           user_email: "github-actions[bot]@users.noreply.github.com"
-          commit_message: "Deploy to GitHub Pages: ${{ steps.read_build_env.outputs.FULL_VERSION }}"
+          commit_message: "Deploy to GitHub Pages: ${{ steps.read_build_env.outputs.DISPLAY_VERSION }}"
 
       # 根据平台压缩构建产物，为上传做准备
       # 使用不同的命令和文件路径根据平台进行压缩
@@ -267,25 +283,25 @@ jobs:
           PREFIX="nightly"
 
           if [ "${{ matrix.name }}" = "android" ]; then
-            mv build/app/outputs/flutter-apk/app-release.apk ./app-${PREFIX}-all-${{ steps.read_build_env.outputs.FULL_VERSION }}.apk
-            mv build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk ./app-${PREFIX}-armeabi-v7a-${{ steps.read_build_env.outputs.FULL_VERSION }}.apk
-            mv build/app/outputs/flutter-apk/app-arm64-v8a-release.apk ./app-${PREFIX}-arm64-v8a-${{ steps.read_build_env.outputs.FULL_VERSION }}.apk
-            mv build/app/outputs/flutter-apk/app-x86_64-release.apk ./app-${PREFIX}-x86_64-${{ steps.read_build_env.outputs.FULL_VERSION }}.apk
+            mv build/app/outputs/flutter-apk/app-release.apk ./app-${PREFIX}-all-${{ steps.read_build_env.outputs.DISPLAY_VERSION }}.apk
+            mv build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk ./app-${PREFIX}-armeabi-v7a-${{ steps.read_build_env.outputs.DISPLAY_VERSION }}.apk
+            mv build/app/outputs/flutter-apk/app-arm64-v8a-release.apk ./app-${PREFIX}-arm64-v8a-${{ steps.read_build_env.outputs.DISPLAY_VERSION }}.apk
+            mv build/app/outputs/flutter-apk/app-x86_64-release.apk ./app-${PREFIX}-x86_64-${{ steps.read_build_env.outputs.DISPLAY_VERSION }}.apk
           elif [ "${{ matrix.name }}" = "android-aab" ]; then
-            mv build/app/outputs/bundle/release/app-release.aab ./app-${PREFIX}-${{ steps.read_build_env.outputs.FULL_VERSION }}.aab
+            mv build/app/outputs/bundle/release/app-release.aab ./app-${PREFIX}-${{ steps.read_build_env.outputs.DISPLAY_VERSION }}.aab
           elif [ "${{ matrix.name }}" = "web" ]; then
-            zip -r web-${PREFIX}-${{ steps.read_build_env.outputs.FULL_VERSION }}.zip build/web
+            zip -r web-${PREFIX}-${{ steps.read_build_env.outputs.DISPLAY_VERSION }}.zip build/web
           elif [ "${{ matrix.name }}" = "linux" ]; then
-            zip -r linux-${PREFIX}-${{ steps.read_build_env.outputs.FULL_VERSION }}.zip build/linux/x64/release/bundle
+            zip -r linux-${PREFIX}-${{ steps.read_build_env.outputs.DISPLAY_VERSION }}.zip build/linux/x64/release/bundle
           elif [ "${{ matrix.name }}" = "windows" ]; then
-            powershell Compress-Archive build/windows/x64/runner/Release windows-${PREFIX}-${{ steps.read_build_env.outputs.FULL_VERSION }}.zip
+            powershell Compress-Archive build/windows/x64/runner/Release windows-${PREFIX}-${{ steps.read_build_env.outputs.DISPLAY_VERSION }}.zip
           elif [ "${{ matrix.name }}" = "ios" ]; then
             mkdir Payload
             cp -r build/ios/iphoneos/Runner.app Payload/
-            zip -r ios-${PREFIX}-${{ steps.read_build_env.outputs.FULL_VERSION }}.ipa Payload/
-            zip -r ios-${PREFIX}-${{ steps.read_build_env.outputs.FULL_VERSION }}.zip build/ios/iphoneos
+            zip -r ios-${PREFIX}-${{ steps.read_build_env.outputs.DISPLAY_VERSION }}.ipa Payload/
+            zip -r ios-${PREFIX}-${{ steps.read_build_env.outputs.DISPLAY_VERSION }}.zip build/ios/iphoneos
           elif [ "${{ matrix.name }}" = "macos" ]; then
-            zip -r macos-${PREFIX}-${{ steps.read_build_env.outputs.FULL_VERSION }}.zip build/macos/Build/Products/Release
+            zip -r macos-${PREFIX}-${{ steps.read_build_env.outputs.DISPLAY_VERSION }}.zip build/macos/Build/Products/Release
           fi
         shell: bash
 
@@ -299,51 +315,4 @@ jobs:
             *.ipa
             *.zip
           if-no-files-found: error
-
-  release:
-    needs: build_app
-    # 只要 build_app 不是被 24 小时 gate 跳过、也不是整体取消，就发布已成功产出的产物
-    # （单个平台失败时仍会发布其余平台的产物，避免一个环境问题导致完全没有 nightly）
-    if: ${{ always() && needs.build_app.result != 'skipped' && needs.build_app.result != 'cancelled' }}
-    runs-on: ubuntu-latest
-    steps:
-      - name: Download all artifacts
-        uses: actions/download-artifact@v4
-        with:
-          path: artifacts
-
-      - name: Read FULL_VERSION from _build_env.config
-        id: read_build_env
-        run: |
-          FULL_VERSION=$(grep 'FULL_VERSION=' artifacts/build_env_files/_build_env.config | cut -d '=' -f2)
-          echo "FULL_VERSION=${FULL_VERSION}" >> $GITHUB_OUTPUT
-
-      - name: Publish Nightly Pre-release
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: nightly
-          name: Nightly Build
-          body: 自动构建的 nightly 产物，具体版本见附件文件名。
-          prerelease: true
-          make_latest: false
-          fail_on_unmatched_files: false
-          files: |
-            artifacts/*/*.apk
-            artifacts/*/*.aab
-            artifacts/*/*.ipa
-            artifacts/*/*.zip
-
-      - name: Prune stale nightly assets
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          # 滚动 release 会累积历史版本的 asset，这里只保留本次构建版本，删除其余
-          gh release view nightly --repo "$GITHUB_REPOSITORY" --json assets \
-            --jq '.assets[].name' 2>/dev/null \
-            | grep -vF "${{ steps.read_build_env.outputs.FULL_VERSION }}" \
-            | while read -r name; do
-                [ -n "$name" ] || continue
-                echo "Deleting stale asset: $name"
-                gh release delete-asset nightly "$name" --repo "$GITHUB_REPOSITORY" --yes || true
-              done
 
